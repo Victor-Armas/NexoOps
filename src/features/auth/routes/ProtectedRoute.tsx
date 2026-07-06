@@ -1,20 +1,21 @@
-import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { LoadingScreen } from "../../../components/layout/LoadingScreen";
+import { useAuth } from "../hooks/useAuth";
 
 export function ProtectedRoute() {
-    const { session, isLoading } = useAuth();
+    const { session, profile, isLoading } = useAuth();
+    const location = useLocation();
 
     if (isLoading) {
-        return (
-            <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-                return <LoadingScreen />;
-            </main>
-        );
+        return <LoadingScreen />;
     }
 
     if (!session) {
-        return <Navigate to="/login" replace />;
+        return <Navigate to="/login" replace state={{ from: location }} />;
+    }
+
+    if (!profile) {
+        return <Navigate to="/unauthorized" replace />;
     }
 
     return <Outlet />;

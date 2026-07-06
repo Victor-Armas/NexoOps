@@ -16,6 +16,9 @@ export function PublicRoute() {
     if (session) {
         return <Navigate to="/app" replace />;
     }
+    else {
+
+    }
 
     return <Outlet />;
 }
