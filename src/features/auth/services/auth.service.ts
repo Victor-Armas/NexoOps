@@ -1,5 +1,17 @@
 import { supabase } from "../../../lib/supabase/client";
-import type { ProfileRow, RoleRow, UserProfile } from "../types/auth.types";
+import {
+  profileRowSchema,
+  roleRowSchema,
+  type UserProfile,
+} from "../schemas/auth.schemas";
+
+export async function signInWithPassword(email: string, password: string) {
+  return supabase.auth.signInWithPassword({ email, password });
+}
+
+export async function signOutUser() {
+  await supabase.auth.signOut();
+}
 
 export async function getUserProfile(
   userId: string,
@@ -15,11 +27,12 @@ export async function getUserProfile(
     throw profileError;
   }
 
-  if (!profileData) {
+  const profileResult = profileRowSchema.safeParse(profileData);
+  if (!profileResult.success) {
     return null;
   }
 
-  const profile = profileData as ProfileRow;
+  const profile = profileResult.data;
 
   const { data: roleData, error: roleError } = await supabase
     .from("roles")
@@ -32,11 +45,12 @@ export async function getUserProfile(
     throw roleError;
   }
 
-  if (!roleData) {
+  const roleResult = roleRowSchema.safeParse(roleData);
+  if (!roleResult.success) {
     return null;
   }
 
-  const role = roleData as RoleRow;
+  const role = roleResult.data;
 
   return {
     id: profile.id,
@@ -48,8 +62,4 @@ export async function getUserProfile(
       name: role.name,
     },
   };
-}
-
-export async function signOutUser() {
-  await supabase.auth.signOut();
 }

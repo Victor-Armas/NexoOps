@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase/client";
@@ -7,61 +7,38 @@ import type { AuthContextValue, UserProfile } from "../types/auth.types";
 import { AuthContext } from "./AuthContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [session, setSession] = useState<Session | null>(null);
-    const [profile, setProfile] = useState<UserProfile | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        let isMounted = true;
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+      setSession(currentSession);
 
-        async function loadSession() {
-            const { data } = await supabase.auth.getSession();
-
-            if (!isMounted) return;
-
-            setSession(data.session);
-
-            if (data.session?.user) {
-                const userProfile = await getUserProfile(data.session.user.id);
-                setProfile(userProfile);
-            }
-
-            setIsLoading(false);
+      try {
+        if (currentSession?.user) {
+          setProfile(await getUserProfile(currentSession.user.id));
+        } else {
+          setProfile(null);
         }
+      } catch {
+        setProfile(null);
+      } finally {
+        setIsLoading(false);
+      }
+    });
 
-        loadSession();
+    return () => subscription.unsubscribe();
+  }, []);
 
-        const {
-            data: { subscription },
-        } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-            setSession(currentSession);
+  const value: AuthContextValue = {
+    session,
+    profile,
+    isLoading,
+    signOut: signOutUser,
+  };
 
-            if (currentSession?.user) {
-                const userProfile = await getUserProfile(currentSession.user.id);
-                setProfile(userProfile);
-            } else {
-                setProfile(null);
-            }
-
-            setIsLoading(false);
-        });
-
-        return () => {
-            isMounted = false;
-            subscription.unsubscribe();
-        };
-    }, []);
-
-    const value = useMemo<AuthContextValue>(
-        () => ({
-            session,
-            user: session?.user ?? null,
-            profile,
-            isLoading,
-            signOut: signOutUser,
-        }),
-        [session, profile, isLoading],
-    );
-
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

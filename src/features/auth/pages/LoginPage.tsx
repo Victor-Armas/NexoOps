@@ -1,11 +1,11 @@
 import { Lock, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "../../../lib/supabase/client";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { ThemeToggle } from "../../theme/ThemeToggle";
-import { loginSchema, type LoginFormValues } from "../schemas/loginSchema";
+import { loginSchema, type LoginFormValues } from "../schemas/auth.schemas";
+import { signInWithPassword } from "../services/auth.service";
 import { useNavigate } from "react-router-dom";
 
 export function LoginPage() {
@@ -24,10 +24,7 @@ export function LoginPage() {
     const navigate = useNavigate();
 
     const onSubmit = async (values: LoginFormValues) => {
-        const { error } = await supabase.auth.signInWithPassword({
-            email: values.email,
-            password: values.password,
-        });
+        const { error } = await signInWithPassword(values.email, values.password);
 
         if (error) {
             setError("root", {

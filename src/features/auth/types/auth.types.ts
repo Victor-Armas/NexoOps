@@ -1,42 +1,11 @@
-import type { Session, User } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
+import type { UserProfile } from "../schemas/auth.schemas";
 
-export type RoleKey =
-  | "admin"
-  | "supervisor"
-  | "monitor"
-  | "operator"
-  | "viewer";
-
-export type UserRole = {
-  id: string;
-  key: RoleKey;
-  name: string;
-};
-
-export type UserProfile = {
-  id: string;
-  fullName: string;
-  email: string;
-  role: UserRole;
-};
+export type { RoleKey, UserProfile, UserRole } from "../schemas/auth.schemas";
 
 export type AuthContextValue = {
   session: Session | null;
-  user: User | null;
   profile: UserProfile | null;
   isLoading: boolean;
   signOut: () => Promise<void>;
-};
-
-export type ProfileRow = {
-  id: string;
-  full_name: string;
-  email: string;
-  role_id: string;
-};
-
-export type RoleRow = {
-  id: string;
-  key: RoleKey;
-  name: string;
 };
