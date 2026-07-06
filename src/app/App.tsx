@@ -9,6 +9,8 @@ import { HomePage } from "../features/Home/pages/HomePage";
 import { AppShell } from "../components/layout/AppShell";
 import { PlantsPage } from "../features/Plants/page/PlantsPage";
 import { UnitsPage } from "../features/units/pages/UnitsPage";
+import { ProjectMenuPage } from "../features/projects/pages/ProjectMenuPage";
+import { ProjectShell } from "../components/layout/ProjectShell";
 
 
 export function App() {
@@ -23,7 +25,13 @@ export function App() {
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           <Route element={<ProtectedRoute />}>
+
             <Route path="/app" element={<AppShell />}>
+              <Route index element={<ProjectMenuPage />} />
+            </Route>
+
+
+            <Route path="/app/projects/:projectId" element={<ProjectShell />}>
               <Route index element={<HomePage />} />
               <Route path="plants" element={<PlantsPage />} />
               <Route path="units" element={<UnitsPage />} />
