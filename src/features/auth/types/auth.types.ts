@@ -27,3 +27,16 @@ export type AuthContextValue = {
   isLoading: boolean;
   signOut: () => Promise<void>;
 };
+
+export type ProfileRow = {
+  id: string;
+  full_name: string;
+  email: string;
+  role_id: string;
+};
+
+export type RoleRow = {
+  id: string;
+  key: RoleKey;
+  name: string;
+};
