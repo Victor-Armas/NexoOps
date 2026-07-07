@@ -14,7 +14,10 @@ export function ProjectMenuPage() {
     return (
         <>
             <section className="mb-5">
-                <h2 className="text-2xl font-bold">{`Plantas Asignadas`}</h2>
+                <h2 className="text-2xl font-bold">Proyectos asignados</h2>
+                <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+                    Selecciona una operación para continuar
+                </p>
             </section>
 
             {errorMessage && (

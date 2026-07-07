@@ -8,24 +8,18 @@ function mapProject(row: ProjectRow): Project {
     name: row.name,
     description: row.description,
     sortOrder: row.sort_order,
-    isActive: row.is_active,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
   };
 }
 
 export async function getProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select(
-      "id, code, name, description, sort_order, is_active, created_at, updated_at",
-    )
+    .select("id, code, name, description, sort_order")
     .eq("is_active", true)
-    .order("sort_order", { ascending: true });
+    .order("sort_order", { ascending: true })
+    .returns<ProjectRow[]>();
 
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 
-  return (data as ProjectRow[]).map(mapProject);
+  return data.map(mapProject);
 }

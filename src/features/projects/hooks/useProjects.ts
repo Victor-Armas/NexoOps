@@ -13,12 +13,12 @@ export function useProjects() {
     async function loadProjects() {
       try {
         setIsLoading(true);
+        setErrorMessage(null);
 
-        const projectsData = await getProjects();
+        const data = await getProjects();
 
         if (isMounted) {
-          setProjects(projectsData);
-          setErrorMessage(null);
+          setProjects(data);
         }
       } catch {
         if (isMounted) {

@@ -5,13 +5,14 @@ import { ProtectedRoute } from "../features/auth/routes/ProtectedRoute";
 import { PublicRoute } from "../features/auth/routes/PublicRoute";
 import { UnauthorizedPage } from "../features/auth/pages/UnauthorizedPage";
 import { NotFoundPage } from "../features/auth/pages/NotFoundPage";
-import { HomePage } from "../features/Home/pages/HomePage";
-import { AppShell } from "../components/layout/AppShell";
-import { PlantsPage } from "../features/Plants/page/PlantsPage";
-import { UnitsPage } from "../features/units/pages/UnitsPage";
+import { InterplantDashboardPage } from "../features/interplant/dashboard/pages/InterplantDashboardPage";
+import { PlantsPage } from "../features/interplant/plants/pages/PlantsPage";
+import { UnitsPage } from "../features/interplant/units/pages/UnitsPage";
+import { IncidentsPage } from "../features/interplant/incidents/pages/IncidentsPage";
+import { ClosingPage } from "../features/interplant/closing/pages/ClosingPage";
 import { ProjectMenuPage } from "../features/projects/pages/ProjectMenuPage";
+import { AppShell } from "../components/layout/AppShell";
 import { ProjectShell } from "../components/layout/ProjectShell";
-
 
 export function App() {
   return (
@@ -25,16 +26,16 @@ export function App() {
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           <Route element={<ProtectedRoute />}>
-
             <Route path="/app" element={<AppShell />}>
               <Route index element={<ProjectMenuPage />} />
             </Route>
 
-
             <Route path="/app/projects/:projectId" element={<ProjectShell />}>
-              <Route index element={<HomePage />} />
+              <Route index element={<InterplantDashboardPage />} />
               <Route path="plants" element={<PlantsPage />} />
               <Route path="units" element={<UnitsPage />} />
+              <Route path="incidents" element={<IncidentsPage />} />
+              <Route path="closing" element={<ClosingPage />} />
             </Route>
           </Route>
 

@@ -12,9 +12,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+    let isMounted = true;
+
+    async function syncSession(currentSession: Session | null) {
       setSession(currentSession);
 
       try {
@@ -26,11 +26,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } catch {
         setProfile(null);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
+      if (isMounted) {
+        void syncSession(initialSession);
       }
     });
 
-    return () => subscription.unsubscribe();
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, currentSession) => {
+      if (isMounted) {
+        void syncSession(currentSession);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value: AuthContextValue = {
