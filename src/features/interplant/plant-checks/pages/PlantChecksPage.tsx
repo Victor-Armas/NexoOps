@@ -1,0 +1,160 @@
+import { useMemo, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
+import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
+import { useAuth } from "../../../auth/hooks/useAuth";
+import { usePlants } from "../../plants/hooks/usePlants";
+import { useShift } from "../../shifts/hooks/useShift";
+import { PlantCheckForm } from "../components/PlantCheckForm";
+import { PlantCheckHistory } from "../components/PlantCheckHistory";
+import { usePlantChecks } from "../hooks/usePlantChecks";
+import type { PlantCheckFormValues } from "../schemas/plant-check.schemas";
+
+export function PlantChecksPage() {
+    const { profile } = useAuth();
+    const { projectId, plantId } = useParams<{
+        projectId: string;
+        plantId: string;
+    }>();
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const { plants, isLoading: isLoadingPlants } = usePlants(projectId);
+    const { shift, isLoading: isLoadingShift } = useShift(projectId, profile?.id);
+
+    const plant = useMemo(
+        () => plants.find((item) => item.id === plantId) ?? null,
+        [plants, plantId],
+    );
+
+    const {
+        plantChecks,
+        latestPlantCheck,
+        isLoading: isLoadingPlantChecks,
+        errorMessage,
+        addPlantCheck,
+    } = usePlantChecks(shift?.id, plantId);
+
+    const canRegisterStatus =
+        profile?.role.key === "admin" ||
+        profile?.role.key === "supervisor" ||
+        profile?.role.key === "operator";
+
+    const isLoading = isLoadingPlants || isLoadingShift || isLoadingPlantChecks;
+
+    if (isLoading) {
+        return <LoadingScreen message="Cargando estatus de planta..." />;
+    }
+
+    const handleSubmit = async (values: PlantCheckFormValues) => {
+        if (!shift || !plantId) {
+            toast.error("No hay turno abierto para registrar estatus.");
+            return;
+        }
+
+        try {
+            setIsSubmitting(true);
+
+            await addPlantCheck({
+                shiftId: shift.id,
+                plantId,
+                fullCount: values.fullCount,
+                emptyCount: values.emptyCount,
+                pendingCount: values.pendingCount,
+                riskLevel: values.riskLevel,
+                notes: values.notes?.trim() || undefined,
+            });
+
+            toast.success("Estatus registrado correctamente.");
+        } catch {
+            toast.error("No se pudo registrar el estatus.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <>
+            <section className="mb-5">
+                <Link
+                    to={`/app/projects/${projectId}/plants`}
+                    className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 light:text-cyan-700"
+                >
+                    <ArrowLeft size={16} />
+                    Volver a plantas
+                </Link>
+
+                <h2 className="text-2xl font-bold">
+                    {plant ? plant.name : "Planta"}
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+                    Estatus operativo del turno actual.
+                </p>
+            </section>
+
+            {!shift && (
+                <section className="rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
+                    No hay turno abierto. Abre un turno para registrar estatus por planta.
+                </section>
+            )}
+
+            {errorMessage && (
+                <section className="rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
+                    {errorMessage}
+                </section>
+            )}
+
+            {shift && latestPlantCheck && (
+                <section className="mb-5 rounded-4xl border border-cyan-400/20 bg-cyan-400/10 p-5 light:border-cyan-200 light:bg-cyan-50">
+                    <p className="text-sm text-cyan-300 light:text-cyan-700">
+                        Último estatus registrado
+                    </p>
+
+                    <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                        <div>
+                            <p className="text-2xl font-bold">{latestPlantCheck.fullCount}</p>
+                            <p className="text-xs text-slate-400 light:text-slate-500">
+                                Llenos
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-2xl font-bold">{latestPlantCheck.emptyCount}</p>
+                            <p className="text-xs text-slate-400 light:text-slate-500">
+                                Vacíos
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-2xl font-bold">
+                                {latestPlantCheck.pendingCount}
+                            </p>
+                            <p className="text-xs text-slate-400 light:text-slate-500">
+                                Pend.
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            )}
+
+            {shift && canRegisterStatus && (
+                <div className="mb-5">
+                    <PlantCheckForm
+                        isSubmitting={isSubmitting}
+                        onSubmit={handleSubmit}
+                    />
+                </div>
+            )}
+
+            {shift && !canRegisterStatus && (
+                <section className="mb-5 rounded-4xl border border-white/10 bg-white/10 p-5 text-sm text-slate-400 light:border-slate-200 light:bg-white light:text-slate-500">
+                    Tu rol solo permite consultar el estatus de planta.
+                </section>
+            )}
+
+            {shift && <PlantCheckHistory plantChecks={plantChecks} />}
+        </>
+    );
+}

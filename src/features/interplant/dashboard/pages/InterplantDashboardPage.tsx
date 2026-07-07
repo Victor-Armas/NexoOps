@@ -1,33 +1,75 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LogOut, UserRound } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { useAuth } from "../../../auth/hooks/useAuth";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
+import { useAuth } from "../../../auth/hooks/useAuth";
+import { usePlants } from "../../plants/hooks/usePlants";
+import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
 import { useShift } from "../../shifts/hooks/useShift";
 import { OpenShiftPanel } from "../../shifts/components/OpenShiftPanel";
 import { ShiftStatusBanner } from "../../shifts/components/ShiftStatusBanner";
 import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
 import type { OpenShiftFormValues } from "../../shifts/schemas/shift.schemas";
-
-const kpis = [
-    { label: "Recorridos", value: 14 },
-    { label: "Movimientos", value: 11 },
-    { label: "Cargas", value: 6 },
-    { label: "Descargas", value: 5 },
-];
+import { ShiftKpiGrid } from "../components/ShiftKpiGrid";
 
 export function InterplantDashboardPage() {
     const { profile, signOut } = useAuth();
     const { projectId } = useParams<{ projectId: string }>();
-    const { shift, isLoading, errorMessage, openShift, closeShift } = useShift(
-        projectId,
-        profile?.id,
-    );
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const {
+        shift,
+        isLoading: isLoadingShift,
+        errorMessage: shiftErrorMessage,
+        openShift,
+        closeShift,
+    } = useShift(projectId, profile?.id);
+
+    const {
+        plants,
+        isLoading: isLoadingPlants,
+        errorMessage: plantsErrorMessage,
+    } = usePlants(projectId);
+
+    const {
+        latestByPlantId,
+        isLoading: isLoadingLatestChecks,
+        errorMessage: latestChecksErrorMessage,
+    } = useLatestPlantChecksByShift(shift?.id);
 
     const canManageShift =
         profile?.role.key === "admin" || profile?.role.key === "supervisor";
+
+    const dashboardMetrics = useMemo(() => {
+        const latestChecks = Object.values(latestByPlantId);
+
+        return {
+            checkedPlants: latestChecks.length,
+            totalPlants: plants.length,
+            fullCount: latestChecks.reduce(
+                (total, plantCheck) => total + plantCheck.fullCount,
+                0,
+            ),
+            emptyCount: latestChecks.reduce(
+                (total, plantCheck) => total + plantCheck.emptyCount,
+                0,
+            ),
+            pendingCount: latestChecks.reduce(
+                (total, plantCheck) => total + plantCheck.pendingCount,
+                0,
+            ),
+            highRiskPlants: latestChecks.filter(
+                (plantCheck) => plantCheck.riskLevel === "high",
+            ).length,
+        };
+    }, [latestByPlantId, plants.length]);
+
+    const isLoading =
+        isLoadingShift || Boolean(shift && (isLoadingPlants || isLoadingLatestChecks));
+
+    const errorMessage =
+        shiftErrorMessage || plantsErrorMessage || latestChecksErrorMessage;
 
     if (isLoading) {
         return <LoadingScreen message="Cargando turno..." />;
@@ -60,12 +102,12 @@ export function InterplantDashboardPage() {
                 <h2 className="text-2xl font-bold">
                     {shift ? SHIFT_TYPE_LABELS[shift.shiftType] : "Sin turno activo"}
                 </h2>
-                <div className="flex gap-2 justify-between pt-1 text-gray-600">
-                    <div>
-                        <p>{profile?.fullName}</p>
-                    </div>
-                    <div className="flex">
-                        <UserRound />
+
+                <div className="flex justify-between gap-2 pt-1 text-sm text-slate-400 light:text-slate-500">
+                    <p>{profile?.fullName}</p>
+
+                    <div className="flex items-center gap-1">
+                        <UserRound size={16} />
                         <p>{profile?.role.name}</p>
                     </div>
                 </div>
@@ -97,17 +139,34 @@ export function InterplantDashboardPage() {
                         />
                     </div>
 
-                    <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
-                        <div className="mt-5 grid grid-cols-2 gap-3">
-                            {kpis.map((kpi) => (
-                                <article
-                                    key={kpi.label}
-                                    className="rounded-3xl border border-white/10 bg-slate-950/40 p-4 light:border-slate-200 light:bg-slate-50"
-                                >
-                                    <p className="text-sm text-slate-400">{kpi.label}</p>
-                                    <p className="mt-2 text-3xl font-bold">{kpi.value}</p>
-                                </article>
-                            ))}
+                    <div className="mt-5">
+                        <ShiftKpiGrid
+                            checkedPlants={dashboardMetrics.checkedPlants}
+                            totalPlants={dashboardMetrics.totalPlants}
+                            fullCount={dashboardMetrics.fullCount}
+                            emptyCount={dashboardMetrics.emptyCount}
+                            pendingCount={dashboardMetrics.pendingCount}
+                            highRiskPlants={dashboardMetrics.highRiskPlants}
+                        />
+                    </div>
+
+                    <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 light:border-slate-200 light:bg-white">
+                        <h2 className="font-bold">Acciones rápidas</h2>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                            <Link
+                                to={`/app/projects/${projectId}/plants`}
+                                className="rounded-3xl bg-cyan-500 px-4 py-4 text-center text-sm font-semibold text-slate-950"
+                            >
+                                Revisar plantas
+                            </Link>
+
+                            <Link
+                                to={`/app/projects/${projectId}/units`}
+                                className="rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-center text-sm font-semibold text-white light:border-slate-200 light:bg-slate-50 light:text-slate-950"
+                            >
+                                Ver unidades
+                            </Link>
                         </div>
                     </section>
                 </>

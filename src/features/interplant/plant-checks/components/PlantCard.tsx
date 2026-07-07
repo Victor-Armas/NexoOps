@@ -1,9 +1,9 @@
 import { Building2, Clock3 } from "lucide-react";
-import type { Plant } from "../types/plant.types";
 import {
     PLANT_RISK_LABELS,
     type PlantCheck,
 } from "../../plant-checks/types/plant-check.types";
+import type { Plant } from "../../plants/types/plant.types";
 
 type PlantCardProps = {
     plant: Plant;
@@ -19,7 +19,7 @@ function formatTime(value: string) {
 
 export function PlantCard({ plant, latestCheck }: PlantCardProps) {
     return (
-        <article className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur transition hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500">
+        <article className="rounded-[1.5rem] border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur transition hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500">
             <div className="flex items-start gap-4">
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
                     <Building2 size={24} />

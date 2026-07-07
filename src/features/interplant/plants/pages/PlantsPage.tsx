@@ -1,13 +1,39 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
+import { useAuth } from "../../../auth/hooks/useAuth";
+import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
+import { useShift } from "../../shifts/hooks/useShift";
 import { PlantCard } from "../components/PlantCard";
 import { usePlants } from "../hooks/usePlants";
 
 export function PlantsPage() {
     const navigate = useNavigate();
     const { projectId } = useParams<{ projectId: string }>();
+    const { profile } = useAuth();
 
-    const { plants, isLoading, errorMessage } = usePlants(projectId);
+    const {
+        plants,
+        isLoading: isLoadingPlants,
+        errorMessage: plantsErrorMessage,
+    } = usePlants(projectId);
+
+    const {
+        shift,
+        isLoading: isLoadingShift,
+        errorMessage: shiftErrorMessage,
+    } = useShift(projectId, profile?.id);
+
+    const {
+        latestByPlantId,
+        isLoading: isLoadingLatestChecks,
+        errorMessage: latestChecksErrorMessage,
+    } = useLatestPlantChecksByShift(shift?.id);
+
+    const isLoading =
+        isLoadingPlants || isLoadingShift || isLoadingLatestChecks;
+
+    const errorMessage =
+        plantsErrorMessage || shiftErrorMessage || latestChecksErrorMessage;
 
     if (isLoading) {
         return <LoadingScreen message="Cargando plantas..." />;
@@ -22,8 +48,14 @@ export function PlantsPage() {
                 </p>
             </section>
 
+            {!shift && (
+                <section className="mb-5 rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
+                    No hay turno abierto. Abre un turno para registrar estatus por planta.
+                </section>
+            )}
+
             {errorMessage && (
-                <div className="rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
+                <div className="mb-5 rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
                     {errorMessage}
                 </div>
             )}
@@ -38,7 +70,10 @@ export function PlantsPage() {
                         }
                         className="block w-full text-left"
                     >
-                        <PlantCard plant={plant} />
+                        <PlantCard
+                            plant={plant}
+                            latestCheck={latestByPlantId[plant.id] ?? null}
+                        />
                     </button>
                 ))}
             </section>

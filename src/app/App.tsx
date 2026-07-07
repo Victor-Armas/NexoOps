@@ -14,6 +14,7 @@ import { AppShell } from "../components/layout/AppShell";
 import { ProjectShell } from "../components/layout/ProjectShell";
 import { InterplantDashboardPage } from "../features/interplant/dashboard/pages/InterplantDashboardPage";
 import { Toaster } from "sonner";
+import { PlantChecksPage } from "../features/interplant/plant-checks/pages/PlantChecksPage";
 
 export function App() {
   return (
@@ -38,6 +39,7 @@ export function App() {
               <Route path="units" element={<UnitsPage />} />
               <Route path="incidents" element={<IncidentsPage />} />
               <Route path="closing" element={<ClosingPage />} />
+              <Route path="plants/:plantId" element={<PlantChecksPage />} />
             </Route>
           </Route>
 
