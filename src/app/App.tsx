@@ -5,7 +5,6 @@ import { ProtectedRoute } from "../features/auth/routes/ProtectedRoute";
 import { PublicRoute } from "../features/auth/routes/PublicRoute";
 import { UnauthorizedPage } from "../features/auth/pages/UnauthorizedPage";
 import { NotFoundPage } from "../features/auth/pages/NotFoundPage";
-import { InterplantDashboardPage } from "../features/interplant/dashboard/pages/InterplantDashboardPage";
 import { PlantsPage } from "../features/interplant/plants/pages/PlantsPage";
 import { UnitsPage } from "../features/interplant/units/pages/UnitsPage";
 import { IncidentsPage } from "../features/interplant/incidents/pages/IncidentsPage";
@@ -13,6 +12,7 @@ import { ClosingPage } from "../features/interplant/closing/pages/ClosingPage";
 import { ProjectMenuPage } from "../features/projects/pages/ProjectMenuPage";
 import { AppShell } from "../components/layout/AppShell";
 import { ProjectShell } from "../components/layout/ProjectShell";
+import { InterplantDashboardPage } from "../features/interplant/shifts/page/InterplantDashboardPage";
 
 export function App() {
   return (

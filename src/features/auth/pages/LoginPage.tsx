@@ -34,7 +34,7 @@ export function LoginPage() {
         }
 
 
-        navigate("/app", { replace: true });
+        navigate("/", { replace: true });
     };
 
     return (
