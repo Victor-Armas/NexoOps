@@ -1,4 +1,5 @@
 import { supabase } from "../../../../lib/supabase/client";
+import { subscribeToTableChanges } from "../../../../lib/supabase/realtime";
 import type { Shift, ShiftRow, ShiftType } from "../types/shift.types";
 
 const SHIFT_COLUMNS =
@@ -69,6 +70,7 @@ export async function closeShift(shiftId: string): Promise<Shift> {
     .from("shifts")
     .update({ status: "closed", closed_at: new Date().toISOString() })
     .eq("id", shiftId)
+    .eq("status", "open")
     .select(SHIFT_COLUMNS)
     .single();
 
@@ -77,4 +79,16 @@ export async function closeShift(shiftId: string): Promise<Shift> {
   }
 
   return mapShift(data as ShiftRow);
+}
+
+export function subscribeToProjectShiftsChanges(
+  projectId: string,
+  onChange: () => void,
+) {
+  return subscribeToTableChanges({
+    channelName: `project-shifts-${projectId}`,
+    table: "shifts",
+    filter: `project_id=eq.${projectId}`,
+    onChange,
+  });
 }

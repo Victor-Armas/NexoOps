@@ -12,12 +12,14 @@ import { ClosingPage } from "../features/interplant/closing/pages/ClosingPage";
 import { ProjectMenuPage } from "../features/projects/pages/ProjectMenuPage";
 import { AppShell } from "../components/layout/AppShell";
 import { ProjectShell } from "../components/layout/ProjectShell";
-import { InterplantDashboardPage } from "../features/interplant/shifts/page/InterplantDashboardPage";
+import { InterplantDashboardPage } from "../features/interplant/dashboard/pages/InterplantDashboardPage";
+import { Toaster } from "sonner";
 
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Toaster richColors position="top-center" />
         <Routes>
           <Route element={<PublicRoute />}>
             <Route path="/login" element={<LoginPage />} />

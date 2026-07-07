@@ -4,14 +4,11 @@ import type { Plant } from "../types/plant.types";
 
 export function usePlants(projectId: string | undefined) {
   const [plants, setPlants] = useState<Plant[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Boolean(projectId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!projectId) {
-      setPlants([]);
-      setErrorMessage("Proyecto no válido.");
-      setIsLoading(false);
       return;
     }
 
@@ -39,12 +36,20 @@ export function usePlants(projectId: string | undefined) {
       }
     }
 
-    loadPlants();
+    void loadPlants();
 
     return () => {
       isMounted = false;
     };
   }, [projectId]);
+
+  if (!projectId) {
+    return {
+      plants: [],
+      isLoading: false,
+      errorMessage: "Proyecto no válido.",
+    };
+  }
 
   return {
     plants,
