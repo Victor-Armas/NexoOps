@@ -1,7 +1,5 @@
 import { Clock3, MapPin, Truck } from "lucide-react";
-import type {
-    UnitMovementEvent,
-} from "../../unit-movement-events/types/unit-movement-event.types";
+import type { UnitMovementEvent } from "../../unit-movement-events/types/unit-movement-event.types";
 import { UNIT_MOVEMENT_EVENT_LABELS } from "../../unit-movement-events/types/unit-movement-event.types";
 import type { Plant } from "../../plants/types/plant.types";
 import type {
@@ -62,31 +60,71 @@ function getStatusLabel(
         return "Disponible";
     }
 
-    if (latestMovement.status === "open" && latestEvent) {
-        return UNIT_MOVEMENT_EVENT_LABELS[latestEvent.eventType];
+    if (latestMovement.status !== "open") {
+        return UNIT_MOVEMENT_STATUS_LABELS[latestMovement.status];
     }
 
-    if (latestMovement.status === "open") {
+    if (!latestEvent) {
         return "En movimiento";
     }
 
-    return UNIT_MOVEMENT_STATUS_LABELS[latestMovement.status];
-}
-
-function getStatusClassName(latestMovement?: UnitMovement | null) {
-    if (!latestMovement) {
-        return "bg-emerald-400/10 text-emerald-300 light:bg-emerald-100 light:text-emerald-700";
+    if (latestEvent.eventType === "meal_finished") {
+        return "En movimiento";
     }
 
-    if (latestMovement.status === "open") {
-        return "bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700";
+    return UNIT_MOVEMENT_EVENT_LABELS[latestEvent.eventType];
+}
+
+function getStatusClassName(
+    latestMovement?: UnitMovement | null,
+    latestEvent?: UnitMovementEvent | null,
+) {
+    if (!latestMovement) {
+        return "bg-emerald-400/10 text-emerald-300 light:bg-emerald-100 light:text-emerald-700";
     }
 
     if (latestMovement.status === "cancelled") {
         return "bg-red-400/10 text-red-300 light:bg-red-100 light:text-red-700";
     }
 
-    return "bg-emerald-400/10 text-emerald-300 light:bg-emerald-100 light:text-emerald-700";
+    if (latestMovement.status !== "open") {
+        return "bg-emerald-400/10 text-emerald-300 light:bg-emerald-100 light:text-emerald-700";
+    }
+
+    if (latestEvent?.eventType === "meal") {
+        return "bg-yellow-400/10 text-yellow-200 light:bg-yellow-100 light:text-yellow-700";
+    }
+
+    if (latestEvent?.eventType === "waiting_dock") {
+        return "bg-yellow-400/10 text-yellow-200 light:bg-yellow-100 light:text-yellow-700";
+    }
+
+    if (
+        latestEvent?.eventType === "loading" ||
+        latestEvent?.eventType === "unloading"
+    ) {
+        return "bg-blue-400/10 text-blue-300 light:bg-blue-100 light:text-blue-700";
+    }
+
+    return "bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700";
+}
+
+function getCardClassName(
+    latestMovement?: UnitMovement | null,
+    latestEvent?: UnitMovementEvent | null,
+) {
+    if (latestMovement?.status === "open" && latestEvent?.eventType === "meal") {
+        return "border-yellow-400/40 bg-yellow-400/10 light:border-yellow-300 light:bg-yellow-50";
+    }
+
+    if (
+        latestMovement?.status === "open" &&
+        latestEvent?.eventType === "waiting_dock"
+    ) {
+        return "border-yellow-400/30 bg-yellow-400/5 light:border-yellow-300 light:bg-yellow-50";
+    }
+
+    return "border-white/10 bg-white/10 hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500";
 }
 
 export function UnitCard({
@@ -115,11 +153,15 @@ export function UnitCard({
     );
 
     const isOpen = latestMovement?.status === "open";
-
     const currentStatusLabel = getStatusLabel(latestMovement, latestEvent);
 
     return (
-        <article className="rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl transition hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500">
+        <article
+            className={`rounded-[2rem] border p-5 shadow-xl backdrop-blur-xl transition ${getCardClassName(
+                latestMovement,
+                latestEvent,
+            )}`}
+        >
             <div className="flex items-start gap-4">
                 <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-3xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
                     <Truck size={26} />
@@ -138,6 +180,7 @@ export function UnitCard({
                         <span
                             className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
                                 latestMovement,
+                                latestEvent,
                             )}`}
                         >
                             {currentStatusLabel}
@@ -184,6 +227,13 @@ export function UnitCard({
                                 </span>
                             </div>
 
+                            {isOpen && latestMovement.shiftId && (
+                                <p className="mt-3 rounded-2xl bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-300 light:bg-cyan-50 light:text-cyan-700">
+                                    Movimiento abierto. Si viene de un turno anterior, se puede
+                                    continuar desde aquí.
+                                </p>
+                            )}
+
                             {latestMovement.notes && (
                                 <p className="mt-3 line-clamp-2 text-sm text-slate-300 light:text-slate-600">
                                     {latestMovement.notes}
@@ -192,7 +242,7 @@ export function UnitCard({
                         </>
                     ) : (
                         <p className="mt-4 rounded-3xl bg-slate-950/40 px-4 py-3 text-sm text-slate-400 light:bg-slate-50 light:text-slate-500">
-                            Sin movimiento registrado en este turno.
+                            Sin movimiento activo.
                         </p>
                     )}
                 </div>

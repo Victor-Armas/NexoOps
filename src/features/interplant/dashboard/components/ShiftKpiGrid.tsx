@@ -3,7 +3,6 @@ type ShiftKpiGridProps = {
     totalPlants: number;
     fullCount: number;
     emptyCount: number;
-    pendingCount: number;
     highRiskPlants: number;
 };
 
@@ -12,29 +11,30 @@ export function ShiftKpiGrid({
     totalPlants,
     fullCount,
     emptyCount,
-    pendingCount,
     highRiskPlants,
 }: ShiftKpiGridProps) {
+    const missingPlants = Math.max(totalPlants - checkedPlants, 0);
+
     const kpis = [
         {
             label: "Plantas revisadas",
             value: `${checkedPlants}/${totalPlants}`,
         },
         {
-            label: "Llenos",
+            label: "Carros llenos",
             value: fullCount,
         },
         {
-            label: "Vacíos",
+            label: "Carros vacíos",
             value: emptyCount,
-        },
-        {
-            label: "Pendientes",
-            value: pendingCount,
         },
         {
             label: "Riesgo alto",
             value: highRiskPlants,
+        },
+        {
+            label: "Sin revisar",
+            value: missingPlants,
         },
     ];
 

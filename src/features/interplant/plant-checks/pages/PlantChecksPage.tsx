@@ -10,6 +10,10 @@ import { PlantCheckForm } from "../components/PlantCheckForm";
 import { PlantCheckHistory } from "../components/PlantCheckHistory";
 import { usePlantChecks } from "../hooks/usePlantChecks";
 import type { PlantCheckFormValues } from "../schemas/plant-check.schemas";
+import {
+    getPlantCheckFields,
+    getTotalByFieldGroup,
+} from "../config/plant-check-field.config";
 
 export function PlantChecksPage() {
     const { profile, can } = useAuth();
@@ -26,6 +30,11 @@ export function PlantChecksPage() {
     const plant = useMemo(
         () => plants.find((item) => item.id === plantId) ?? null,
         [plants, plantId],
+    );
+
+    const plantCheckFields = useMemo(
+        () => getPlantCheckFields(plant?.name),
+        [plant?.name],
     );
 
     const {
@@ -56,9 +65,19 @@ export function PlantChecksPage() {
             await addPlantCheck({
                 shiftId: shift.id,
                 plantId,
-                fullCount: values.fullCount,
-                emptyCount: values.emptyCount,
-                pendingCount: values.pendingCount,
+                fullCount: getTotalByFieldGroup(
+                    values.checkValues,
+                    plantCheckFields,
+                    "full",
+                ),
+                emptyCount: getTotalByFieldGroup(
+                    values.checkValues,
+                    plantCheckFields,
+                    "empty",
+                ),
+                pendingCount: 0,
+                checkValues: values.checkValues,
+                operationalCondition: values.operationalCondition,
                 riskLevel: values.riskLevel,
                 notes: values.notes?.trim() || undefined,
             });
@@ -104,41 +123,24 @@ export function PlantChecksPage() {
             )}
 
             {shift && latestPlantCheck && (
-                <section className="mb-5 rounded-4xl border border-cyan-400/20 bg-cyan-400/10 p-5 light:border-cyan-200 light:bg-cyan-50">
-                    <p className="text-sm text-cyan-300 light:text-cyan-700">
-                        Último estatus registrado
-                    </p>
-
-                    <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div>
-                            <p className="text-2xl font-bold">{latestPlantCheck.fullCount}</p>
-                            <p className="text-xs text-slate-400 light:text-slate-500">
-                                Llenos
-                            </p>
-                        </div>
-
-                        <div>
-                            <p className="text-2xl font-bold">{latestPlantCheck.emptyCount}</p>
-                            <p className="text-xs text-slate-400 light:text-slate-500">
-                                Vacíos
-                            </p>
-                        </div>
-
-                        <div>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-center">
+                    {plantCheckFields.map((field) => (
+                        <div key={field.key}>
                             <p className="text-2xl font-bold">
-                                {latestPlantCheck.pendingCount}
+                                {latestPlantCheck.checkValues[field.key] ?? 0}
                             </p>
                             <p className="text-xs text-slate-400 light:text-slate-500">
-                                Pend.
+                                {field.label}
                             </p>
                         </div>
-                    </div>
-                </section>
+                    ))}
+                </div>
             )}
 
             {shift && canRegisterStatus && (
                 <div className="mb-5">
                     <PlantCheckForm
+                        fields={plantCheckFields}
                         isSubmitting={isSubmitting}
                         onSubmit={handleSubmit}
                     />
@@ -151,7 +153,12 @@ export function PlantChecksPage() {
                 </section>
             )}
 
-            {shift && <PlantCheckHistory plantChecks={plantChecks} />}
+            {shift && (
+                <PlantCheckHistory
+                    fields={plantCheckFields}
+                    plantChecks={plantChecks}
+                />
+            )}
         </>
     );
 }

@@ -7,6 +7,7 @@ export type UnitMovementEventType =
   | "unloading"
   | "released"
   | "meal"
+  | "meal_finished"
   | "driver_change"
   | "completed"
   | "cancelled";
@@ -49,6 +50,7 @@ export const UNIT_MOVEMENT_EVENT_LABELS: Record<UnitMovementEventType, string> =
     unloading: "Descargando",
     released: "Saliendo de planta",
     meal: "Comida",
+    meal_finished: "Comida finalizada",
     driver_change: "Cambio operador",
     completed: "Completado",
     cancelled: "Cancelado",

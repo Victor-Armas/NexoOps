@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getUnitMovementsByShift,
+  getUnitMovementsByShiftContext,
   subscribeToUnitMovementsChanges,
 } from "../services/unit-movements.service";
 import type { UnitMovement } from "../types/unit-movement.types";
@@ -22,20 +23,47 @@ function mapLatestMovementsByUnitId(
   );
 }
 
-export function useLatestUnitMovementsByShift(shiftId: string | undefined) {
+function getUnitIdsKey(unitIds: string[] | undefined) {
+  return unitIds?.join(",") ?? "";
+}
+
+export function useLatestUnitMovementsByShift(
+  shiftId: string | undefined,
+  unitIds?: string[],
+) {
+  const unitIdsKey = getUnitIdsKey(unitIds);
+
+  const normalizedUnitIds = useMemo(
+    () => (unitIdsKey ? unitIdsKey.split(",") : []),
+    [unitIdsKey],
+  );
+
+  const hasContextUnits = normalizedUnitIds.length > 0;
+
   const [latestByUnitId, setLatestByUnitId] =
     useState<LatestUnitMovementsByUnitId>({});
   const [isLoading, setIsLoading] = useState(Boolean(shiftId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadUnitMovements = useCallback(async () => {
     if (!shiftId) {
-      return;
+      return [];
     }
 
+    if (hasContextUnits) {
+      return getUnitMovementsByShiftContext({
+        shiftId,
+        unitIds: normalizedUnitIds,
+      });
+    }
+
+    return getUnitMovementsByShift(shiftId);
+  }, [shiftId, hasContextUnits, normalizedUnitIds]);
+
+  useEffect(() => {
     let isMounted = true;
 
-    void getUnitMovementsByShift(shiftId)
+    void loadUnitMovements()
       .then((data) => {
         if (!isMounted) {
           return;
@@ -52,30 +80,22 @@ export function useLatestUnitMovementsByShift(shiftId: string | undefined) {
         setErrorMessage("No se pudo cargar el estado de las unidades.");
       })
       .finally(() => {
-        if (!isMounted) {
-          return;
+        if (isMounted) {
+          setIsLoading(false);
         }
-
-        setIsLoading(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [shiftId]);
+  }, [loadUnitMovements]);
 
   const refetch = useCallback(async () => {
-    if (!shiftId) {
-      setLatestByUnitId({});
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       setErrorMessage(null);
 
-      const data = await getUnitMovementsByShift(shiftId);
+      const data = await loadUnitMovements();
 
       setLatestByUnitId(mapLatestMovementsByUnitId(data));
     } catch {
@@ -83,21 +103,25 @@ export function useLatestUnitMovementsByShift(shiftId: string | undefined) {
     } finally {
       setIsLoading(false);
     }
-  }, [shiftId]);
+  }, [loadUnitMovements]);
 
   useEffect(() => {
     if (!shiftId) {
       return;
     }
 
-    const channel = subscribeToUnitMovementsChanges(shiftId, () => {
-      void refetch();
-    });
+    const channel = subscribeToUnitMovementsChanges(
+      shiftId,
+      () => {
+        void refetch();
+      },
+      hasContextUnits,
+    );
 
     return () => {
       void channel.unsubscribe();
     };
-  }, [shiftId, refetch]);
+  }, [shiftId, hasContextUnits, refetch]);
 
   return {
     latestByUnitId,

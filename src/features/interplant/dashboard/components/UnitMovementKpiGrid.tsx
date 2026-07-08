@@ -3,6 +3,7 @@ type UnitMovementKpiGridProps = {
     totalUnits: number;
     openMovements: number;
     completedMovements: number;
+    mealUnits: number;
     waitingDockUnits: number;
     loadingOrUnloadingUnits: number;
     totalQuantity: number;
@@ -13,6 +14,7 @@ export function UnitMovementKpiGrid({
     totalUnits,
     openMovements,
     completedMovements,
+    mealUnits,
     waitingDockUnits,
     loadingOrUnloadingUnits,
     totalQuantity,
@@ -27,8 +29,8 @@ export function UnitMovementKpiGrid({
             value: openMovements,
         },
         {
-            label: "Completados",
-            value: completedMovements,
+            label: "En comida",
+            value: mealUnits,
         },
         {
             label: "Esperando rampa",
@@ -37,6 +39,10 @@ export function UnitMovementKpiGrid({
         {
             label: "Carga/descarga",
             value: loadingOrUnloadingUnits,
+        },
+        {
+            label: "Completados",
+            value: completedMovements,
         },
         {
             label: "Cantidad movida",

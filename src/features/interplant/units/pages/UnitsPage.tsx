@@ -27,6 +27,8 @@ export function UnitsPage() {
         errorMessage: unitsErrorMessage,
     } = useUnits(projectId);
 
+    const unitIds = useMemo(() => units.map((unit) => unit.id), [units]);
+
     const {
         plants,
         isLoading: isLoadingPlants,
@@ -43,7 +45,7 @@ export function UnitsPage() {
         latestByUnitId,
         isLoading: isLoadingLatestMovements,
         errorMessage: latestMovementsErrorMessage,
-    } = useLatestUnitMovementsByShift(shift?.id);
+    } = useLatestUnitMovementsByShift(shift?.id, unitIds);
 
     const latestMovements = useMemo(
         () => Object.values(latestByUnitId),

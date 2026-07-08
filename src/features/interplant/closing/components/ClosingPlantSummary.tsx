@@ -14,7 +14,7 @@ export function ClosingPlantSummary({
             <div className="mt-4 grid grid-cols-2 gap-3">
                 <article className="rounded-3xl bg-slate-950/40 p-4 light:bg-slate-50">
                     <p className="text-sm text-slate-400 light:text-slate-500">
-                        Llenos
+                        Carros llenos
                     </p>
                     <p className="mt-2 text-3xl font-bold">
                         {plantMetrics.fullCount}
@@ -23,19 +23,10 @@ export function ClosingPlantSummary({
 
                 <article className="rounded-3xl bg-slate-950/40 p-4 light:bg-slate-50">
                     <p className="text-sm text-slate-400 light:text-slate-500">
-                        Vacíos
+                        Carros vacíos
                     </p>
                     <p className="mt-2 text-3xl font-bold">
                         {plantMetrics.emptyCount}
-                    </p>
-                </article>
-
-                <article className="rounded-3xl bg-slate-950/40 p-4 light:bg-slate-50">
-                    <p className="text-sm text-slate-400 light:text-slate-500">
-                        Pendientes
-                    </p>
-                    <p className="mt-2 text-3xl font-bold">
-                        {plantMetrics.pendingCount}
                     </p>
                 </article>
 
@@ -45,6 +36,15 @@ export function ClosingPlantSummary({
                     </p>
                     <p className="mt-2 text-3xl font-bold">
                         {plantMetrics.highRiskPlants}
+                    </p>
+                </article>
+
+                <article className="rounded-3xl bg-slate-950/40 p-4 light:bg-slate-50">
+                    <p className="text-sm text-slate-400 light:text-slate-500">
+                        Sin revisar
+                    </p>
+                    <p className="mt-2 text-3xl font-bold">
+                        {plantMetrics.missingPlants}
                     </p>
                 </article>
             </div>

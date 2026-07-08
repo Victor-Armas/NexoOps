@@ -83,10 +83,6 @@ export function InterplantDashboardPage() {
                 (total, plantCheck) => total + plantCheck.emptyCount,
                 0,
             ),
-            pendingCount: latestChecks.reduce(
-                (total, plantCheck) => total + plantCheck.pendingCount,
-                0,
-            ),
             highRiskPlants: latestChecks.filter(
                 (plantCheck) => plantCheck.riskLevel === "high",
             ).length,
@@ -121,11 +117,18 @@ export function InterplantDashboardPage() {
             );
         }).length;
 
+        const mealUnits = openMovements.filter((movement) => {
+            const latestEvent = latestByMovementId[movement.id];
+
+            return latestEvent?.eventType === "meal";
+        }).length;
+
         return {
             activeUnits: activeUnitIds.size,
             totalUnits: units.length,
             openMovements: openMovements.length,
             completedMovements: completedMovements.length,
+            mealUnits,
             waitingDockUnits,
             loadingOrUnloadingUnits,
             totalQuantity: unitMovements.reduce(
@@ -256,7 +259,6 @@ export function InterplantDashboardPage() {
                             totalPlants={plantMetrics.totalPlants}
                             fullCount={plantMetrics.fullCount}
                             emptyCount={plantMetrics.emptyCount}
-                            pendingCount={plantMetrics.pendingCount}
                             highRiskPlants={plantMetrics.highRiskPlants}
                         />
                     </div>
@@ -267,6 +269,7 @@ export function InterplantDashboardPage() {
                             totalUnits={unitMetrics.totalUnits}
                             openMovements={unitMetrics.openMovements}
                             completedMovements={unitMetrics.completedMovements}
+                            mealUnits={unitMetrics.mealUnits}
                             waitingDockUnits={unitMetrics.waitingDockUnits}
                             loadingOrUnloadingUnits={unitMetrics.loadingOrUnloadingUnits}
                             totalQuantity={unitMetrics.totalQuantity}

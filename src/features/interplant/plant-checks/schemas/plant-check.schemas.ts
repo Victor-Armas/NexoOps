@@ -2,24 +2,23 @@ import { z } from "zod";
 
 export const plantRiskLevelSchema = z.enum(["low", "medium", "high"]);
 
+export const plantOperationalConditionSchema = z.enum([
+  "normal",
+  "no_unload_space",
+  "no_dock_available",
+  "material_priority",
+  "other",
+]);
+
+const plantCheckValueSchema = z.coerce
+  .number()
+  .int("Debe ser un número entero")
+  .min(0, "No puede ser negativo");
+
 export const plantCheckSchema = z.object({
-  fullCount: z.coerce
-    .number()
-    .int("Debe ser un número entero")
-    .min(0, "No puede ser negativo"),
-
-  emptyCount: z.coerce
-    .number()
-    .int("Debe ser un número entero")
-    .min(0, "No puede ser negativo"),
-
-  pendingCount: z.coerce
-    .number()
-    .int("Debe ser un número entero")
-    .min(0, "No puede ser negativo"),
-
+  checkValues: z.record(z.string(), plantCheckValueSchema),
+  operationalCondition: plantOperationalConditionSchema,
   riskLevel: plantRiskLevelSchema,
-
   notes: z.string().max(500, "Máximo 500 caracteres").optional(),
 });
 

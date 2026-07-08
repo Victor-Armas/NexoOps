@@ -1,8 +1,13 @@
 import { Clock3 } from "lucide-react";
+import type { PlantCheckField } from "../config/plant-check-field.config";
 import type { PlantCheck } from "../types/plant-check.types";
-import { PLANT_RISK_LABELS } from "../types/plant-check.types";
+import {
+    PLANT_OPERATIONAL_CONDITION_LABELS,
+    PLANT_RISK_LABELS,
+} from "../types/plant-check.types";
 
 type PlantCheckHistoryProps = {
+    fields: PlantCheckField[];
     plantChecks: PlantCheck[];
 };
 
@@ -13,7 +18,10 @@ function formatTime(value: string) {
     }).format(new Date(value));
 }
 
-export function PlantCheckHistory({ plantChecks }: PlantCheckHistoryProps) {
+export function PlantCheckHistory({
+    fields,
+    plantChecks,
+}: PlantCheckHistoryProps) {
     if (plantChecks.length === 0) {
         return (
             <section className="rounded-4xl border border-white/10 bg-white/10 p-5 text-sm text-slate-400 light:border-slate-200 light:bg-white light:text-slate-500">
@@ -42,22 +50,30 @@ export function PlantCheckHistory({ plantChecks }: PlantCheckHistoryProps) {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-center">
-                        <div className="rounded-2xl bg-slate-950/40 p-3 light:bg-slate-50">
-                            <p className="text-xs text-slate-400">Llenos</p>
-                            <p className="text-xl font-bold">{plantCheck.fullCount}</p>
-                        </div>
-
-                        <div className="rounded-2xl bg-slate-950/40 p-3 light:bg-slate-50">
-                            <p className="text-xs text-slate-400">Vacíos</p>
-                            <p className="text-xl font-bold">{plantCheck.emptyCount}</p>
-                        </div>
-
-                        <div className="rounded-2xl bg-slate-950/40 p-3 light:bg-slate-50">
-                            <p className="text-xs text-slate-400">Pend.</p>
-                            <p className="text-xl font-bold">{plantCheck.pendingCount}</p>
-                        </div>
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                        {fields.map((field) => (
+                            <div
+                                key={field.key}
+                                className="rounded-2xl bg-slate-950/40 p-3 light:bg-slate-50"
+                            >
+                                <p className="text-xs text-slate-400">{field.label}</p>
+                                <p className="text-xl font-bold">
+                                    {plantCheck.checkValues[field.key] ?? 0}
+                                </p>
+                            </div>
+                        ))}
                     </div>
+
+                    {plantCheck.operationalCondition && (
+                        <p className="mt-3 rounded-2xl bg-slate-950/40 px-3 py-2 text-sm text-slate-300 light:bg-slate-50 light:text-slate-600">
+                            Condición:{" "}
+                            {
+                                PLANT_OPERATIONAL_CONDITION_LABELS[
+                                plantCheck.operationalCondition
+                                ]
+                            }
+                        </p>
+                    )}
 
                     {plantCheck.notes && (
                         <p className="mt-3 text-sm text-slate-300 light:text-slate-600">

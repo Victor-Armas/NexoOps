@@ -7,7 +7,7 @@ import type {
 } from "../types/plant-check.types";
 
 const PLANT_CHECK_COLUMNS =
-  "id, shift_id, plant_id, full_count, empty_count, pending_count, risk_level, notes, checked_by, checked_at, created_at, updated_at";
+  "id, shift_id, plant_id, full_count, empty_count, pending_count, check_values, operational_condition, risk_level, notes, checked_by, checked_at, created_at, updated_at";
 
 function mapPlantCheck(row: PlantCheckRow): PlantCheck {
   return {
@@ -17,6 +17,8 @@ function mapPlantCheck(row: PlantCheckRow): PlantCheck {
     fullCount: row.full_count,
     emptyCount: row.empty_count,
     pendingCount: row.pending_count,
+    checkValues: row.check_values ?? {},
+    operationalCondition: row.operational_condition,
     riskLevel: row.risk_level,
     notes: row.notes,
     checkedBy: row.checked_by,
@@ -73,6 +75,8 @@ export async function createPlantCheck(
       full_count: payload.fullCount,
       empty_count: payload.emptyCount,
       pending_count: payload.pendingCount,
+      check_values: payload.checkValues,
+      operational_condition: payload.operationalCondition,
       risk_level: payload.riskLevel,
       notes: payload.notes?.trim() || null,
     })
