@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../../../lib/supabase/client";
 import { getUserProfile, signOutUser } from "../services/auth.service";
-import type { AuthContextValue, UserProfile } from "../types/auth.types";
+import type {
+  AuthContextValue,
+  PermissionKey,
+  UserProfile,
+} from "../types/auth.types";
 import { AuthContext } from "./AuthContext";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -52,10 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  const can = useCallback(
+    (permissionKey: PermissionKey) =>
+      profile?.permissions.includes(permissionKey) ?? false,
+    [profile?.permissions],
+  );
+
   const value: AuthContextValue = {
     session,
     profile,
     isLoading,
+    can,
     signOut: signOutUser,
   };
 
