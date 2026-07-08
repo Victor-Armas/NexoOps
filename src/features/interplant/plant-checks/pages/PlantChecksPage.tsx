@@ -12,7 +12,7 @@ import { usePlantChecks } from "../hooks/usePlantChecks";
 import type { PlantCheckFormValues } from "../schemas/plant-check.schemas";
 
 export function PlantChecksPage() {
-    const { profile } = useAuth();
+    const { profile, can } = useAuth();
     const { projectId, plantId } = useParams<{
         projectId: string;
         plantId: string;
@@ -36,10 +36,7 @@ export function PlantChecksPage() {
         addPlantCheck,
     } = usePlantChecks(shift?.id, plantId);
 
-    const canRegisterStatus =
-        profile?.role.key === "admin" ||
-        profile?.role.key === "supervisor" ||
-        profile?.role.key === "operator";
+    const canRegisterStatus = can("plants.check.create");
 
     const isLoading = isLoadingPlants || isLoadingShift || isLoadingPlantChecks;
 
