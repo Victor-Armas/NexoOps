@@ -10,6 +10,11 @@ export type PlantCheckField = {
   group: "full" | "empty";
 };
 
+export type PlantRiskThresholds = {
+  mediumFullCountThreshold: number;
+  mediumEmptyCountThreshold: number;
+};
+
 const P4_FIELDS: PlantCheckField[] = [
   {
     key: "full_p5",
@@ -75,6 +80,7 @@ export function getSuggestedRiskLevel(params: {
   values: PlantCheckValues;
   fields: PlantCheckField[];
   operationalCondition: PlantOperationalCondition;
+  riskThresholds: PlantRiskThresholds;
 }): PlantRiskLevel {
   const fullCount = getTotalByFieldGroup(params.values, params.fields, "full");
   const emptyCount = getTotalByFieldGroup(
@@ -94,7 +100,10 @@ export function getSuggestedRiskLevel(params: {
     return "medium";
   }
 
-  if (fullCount >= 10 || emptyCount >= 15) {
+  if (
+    fullCount >= params.riskThresholds.mediumFullCountThreshold ||
+    emptyCount >= params.riskThresholds.mediumEmptyCountThreshold
+  ) {
     return "medium";
   }
 

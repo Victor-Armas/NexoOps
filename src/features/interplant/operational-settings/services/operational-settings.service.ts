@@ -6,10 +6,12 @@ import type {
 } from "../types/operational-settings.types";
 
 const OPERATIONAL_SETTINGS_COLUMNS =
-  "project_id, meal_target_minutes, meal_delay_limit_minutes, updated_by, created_at, updated_at";
+  "project_id, meal_target_minutes, meal_delay_limit_minutes, medium_full_count_threshold, medium_empty_count_threshold, updated_by, created_at, updated_at";
 
 const DEFAULT_MEAL_TARGET_MINUTES = 60;
 const DEFAULT_MEAL_DELAY_LIMIT_MINUTES = 75;
+const DEFAULT_MEDIUM_FULL_COUNT_THRESHOLD = 10;
+const DEFAULT_MEDIUM_EMPTY_COUNT_THRESHOLD = 15;
 
 function mapOperationalSettings(
   row: OperationalSettingsRow,
@@ -18,6 +20,8 @@ function mapOperationalSettings(
     projectId: row.project_id,
     mealTargetMinutes: row.meal_target_minutes,
     mealDelayLimitMinutes: row.meal_delay_limit_minutes,
+    mediumFullCountThreshold: row.medium_full_count_threshold,
+    mediumEmptyCountThreshold: row.medium_empty_count_threshold,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -31,6 +35,8 @@ export function getDefaultOperationalSettings(
     projectId,
     mealTargetMinutes: DEFAULT_MEAL_TARGET_MINUTES,
     mealDelayLimitMinutes: DEFAULT_MEAL_DELAY_LIMIT_MINUTES,
+    mediumFullCountThreshold: DEFAULT_MEDIUM_FULL_COUNT_THRESHOLD,
+    mediumEmptyCountThreshold: DEFAULT_MEDIUM_EMPTY_COUNT_THRESHOLD,
     updatedBy: null,
     createdAt: null,
     updatedAt: null,
@@ -67,6 +73,8 @@ export async function saveOperationalSettings(
         project_id: payload.projectId,
         meal_target_minutes: payload.mealTargetMinutes,
         meal_delay_limit_minutes: payload.mealDelayLimitMinutes,
+        medium_full_count_threshold: payload.mediumFullCountThreshold,
+        medium_empty_count_threshold: payload.mediumEmptyCountThreshold,
         updated_by: payload.updatedBy,
         updated_at: new Date().toISOString(),
       },

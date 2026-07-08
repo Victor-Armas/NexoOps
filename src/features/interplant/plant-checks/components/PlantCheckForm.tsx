@@ -7,6 +7,7 @@ import {
     getDefaultPlantCheckValues,
     getSuggestedRiskLevel,
     type PlantCheckField,
+    type PlantRiskThresholds,
 } from "../config/plant-check-field.config";
 import {
     plantCheckSchema,
@@ -24,6 +25,7 @@ import {
 type PlantCheckFormProps = {
     fields: PlantCheckField[];
     isSubmitting: boolean;
+    riskThresholds: PlantRiskThresholds;
     onSubmit: (values: PlantCheckFormValues) => Promise<void>;
 };
 
@@ -61,6 +63,7 @@ function normalizeCheckValues(
 
 export function PlantCheckForm({
     fields,
+    riskThresholds,
     isSubmitting,
     onSubmit,
 }: PlantCheckFormProps) {
@@ -105,6 +108,7 @@ export function PlantCheckForm({
         values: normalizedCheckValues,
         fields,
         operationalCondition: watchedOperationalCondition ?? "normal",
+        riskThresholds,
     });
 
     const handleApplySuggestedRisk = () => {
@@ -191,6 +195,8 @@ export function PlantCheckForm({
                             <p className="text-sm font-bold">Riesgo operativo</p>
                             <p className="mt-1 text-xs text-slate-400 light:text-slate-500">
                                 Sugerido: {PLANT_RISK_LABELS[suggestedRiskLevel]}
+                                Umbrales: llenos ≥ {riskThresholds.mediumFullCountThreshold}, vacíos ≥{" "}
+                                {riskThresholds.mediumEmptyCountThreshold}
                             </p>
                         </div>
 

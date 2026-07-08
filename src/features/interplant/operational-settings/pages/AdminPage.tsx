@@ -8,6 +8,7 @@ import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { useOperationalSettings } from "../hooks/useOperationalSettings";
 import type { OperationalSettings } from "../types/operational-settings.types";
+import { PlantCheckFieldSettingsPanel } from "../components/PlantCheckFieldSettingsPanel";
 
 type OperationalSettingsFormProps = {
     settings: OperationalSettings;
@@ -33,11 +34,20 @@ function OperationalSettingsForm({
         String(settings.mealDelayLimitMinutes),
     );
 
+    const [mediumFullCountThreshold, setMediumFullCountThreshold] = useState(
+        String(settings.mediumFullCountThreshold),
+    );
+    const [mediumEmptyCountThreshold, setMediumEmptyCountThreshold] = useState(
+        String(settings.mediumEmptyCountThreshold),
+    );
+
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
         const nextMealTargetMinutes = Number(mealTargetMinutes);
         const nextMealDelayLimitMinutes = Number(mealDelayLimitMinutes);
+        const nextMediumFullCountThreshold = Number(mediumFullCountThreshold);
+        const nextMediumEmptyCountThreshold = Number(mediumEmptyCountThreshold);
 
         if (!Number.isInteger(nextMealTargetMinutes) || nextMealTargetMinutes <= 0) {
             toast.error("El tiempo objetivo de comida debe ser mayor a 0.");
@@ -54,11 +64,30 @@ function OperationalSettingsForm({
             return;
         }
 
+
+        if (
+            !Number.isInteger(nextMediumFullCountThreshold) ||
+            nextMediumFullCountThreshold < 0
+        ) {
+            toast.error("El umbral de llenos debe ser mayor o igual a 0.");
+            return;
+        }
+
+        if (
+            !Number.isInteger(nextMediumEmptyCountThreshold) ||
+            nextMediumEmptyCountThreshold < 0
+        ) {
+            toast.error("El umbral de vacíos debe ser mayor o igual a 0.");
+            return;
+        }
+
         try {
             await onSave({
                 projectId,
                 mealTargetMinutes: nextMealTargetMinutes,
                 mealDelayLimitMinutes: nextMealDelayLimitMinutes,
+                mediumFullCountThreshold: nextMediumFullCountThreshold,
+                mediumEmptyCountThreshold: nextMediumEmptyCountThreshold,
                 updatedBy: profileId,
             });
 
@@ -131,6 +160,67 @@ function OperationalSettingsForm({
             <div className="mt-5 rounded-3xl bg-cyan-400/10 px-4 py-3 text-sm text-cyan-200 light:bg-cyan-50 light:text-cyan-700">
                 Por ahora estos valores quedan guardados en Supabase. En el siguiente
                 bloque los conectamos al flujo real de comida.
+            </div>
+
+            <div className="mt-5 border-t border-white/10 pt-5 light:border-slate-200">
+                <h3 className="text-lg font-bold">Reglas de riesgo operativo</h3>
+
+                <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+                    Define cuándo la revisión de planta debe sugerir riesgo medio.
+                </p>
+
+                <div className="mt-4 space-y-4">
+                    <label className="block">
+                        <span className="text-sm font-semibold text-slate-300 light:text-slate-700">
+                            Riesgo medio si carros llenos son mayor o igual a
+                        </span>
+
+                        <div className="mt-2 flex items-center gap-3">
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={mediumFullCountThreshold}
+                                onChange={(event) =>
+                                    setMediumFullCountThreshold(event.target.value)
+                                }
+                                className="h-12 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 text-sm outline-none transition focus:border-cyan-400 light:border-slate-200 light:bg-slate-50"
+                            />
+
+                            <span className="shrink-0 text-sm text-slate-400 light:text-slate-500">
+                                carros
+                            </span>
+                        </div>
+                    </label>
+
+                    <label className="block">
+                        <span className="text-sm font-semibold text-slate-300 light:text-slate-700">
+                            Riesgo medio si carros vacíos son mayor o igual a
+                        </span>
+
+                        <div className="mt-2 flex items-center gap-3">
+                            <input
+                                type="number"
+                                min={0}
+                                step={1}
+                                value={mediumEmptyCountThreshold}
+                                onChange={(event) =>
+                                    setMediumEmptyCountThreshold(event.target.value)
+                                }
+                                className="h-12 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-4 text-sm outline-none transition focus:border-cyan-400 light:border-slate-200 light:bg-slate-50"
+                            />
+
+                            <span className="shrink-0 text-sm text-slate-400 light:text-slate-500">
+                                carros
+                            </span>
+                        </div>
+                    </label>
+                </div>
+
+                <div className="mt-4 rounded-3xl bg-yellow-400/10 px-4 py-3 text-sm text-yellow-100 light:bg-yellow-50 light:text-yellow-700">
+                    Las condiciones “Sin espacio para descarga” y “Sin rampa
+                    disponible” seguirán marcando riesgo alto automáticamente.
+                </div>
             </div>
 
             <Button
@@ -234,6 +324,11 @@ export function AdminPage() {
                     onSave={saveSettings}
                 />
             )}
+
+            <PlantCheckFieldSettingsPanel
+                projectId={projectId}
+                profileId={profile.id}
+            />
         </>
     );
 }

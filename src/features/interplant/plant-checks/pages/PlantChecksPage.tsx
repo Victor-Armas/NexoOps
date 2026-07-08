@@ -10,10 +10,9 @@ import { PlantCheckForm } from "../components/PlantCheckForm";
 import { PlantCheckHistory } from "../components/PlantCheckHistory";
 import { usePlantChecks } from "../hooks/usePlantChecks";
 import type { PlantCheckFormValues } from "../schemas/plant-check.schemas";
-import {
-    getPlantCheckFields,
-    getTotalByFieldGroup,
-} from "../config/plant-check-field.config";
+import { getTotalByFieldGroup } from "../config/plant-check-field.config";
+import { usePlantCheckFields } from "../hooks/usePlantCheckFields";
+import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
 
 export function PlantChecksPage() {
     const { profile, can } = useAuth();
@@ -24,30 +23,62 @@ export function PlantChecksPage() {
 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const { plants, isLoading: isLoadingPlants } = usePlants(projectId);
-    const { shift, isLoading: isLoadingShift } = useShift(projectId, profile?.id);
+    const {
+        plants,
+        isLoading: isLoadingPlants,
+        errorMessage: plantsErrorMessage,
+    } = usePlants(projectId);
+
+    const {
+        shift,
+        isLoading: isLoadingShift,
+        errorMessage: shiftErrorMessage,
+    } = useShift(projectId, profile?.id);
+
+    const {
+        settings: operationalSettings,
+        isLoading: isLoadingOperationalSettings,
+        errorMessage: operationalSettingsErrorMessage,
+    } = useOperationalSettings(projectId);
 
     const plant = useMemo(
         () => plants.find((item) => item.id === plantId) ?? null,
         [plants, plantId],
     );
 
-    const plantCheckFields = useMemo(
-        () => getPlantCheckFields(plant?.name),
-        [plant?.name],
-    );
+    const {
+        fields: plantCheckFields,
+        isLoading: isLoadingPlantCheckFields,
+        errorMessage: plantCheckFieldsErrorMessage,
+    } = usePlantCheckFields({
+        projectId,
+        plantId,
+        plantName: plant?.name,
+    });
 
     const {
         plantChecks,
         latestPlantCheck,
         isLoading: isLoadingPlantChecks,
-        errorMessage,
+        errorMessage: plantChecksErrorMessage,
         addPlantCheck,
     } = usePlantChecks(shift?.id, plantId);
 
     const canRegisterStatus = can("plants.check.create");
 
-    const isLoading = isLoadingPlants || isLoadingShift || isLoadingPlantChecks;
+    const isLoading =
+        isLoadingPlants ||
+        isLoadingShift ||
+        isLoadingOperationalSettings ||
+        isLoadingPlantCheckFields ||
+        isLoadingPlantChecks;
+
+    const errorMessage =
+        plantsErrorMessage ||
+        shiftErrorMessage ||
+        operationalSettingsErrorMessage ||
+        plantCheckFieldsErrorMessage ||
+        plantChecksErrorMessage;
 
     if (isLoading) {
         return <LoadingScreen message="Cargando estatus de planta..." />;
@@ -141,6 +172,12 @@ export function PlantChecksPage() {
                 <div className="mb-5">
                     <PlantCheckForm
                         fields={plantCheckFields}
+                        riskThresholds={{
+                            mediumFullCountThreshold:
+                                operationalSettings?.mediumFullCountThreshold ?? 10,
+                            mediumEmptyCountThreshold:
+                                operationalSettings?.mediumEmptyCountThreshold ?? 15,
+                        }}
                         isSubmitting={isSubmitting}
                         onSubmit={handleSubmit}
                     />
