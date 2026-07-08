@@ -1,0 +1,57 @@
+export type ShiftClosing = {
+  id: string;
+  shiftId: string;
+  closedBy: string;
+  plantCheckedCount: number;
+  plantTotalCount: number;
+  fullCount: number;
+  emptyCount: number;
+  pendingCount: number;
+  highRiskPlantCount: number;
+  movementTotalCount: number;
+  movementCompletedCount: number;
+  movementCancelledCount: number;
+  movementOpenCount: number;
+  movementQuantityTotal: number;
+  notes: string | null;
+  closedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ShiftClosingRow = {
+  id: string;
+  shift_id: string;
+  closed_by: string;
+  plant_checked_count: number;
+  plant_total_count: number;
+  full_count: number;
+  empty_count: number;
+  pending_count: number;
+  high_risk_plant_count: number;
+  movement_total_count: number;
+  movement_completed_count: number;
+  movement_cancelled_count: number;
+  movement_open_count: number;
+  movement_quantity_total: number;
+  notes: string | null;
+  closed_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CreateShiftClosingPayload = {
+  shiftId: string;
+  plantCheckedCount: number;
+  plantTotalCount: number;
+  fullCount: number;
+  emptyCount: number;
+  pendingCount: number;
+  highRiskPlantCount: number;
+  movementTotalCount: number;
+  movementCompletedCount: number;
+  movementCancelledCount: number;
+  movementOpenCount: number;
+  movementQuantityTotal: number;
+  notes?: string;
+};

@@ -1,0 +1,123 @@
+import { useMemo } from "react";
+import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
+import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
+import { usePlants } from "../../plants/hooks/usePlants";
+import { useShift } from "../../shifts/hooks/useShift";
+import { useShiftUnitMovements } from "../../unit-movements/hooks/useShiftUnitMovements";
+import { useUnits } from "../../units/hooks/useUnits";
+import {
+  getMovementClosingMetrics,
+  getPlantClosingMetrics,
+} from "../utils/closing-metrics";
+
+type UseClosingSummaryParams = {
+  projectId: string | undefined;
+  supervisorId: string | undefined;
+  roleKey: string | undefined;
+};
+
+export function useClosingSummary({
+  projectId,
+  supervisorId,
+  roleKey,
+}: UseClosingSummaryParams) {
+  const {
+    shift,
+    isLoading: isLoadingShift,
+    errorMessage: shiftErrorMessage,
+    closeShift,
+  } = useShift(projectId, supervisorId);
+
+  const {
+    plants,
+    isLoading: isLoadingPlants,
+    errorMessage: plantsErrorMessage,
+  } = usePlants(projectId);
+
+  const {
+    units,
+    isLoading: isLoadingUnits,
+    errorMessage: unitsErrorMessage,
+  } = useUnits();
+
+  const {
+    latestByPlantId,
+    isLoading: isLoadingPlantChecks,
+    errorMessage: plantChecksErrorMessage,
+  } = useLatestPlantChecksByShift(shift?.id);
+
+  const {
+    unitMovements,
+    isLoading: isLoadingUnitMovements,
+    errorMessage: unitMovementsErrorMessage,
+  } = useShiftUnitMovements(shift?.id);
+
+  const {
+    latestByMovementId,
+    isLoading: isLoadingLatestEvents,
+    errorMessage: latestEventsErrorMessage,
+  } = useLatestUnitMovementEventsByMovementIds(unitMovements);
+
+  const latestPlantChecks = useMemo(
+    () => Object.values(latestByPlantId),
+    [latestByPlantId],
+  );
+
+  const plantMetrics = useMemo(
+    () =>
+      getPlantClosingMetrics({
+        latestChecks: latestPlantChecks,
+        totalPlants: plants.length,
+      }),
+    [latestPlantChecks, plants.length],
+  );
+
+  const movementMetrics = useMemo(
+    () =>
+      getMovementClosingMetrics({
+        unitMovements,
+        latestByMovementId,
+      }),
+    [latestByMovementId, unitMovements],
+  );
+
+  const canCloseShift = roleKey === "admin" || roleKey === "supervisor";
+
+  const canSubmitClose =
+    Boolean(shift) &&
+    canCloseShift &&
+    movementMetrics.openMovements.length === 0;
+
+  const isLoading =
+    isLoadingShift ||
+    Boolean(
+      shift &&
+      (isLoadingPlants ||
+        isLoadingUnits ||
+        isLoadingPlantChecks ||
+        isLoadingUnitMovements ||
+        isLoadingLatestEvents),
+    );
+
+  const errorMessage =
+    shiftErrorMessage ||
+    plantsErrorMessage ||
+    unitsErrorMessage ||
+    plantChecksErrorMessage ||
+    unitMovementsErrorMessage ||
+    latestEventsErrorMessage;
+
+  return {
+    shift,
+    plants,
+    units,
+    latestByMovementId,
+    plantMetrics,
+    movementMetrics,
+    canCloseShift,
+    canSubmitClose,
+    isLoading,
+    errorMessage,
+    closeShift,
+  };
+}
