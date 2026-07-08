@@ -28,58 +28,51 @@ export function useLatestUnitMovementEventsByMovementIds(
     [unitMovements],
   );
 
+  const hasMovementIds = movementIdsKey.length > 0;
+
   const [latestByMovementId, setLatestByMovementId] =
     useState<LatestEventsByMovementId>({});
-  const [isLoading, setIsLoading] = useState(Boolean(movementIdsKey));
+  const [isLoading, setIsLoading] = useState(hasMovementIds);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!movementIdsKey) {
-      setLatestByMovementId({});
-      setIsLoading(false);
-      setErrorMessage(null);
+    if (!hasMovementIds) {
       return;
     }
 
     let isMounted = true;
-    const movementIds = movementIdsKey.split(",");
 
-    setIsLoading(true);
-    setErrorMessage(null);
+    async function loadLatestEvents() {
+      try {
+        setIsLoading(true);
+        setErrorMessage(null);
 
-    void getUnitMovementEventsByMovementIds(movementIds)
-      .then((events) => {
-        if (!isMounted) {
-          return;
+        const movementIds = movementIdsKey.split(",");
+        const events = await getUnitMovementEventsByMovementIds(movementIds);
+
+        if (isMounted) {
+          setLatestByMovementId(mapLatestEventsByMovementId(events));
         }
-
-        setLatestByMovementId(mapLatestEventsByMovementId(events));
-      })
-      .catch(() => {
-        if (!isMounted) {
-          return;
+      } catch {
+        if (isMounted) {
+          setErrorMessage("No se pudo cargar el estado actual de las unidades.");
         }
-
-        setErrorMessage("No se pudo cargar el estado actual de las unidades.");
-      })
-      .finally(() => {
-        if (!isMounted) {
-          return;
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
         }
+      }
+    }
 
-        setIsLoading(false);
-      });
+    void loadLatestEvents();
 
     return () => {
       isMounted = false;
     };
-  }, [movementIdsKey]);
+  }, [hasMovementIds, movementIdsKey]);
 
   const refetch = useCallback(async () => {
-    if (!movementIdsKey) {
-      setLatestByMovementId({});
-      setIsLoading(false);
-      setErrorMessage(null);
+    if (!hasMovementIds) {
       return;
     }
 
@@ -96,10 +89,10 @@ export function useLatestUnitMovementEventsByMovementIds(
     } finally {
       setIsLoading(false);
     }
-  }, [movementIdsKey]);
+  }, [hasMovementIds, movementIdsKey]);
 
   useEffect(() => {
-    if (!movementIdsKey) {
+    if (!hasMovementIds) {
       return;
     }
 
@@ -110,12 +103,12 @@ export function useLatestUnitMovementEventsByMovementIds(
     return () => {
       void channel.unsubscribe();
     };
-  }, [movementIdsKey, refetch]);
+  }, [hasMovementIds, refetch]);
 
   return {
-    latestByMovementId,
-    isLoading,
-    errorMessage,
+    latestByMovementId: hasMovementIds ? latestByMovementId : {},
+    isLoading: hasMovementIds ? isLoading : false,
+    errorMessage: hasMovementIds ? errorMessage : null,
     refetch,
   };
 }
