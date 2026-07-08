@@ -38,7 +38,7 @@ export function useClosingSummary({
     units,
     isLoading: isLoadingUnits,
     errorMessage: unitsErrorMessage,
-  } = useUnits();
+  } = useUnits(projectId);
 
   const {
     latestByPlantId,
