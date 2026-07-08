@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import { CloseShiftConfirmationModal } from "../components/CloseShiftConfirmationModal";
 import { CloseShiftPanel } from "../components/CloseShiftPanel";
 import { ClosingOpenMovementsList } from "../components/ClosingOpenMovementsList";
 import { ClosingPlantSummary } from "../components/ClosingPlantSummary";
@@ -17,6 +18,7 @@ export function ClosingPage() {
     const { profile, can } = useAuth();
     const [isClosing, setIsClosing] = useState(false);
     const [closingNotes, setClosingNotes] = useState("");
+    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
     const closingSummary = useClosingSummary({
         projectId,
@@ -28,14 +30,23 @@ export function ClosingPage() {
         return <LoadingScreen message="Cargando cierre..." />;
     }
 
-    const handleCloseShift = async () => {
+    const handleRequestCloseShift = () => {
         if (!closingSummary.shift) {
             toast.error("No hay turno abierto.");
             return;
         }
 
-        if (closingSummary.movementMetrics.openMovements.length > 0) {
-            toast.error("No puedes cerrar el turno con movimientos abiertos.");
+        if (!closingSummary.canSubmitClose) {
+            toast.error("No tienes permiso para cerrar turno.");
+            return;
+        }
+
+        setIsConfirmModalOpen(true);
+    };
+
+    const handleConfirmCloseShift = async () => {
+        if (!closingSummary.shift) {
+            toast.error("No hay turno abierto.");
             return;
         }
 
@@ -64,6 +75,7 @@ export function ClosingPage() {
             });
 
             await closingSummary.closeShift();
+            setIsConfirmModalOpen(false);
 
             toast.success("Turno cerrado y evidencia guardada.");
         } catch {
@@ -126,8 +138,20 @@ export function ClosingPage() {
                         isClosing={isClosing}
                         closingNotes={closingNotes}
                         onClosingNotesChange={setClosingNotes}
-                        onCloseShift={() => void handleCloseShift()}
+                        onCloseShift={handleRequestCloseShift}
                     />
+
+                    {isConfirmModalOpen && (
+                        <CloseShiftConfirmationModal
+                            openMovements={closingSummary.movementMetrics.openMovements}
+                            units={closingSummary.units}
+                            plants={closingSummary.plants}
+                            latestByMovementId={closingSummary.latestByMovementId}
+                            isClosing={isClosing}
+                            onCancel={() => setIsConfirmModalOpen(false)}
+                            onConfirm={() => void handleConfirmCloseShift()}
+                        />
+                    )}
                 </>
             )}
         </>
