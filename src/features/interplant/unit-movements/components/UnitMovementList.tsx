@@ -13,6 +13,8 @@ type UnitMovementListProps = {
   movementTypes: MovementType[];
   onComplete: (movementId: string) => Promise<void>;
   onCancel: (movementId: string) => Promise<void>;
+  mealTargetMinutes: number;
+  mealDelayLimitMinutes: number;
 };
 
 export function UnitMovementList({
@@ -20,6 +22,8 @@ export function UnitMovementList({
   units,
   plants,
   movementTypes,
+  mealTargetMinutes,
+  mealDelayLimitMinutes,
   onComplete,
   onCancel,
 }: UnitMovementListProps) {
@@ -34,6 +38,8 @@ export function UnitMovementList({
           units={units}
           plants={plants}
           movementTypes={movementTypes}
+          mealTargetMinutes={mealTargetMinutes}
+          mealDelayLimitMinutes={mealDelayLimitMinutes}
           onComplete={onComplete}
           onCancel={onCancel}
         />

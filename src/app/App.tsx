@@ -16,6 +16,7 @@ import { InterplantDashboardPage } from "../features/interplant/dashboard/pages/
 import { Toaster } from "sonner";
 import { PlantChecksPage } from "../features/interplant/plant-checks/pages/PlantChecksPage";
 import { UnitMovementsPage } from "../features/interplant/unit-movements/pages/UnitMovementsPage";
+import { AdminPage } from "../features/interplant/operational-settings/pages/AdminPage";
 
 export function App() {
   return (
@@ -42,6 +43,7 @@ export function App() {
               <Route path="incidents" element={<IncidentsPage />} />
               <Route path="closing" element={<ClosingPage />} />
               <Route path="plants/:plantId" element={<PlantChecksPage />} />
+              <Route path="admin" element={<AdminPage />} />
             </Route>
           </Route>
 

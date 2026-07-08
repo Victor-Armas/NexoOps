@@ -6,7 +6,9 @@ export function ProtectedRoute() {
     const { session, profile, isLoading } = useAuth();
     const location = useLocation();
 
-    if (isLoading) {
+    const isAuthenticated = Boolean(session && profile);
+
+    if (isLoading && !isAuthenticated) {
         return <LoadingScreen />;
     }
 

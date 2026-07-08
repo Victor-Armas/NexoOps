@@ -12,6 +12,7 @@ import { UnitMovementList } from "../components/UnitMovementList";
 import { useMovementTypes } from "../hooks/useMovementTypes";
 import { useUnitMovements } from "../hooks/useUnitMovements";
 import type { UnitMovementFormValues } from "../schemas/unit-movement.schemas";
+import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
 
 export function UnitMovementsPage() {
   const { projectId, unitId } = useParams<{
@@ -47,6 +48,11 @@ export function UnitMovementsPage() {
   } = useMovementTypes();
 
   const {
+    settings: operationalSettings,
+    errorMessage: operationalSettingsErrorMessage,
+  } = useOperationalSettings(projectId);
+
+  const {
     unitMovements,
     isLoading: isLoadingUnitMovements,
     errorMessage: unitMovementsErrorMessage,
@@ -76,7 +82,8 @@ export function UnitMovementsPage() {
     unitsErrorMessage ||
     plantsErrorMessage ||
     movementTypesErrorMessage ||
-    unitMovementsErrorMessage;
+    unitMovementsErrorMessage ||
+    operationalSettingsErrorMessage;
 
   if (isLoading) {
     return <LoadingScreen message="Cargando movimientos..." />;
@@ -192,6 +199,10 @@ export function UnitMovementsPage() {
           units={units}
           plants={plants}
           movementTypes={movementTypes}
+          mealTargetMinutes={operationalSettings?.mealTargetMinutes ?? 60}
+          mealDelayLimitMinutes={
+            operationalSettings?.mealDelayLimitMinutes ?? 75
+          }
           onComplete={handleComplete}
           onCancel={handleCancel}
         />

@@ -25,14 +25,14 @@ import type {
 } from "../types/unit-movement.types";
 import { UNIT_MOVEMENT_STATUS_LABELS } from "../types/unit-movement.types";
 
-const MEAL_TARGET_MINUTES = 60;
-const MEAL_DELAY_LIMIT_MINUTES = 75;
 
 type UnitMovementCardProps = {
   movement: UnitMovement;
   units: Unit[];
   plants: Plant[];
   movementTypes: MovementType[];
+  mealTargetMinutes: number;
+  mealDelayLimitMinutes: number;
   onComplete: (movementId: string) => Promise<void>;
   onCancel: (movementId: string) => Promise<void>;
 };
@@ -86,6 +86,8 @@ export function UnitMovementCard({
   units,
   plants,
   movementTypes,
+  mealTargetMinutes,
+  mealDelayLimitMinutes,
   onComplete,
   onCancel,
 }: UnitMovementCardProps) {
@@ -147,7 +149,7 @@ export function UnitMovementCard({
       ? getElapsedMinutes(latestMealStart.eventAt, now)
       : 0;
 
-  const isMealDelayed = elapsedMealMinutes > MEAL_DELAY_LIMIT_MINUTES;
+  const isMealDelayed = elapsedMealMinutes > mealDelayLimitMinutes;
 
   const currentStatusLabel = isMealActive
     ? "Comida"
@@ -213,8 +215,8 @@ export function UnitMovementCard({
   return (
     <article
       className={`rounded-4xl border p-5 shadow-xl backdrop-blur-xl light:bg-white ${isMealDelayed
-          ? "animate-pulse border-yellow-400/50 bg-yellow-400/10 light:border-yellow-300 light:bg-yellow-50"
-          : "border-white/10 bg-white/10 light:border-slate-200"
+        ? "animate-pulse border-yellow-400/50 bg-yellow-400/10 light:border-yellow-300 light:bg-yellow-50"
+        : "border-white/10 bg-white/10 light:border-slate-200"
         }`}
     >
       <div className="flex items-start gap-4">
@@ -234,8 +236,8 @@ export function UnitMovementCard({
 
             <span
               className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${isMealDelayed
-                  ? "bg-yellow-400/20 text-yellow-200 light:bg-yellow-100 light:text-yellow-700"
-                  : "bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700"
+                ? "bg-yellow-400/20 text-yellow-200 light:bg-yellow-100 light:text-yellow-700"
+                : "bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700"
                 }`}
             >
               {currentStatusLabel}
@@ -286,7 +288,7 @@ export function UnitMovementCard({
 
                   {isMealDelayed && (
                     <p className="mt-2 text-sm font-semibold text-yellow-100 light:text-yellow-800">
-                      Excede el límite de {MEAL_DELAY_LIMIT_MINUTES} minutos.
+                      Excede el límite de {mealDelayLimitMinutes} minutos.
                     </p>
                   )}
                 </div>
@@ -306,8 +308,8 @@ export function UnitMovementCard({
                 <h4 className="text-sm font-bold">Hora de comida</h4>
 
                 <p className="mt-1 text-xs text-slate-400 light:text-slate-500">
-                  Tiempo objetivo: {MEAL_TARGET_MINUTES} min · Alerta después de{" "}
-                  {MEAL_DELAY_LIMIT_MINUTES} min
+                  Tiempo objetivo: {mealTargetMinutes} min · Alerta después de{" "}
+                  {mealDelayLimitMinutes} min
                 </p>
 
                 <button
@@ -319,8 +321,8 @@ export function UnitMovementCard({
                       : setIsMealModalOpen(true)
                   }
                   className={`mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50 ${isMealActive
-                      ? "bg-yellow-500 text-white"
-                      : "border border-yellow-400/30 bg-yellow-400/10 text-yellow-200 light:text-yellow-700"
+                    ? "bg-yellow-500 text-white"
+                    : "border border-yellow-400/30 bg-yellow-400/10 text-yellow-200 light:text-yellow-700"
                     }`}
                 >
                   <Utensils size={17} />
@@ -381,8 +383,8 @@ export function UnitMovementCard({
             </div>
 
             <div className="mt-4 rounded-3xl bg-yellow-400/10 px-4 py-3 text-sm text-yellow-100 light:bg-yellow-50 light:text-yellow-700">
-              Tiempo objetivo: {MEAL_TARGET_MINUTES} minutos. Se marcará alerta
-              si pasa de {MEAL_DELAY_LIMIT_MINUTES} minutos.
+              Tiempo objetivo: {mealTargetMinutes} minutos. Se marcará alerta
+              si pasa de {mealDelayLimitMinutes} minutos.
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3">
