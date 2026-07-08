@@ -40,7 +40,7 @@ export function InterplantDashboardPage() {
         units,
         isLoading: isLoadingUnits,
         errorMessage: unitsErrorMessage,
-    } = useUnits();
+    } = useUnits(projectId);
 
     const {
         latestByPlantId,
