@@ -14,8 +14,14 @@ export function useShiftUnitMovements(
   shiftId: string | undefined,
   unitIds?: string[],
 ) {
-  const unitIdsKey = useMemo(() => getUnitIdsKey(unitIds), [unitIds]);
-  const hasContextUnits = Boolean(unitIds && unitIds.length > 0);
+  const unitIdsKey = getUnitIdsKey(unitIds);
+
+  const normalizedUnitIds = useMemo(
+    () => (unitIdsKey ? unitIdsKey.split(",") : []),
+    [unitIdsKey],
+  );
+
+  const hasContextUnits = normalizedUnitIds.length > 0;
 
   const [unitMovements, setUnitMovements] = useState<UnitMovement[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(shiftId));
@@ -26,59 +32,43 @@ export function useShiftUnitMovements(
       return [];
     }
 
-    if (unitIds) {
+    if (hasContextUnits) {
       return getUnitMovementsByShiftContext({
         shiftId,
-        unitIds,
+        unitIds: normalizedUnitIds,
       });
     }
 
     return getUnitMovementsByShift(shiftId);
-  }, [shiftId, unitIdsKey]);
+  }, [shiftId, hasContextUnits, normalizedUnitIds]);
 
   useEffect(() => {
-    if (!shiftId) {
-      return;
-    }
-
     let isMounted = true;
 
     void loadUnitMovements()
       .then((data) => {
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setUnitMovements(data);
         setErrorMessage(null);
       })
       .catch(() => {
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         setErrorMessage("No se pudieron cargar los movimientos del turno.");
       })
       .finally(() => {
-        if (!isMounted) {
-          return;
+        if (isMounted) {
+          setIsLoading(false);
         }
-
-        setIsLoading(false);
       });
 
     return () => {
       isMounted = false;
     };
-  }, [shiftId, loadUnitMovements]);
+  }, [loadUnitMovements]);
 
   const refetch = useCallback(async () => {
-    if (!shiftId) {
-      setUnitMovements([]);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       setIsLoading(true);
       setErrorMessage(null);
@@ -91,7 +81,7 @@ export function useShiftUnitMovements(
     } finally {
       setIsLoading(false);
     }
-  }, [shiftId, loadUnitMovements]);
+  }, [loadUnitMovements]);
 
   useEffect(() => {
     if (!shiftId) {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getUnitsByProject } from "../services/units.service";
 import type { Unit } from "../types/unit.types";
 
@@ -7,17 +7,45 @@ export function useUnits(projectId: string | undefined) {
   const [isLoading, setIsLoading] = useState(Boolean(projectId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  useEffect(() => {
+  const refetch = useCallback(async () => {
     if (!projectId) {
+      setUnits([]);
+      setIsLoading(false);
       return;
     }
 
+    try {
+      setIsLoading(true);
+      setErrorMessage(null);
+
+      const unitsData = await getUnitsByProject(projectId);
+
+      setUnits(unitsData);
+    } catch {
+      setErrorMessage("No se pudieron cargar las unidades.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [projectId]);
+
+  useEffect(() => {
     let isMounted = true;
 
-    async function loadUnits() {
+    void Promise.resolve().then(async () => {
+      if (!projectId) {
+        if (isMounted) {
+          setUnits([]);
+          setIsLoading(false);
+        }
+
+        return;
+      }
+
       try {
-        setIsLoading(true);
-        setErrorMessage(null);
+        if (isMounted) {
+          setIsLoading(true);
+          setErrorMessage(null);
+        }
 
         const unitsData = await getUnitsByProject(projectId);
 
@@ -33,26 +61,17 @@ export function useUnits(projectId: string | undefined) {
           setIsLoading(false);
         }
       }
-    }
-
-    void loadUnits();
+    });
 
     return () => {
       isMounted = false;
     };
   }, [projectId]);
 
-  if (!projectId) {
-    return {
-      units: [],
-      isLoading: false,
-      errorMessage: "Proyecto no válido.",
-    };
-  }
-
   return {
     units,
     isLoading,
     errorMessage,
+    refetch,
   };
 }
