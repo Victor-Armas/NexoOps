@@ -81,10 +81,7 @@ export function useClosingSummary({
     [latestByMovementId, unitMovements],
   );
 
-  const canSubmitClose =
-    Boolean(shift) &&
-    canCloseShift &&
-    movementMetrics.openMovements.length === 0;
+  const canSubmitClose = Boolean(shift) && canCloseShift;
 
   const isLoading =
     isLoadingShift ||
