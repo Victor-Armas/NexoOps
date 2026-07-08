@@ -1,4 +1,8 @@
 import { Clock3, MapPin, Truck } from "lucide-react";
+import type {
+    UnitMovementEvent,
+} from "../../unit-movement-events/types/unit-movement-event.types";
+import { UNIT_MOVEMENT_EVENT_LABELS } from "../../unit-movement-events/types/unit-movement-event.types";
 import type { Plant } from "../../plants/types/plant.types";
 import type {
     MovementType,
@@ -10,6 +14,7 @@ import type { Unit } from "../types/unit.types";
 type UnitCardProps = {
     unit: Unit;
     latestMovement?: UnitMovement | null;
+    latestEvent?: UnitMovementEvent | null;
     plants?: Plant[];
     movementTypes?: MovementType[];
 };
@@ -49,16 +54,23 @@ function findNameById<T extends { id: string; name: string }>(
     return items?.find((item) => item.id === id)?.name ?? fallback;
 }
 
-function getStatusLabel(latestMovement?: UnitMovement | null) {
+function getStatusLabel(
+    latestMovement?: UnitMovement | null,
+    latestEvent?: UnitMovementEvent | null,
+) {
     if (!latestMovement) {
         return "Disponible";
+    }
+
+    if (latestMovement.status === "open" && latestEvent) {
+        return UNIT_MOVEMENT_EVENT_LABELS[latestEvent.eventType];
     }
 
     if (latestMovement.status === "open") {
         return "En movimiento";
     }
 
-    return "Disponible";
+    return UNIT_MOVEMENT_STATUS_LABELS[latestMovement.status];
 }
 
 function getStatusClassName(latestMovement?: UnitMovement | null) {
@@ -80,6 +92,7 @@ function getStatusClassName(latestMovement?: UnitMovement | null) {
 export function UnitCard({
     unit,
     latestMovement,
+    latestEvent,
     plants,
     movementTypes,
 }: UnitCardProps) {
@@ -103,6 +116,8 @@ export function UnitCard({
 
     const isOpen = latestMovement?.status === "open";
 
+    const currentStatusLabel = getStatusLabel(latestMovement, latestEvent);
+
     return (
         <article className="rounded-[2rem] border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl transition hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500">
             <div className="flex items-start gap-4">
@@ -125,7 +140,7 @@ export function UnitCard({
                                 latestMovement,
                             )}`}
                         >
-                            {getStatusLabel(latestMovement)}
+                            {currentStatusLabel}
                         </span>
                     </div>
 
@@ -165,7 +180,7 @@ export function UnitCard({
 
                                 <span className="inline-flex items-center gap-1">
                                     <MapPin size={14} />
-                                    {UNIT_MOVEMENT_STATUS_LABELS[latestMovement.status]}
+                                    {currentStatusLabel}
                                 </span>
                             </div>
 

@@ -4,14 +4,18 @@ import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
-import { usePlants } from "../../plants/hooks/usePlants";
+import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
-import { useShift } from "../../shifts/hooks/useShift";
+import { usePlants } from "../../plants/hooks/usePlants";
 import { OpenShiftPanel } from "../../shifts/components/OpenShiftPanel";
 import { ShiftStatusBanner } from "../../shifts/components/ShiftStatusBanner";
-import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
 import type { OpenShiftFormValues } from "../../shifts/schemas/shift.schemas";
+import { useShift } from "../../shifts/hooks/useShift";
+import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
+import { useShiftUnitMovements } from "../../unit-movements/hooks/useShiftUnitMovements";
+import { useUnits } from "../../units/hooks/useUnits";
 import { ShiftKpiGrid } from "../components/ShiftKpiGrid";
+import { UnitMovementKpiGrid } from "../components/UnitMovementKpiGrid";
 
 export function InterplantDashboardPage() {
     const { profile, signOut } = useAuth();
@@ -33,15 +37,33 @@ export function InterplantDashboardPage() {
     } = usePlants(projectId);
 
     const {
+        units,
+        isLoading: isLoadingUnits,
+        errorMessage: unitsErrorMessage,
+    } = useUnits();
+
+    const {
         latestByPlantId,
         isLoading: isLoadingLatestChecks,
         errorMessage: latestChecksErrorMessage,
     } = useLatestPlantChecksByShift(shift?.id);
 
+    const {
+        unitMovements,
+        isLoading: isLoadingUnitMovements,
+        errorMessage: unitMovementsErrorMessage,
+    } = useShiftUnitMovements(shift?.id);
+
+    const {
+        latestByMovementId,
+        isLoading: isLoadingLatestEvents,
+        errorMessage: latestEventsErrorMessage,
+    } = useLatestUnitMovementEventsByMovementIds(unitMovements);
+
     const canManageShift =
         profile?.role.key === "admin" || profile?.role.key === "supervisor";
 
-    const dashboardMetrics = useMemo(() => {
+    const plantMetrics = useMemo(() => {
         const latestChecks = Object.values(latestByPlantId);
 
         return {
@@ -65,11 +87,66 @@ export function InterplantDashboardPage() {
         };
     }, [latestByPlantId, plants.length]);
 
+    const unitMetrics = useMemo(() => {
+        const openMovements = unitMovements.filter(
+            (movement) => movement.status === "open",
+        );
+
+        const completedMovements = unitMovements.filter(
+            (movement) => movement.status === "completed",
+        );
+
+        const activeUnitIds = new Set(
+            openMovements.map((movement) => movement.unitId),
+        );
+
+        const waitingDockUnits = openMovements.filter((movement) => {
+            const latestEvent = latestByMovementId[movement.id];
+
+            return latestEvent?.eventType === "waiting_dock";
+        }).length;
+
+        const loadingOrUnloadingUnits = openMovements.filter((movement) => {
+            const latestEvent = latestByMovementId[movement.id];
+
+            return (
+                latestEvent?.eventType === "loading" ||
+                latestEvent?.eventType === "unloading"
+            );
+        }).length;
+
+        return {
+            activeUnits: activeUnitIds.size,
+            totalUnits: units.length,
+            openMovements: openMovements.length,
+            completedMovements: completedMovements.length,
+            waitingDockUnits,
+            loadingOrUnloadingUnits,
+            totalQuantity: unitMovements.reduce(
+                (total, movement) => total + movement.quantity,
+                0,
+            ),
+        };
+    }, [latestByMovementId, unitMovements, units.length]);
+
     const isLoading =
-        isLoadingShift || Boolean(shift && (isLoadingPlants || isLoadingLatestChecks));
+        isLoadingShift ||
+        Boolean(
+            shift &&
+            (isLoadingPlants ||
+                isLoadingUnits ||
+                isLoadingLatestChecks ||
+                isLoadingUnitMovements ||
+                isLoadingLatestEvents),
+        );
 
     const errorMessage =
-        shiftErrorMessage || plantsErrorMessage || latestChecksErrorMessage;
+        shiftErrorMessage ||
+        plantsErrorMessage ||
+        unitsErrorMessage ||
+        latestChecksErrorMessage ||
+        unitMovementsErrorMessage ||
+        latestEventsErrorMessage;
 
     if (isLoading) {
         return <LoadingScreen message="Cargando turno..." />;
@@ -141,12 +218,24 @@ export function InterplantDashboardPage() {
 
                     <div className="mt-5">
                         <ShiftKpiGrid
-                            checkedPlants={dashboardMetrics.checkedPlants}
-                            totalPlants={dashboardMetrics.totalPlants}
-                            fullCount={dashboardMetrics.fullCount}
-                            emptyCount={dashboardMetrics.emptyCount}
-                            pendingCount={dashboardMetrics.pendingCount}
-                            highRiskPlants={dashboardMetrics.highRiskPlants}
+                            checkedPlants={plantMetrics.checkedPlants}
+                            totalPlants={plantMetrics.totalPlants}
+                            fullCount={plantMetrics.fullCount}
+                            emptyCount={plantMetrics.emptyCount}
+                            pendingCount={plantMetrics.pendingCount}
+                            highRiskPlants={plantMetrics.highRiskPlants}
+                        />
+                    </div>
+
+                    <div className="mt-5">
+                        <UnitMovementKpiGrid
+                            activeUnits={unitMetrics.activeUnits}
+                            totalUnits={unitMetrics.totalUnits}
+                            openMovements={unitMetrics.openMovements}
+                            completedMovements={unitMetrics.completedMovements}
+                            waitingDockUnits={unitMetrics.waitingDockUnits}
+                            loadingOrUnloadingUnits={unitMetrics.loadingOrUnloadingUnits}
+                            totalQuantity={unitMetrics.totalQuantity}
                         />
                     </div>
 

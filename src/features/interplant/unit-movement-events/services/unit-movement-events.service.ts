@@ -70,3 +70,34 @@ export function subscribeToUnitMovementEventsChanges(
     onChange,
   });
 }
+
+export async function getUnitMovementEventsByMovementIds(
+  unitMovementIds: string[],
+): Promise<UnitMovementEvent[]> {
+  if (unitMovementIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("unit_movement_events")
+    .select(UNIT_MOVEMENT_EVENT_COLUMNS)
+    .in("unit_movement_id", unitMovementIds)
+    .order("event_at", { ascending: false })
+    .returns<UnitMovementEventRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(mapUnitMovementEvent);
+}
+
+export function subscribeToUnitMovementEventsTableChanges(
+  onChange: () => void,
+) {
+  return subscribeToTableChanges({
+    channelName: "unit-movement-events-latest",
+    table: "unit_movement_events",
+    onChange,
+  });
+}

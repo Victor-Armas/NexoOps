@@ -6,6 +6,7 @@ import {
   getUnitMovementsByShiftAndUnit,
   subscribeToUnitMovementsChanges,
 } from "../services/unit-movements.service";
+import { createUnitMovementEvent } from "../../unit-movement-events/services/unit-movement-events.service";
 import type {
   CreateUnitMovementPayload,
   UnitMovement,
@@ -105,6 +106,11 @@ export function useUnitMovements(
   const markAsCompleted = useCallback(async (movementId: string) => {
     const updated = await completeUnitMovement(movementId);
 
+    await createUnitMovementEvent({
+      unitMovementId: movementId,
+      eventType: "completed",
+    });
+
     setUnitMovements((currentMovements) =>
       currentMovements.map((movement) =>
         movement.id === updated.id ? updated : movement,
@@ -114,6 +120,11 @@ export function useUnitMovements(
 
   const markAsCancelled = useCallback(async (movementId: string) => {
     const updated = await cancelUnitMovement(movementId);
+
+    await createUnitMovementEvent({
+      unitMovementId: movementId,
+      eventType: "cancelled",
+    });
 
     setUnitMovements((currentMovements) =>
       currentMovements.map((movement) =>

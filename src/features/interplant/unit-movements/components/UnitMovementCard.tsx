@@ -86,9 +86,10 @@ export function UnitMovementCard({
 
   const isOpen = movement.status === "open";
 
-  const currentStatusLabel = latestEvent
-    ? UNIT_MOVEMENT_EVENT_LABELS[latestEvent.eventType]
-    : UNIT_MOVEMENT_STATUS_LABELS[movement.status];
+  const currentStatusLabel =
+    movement.status === "open" && latestEvent
+      ? UNIT_MOVEMENT_EVENT_LABELS[latestEvent.eventType]
+      : UNIT_MOVEMENT_STATUS_LABELS[movement.status];
 
   const handleCreateEvent = async (
     eventType: UnitMovementEventType,
