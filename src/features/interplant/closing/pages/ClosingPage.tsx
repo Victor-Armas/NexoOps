@@ -14,14 +14,14 @@ import { upsertShiftClosing } from "../services/shift-closings.service";
 
 export function ClosingPage() {
     const { projectId } = useParams<{ projectId: string }>();
-    const { profile } = useAuth();
+    const { profile, can } = useAuth();
     const [isClosing, setIsClosing] = useState(false);
     const [closingNotes, setClosingNotes] = useState("");
 
     const closingSummary = useClosingSummary({
         projectId,
         supervisorId: profile?.id,
-        roleKey: profile?.role.key,
+        canCloseShift: can("closing.create"),
     });
 
     if (closingSummary.isLoading) {
