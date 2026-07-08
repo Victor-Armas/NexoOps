@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { LogOut, UserRound } from "lucide-react";
-import { Link, useParams } from "react-router-dom";
+import { UserRound } from "lucide-react";
+import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
@@ -17,8 +17,16 @@ import { useUnits } from "../../units/hooks/useUnits";
 import { ShiftKpiGrid } from "../components/ShiftKpiGrid";
 import { UnitMovementKpiGrid } from "../components/UnitMovementKpiGrid";
 
+function getPercentage(value: number, total: number) {
+    if (total === 0) {
+        return 0;
+    }
+
+    return Math.min(100, Math.round((value / total) * 100));
+}
+
 export function InterplantDashboardPage() {
-    const { profile, signOut } = useAuth();
+    const { profile, can } = useAuth();
     const { projectId } = useParams<{ projectId: string }>();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -27,7 +35,6 @@ export function InterplantDashboardPage() {
         isLoading: isLoadingShift,
         errorMessage: shiftErrorMessage,
         openShift,
-        closeShift,
     } = useShift(projectId, profile?.id);
 
     const {
@@ -60,8 +67,7 @@ export function InterplantDashboardPage() {
         errorMessage: latestEventsErrorMessage,
     } = useLatestUnitMovementEventsByMovementIds(unitMovements);
 
-    const canManageShift =
-        profile?.role.key === "admin" || profile?.role.key === "supervisor";
+    const canOpenShift = can("shifts.open");
 
     const plantMetrics = useMemo(() => {
         const latestChecks = Object.values(latestByPlantId);
@@ -129,6 +135,15 @@ export function InterplantDashboardPage() {
         };
     }, [latestByMovementId, unitMovements, units.length]);
 
+    const plantProgress = getPercentage(
+        plantMetrics.checkedPlants,
+        plantMetrics.totalPlants,
+    );
+    const movementProgress = getPercentage(
+        unitMetrics.completedMovements,
+        unitMetrics.openMovements + unitMetrics.completedMovements,
+    );
+
     const isLoading =
         isLoadingShift ||
         Boolean(
@@ -164,15 +179,6 @@ export function InterplantDashboardPage() {
         }
     };
 
-    const handleCloseShift = async () => {
-        try {
-            await closeShift();
-            toast.success("Turno cerrado.");
-        } catch {
-            toast.error("No se pudo cerrar el turno.");
-        }
-    };
-
     return (
         <>
             <section>
@@ -199,7 +205,7 @@ export function InterplantDashboardPage() {
             {!shift && (
                 <div className="mt-5">
                     <OpenShiftPanel
-                        canManage={canManageShift}
+                        canManage={canOpenShift}
                         isSubmitting={isSubmitting}
                         onSubmit={handleOpenShift}
                     />
@@ -209,12 +215,40 @@ export function InterplantDashboardPage() {
             {shift && (
                 <>
                     <div className="mt-5">
-                        <ShiftStatusBanner
-                            shift={shift}
-                            canManage={canManageShift}
-                            onCloseClick={handleCloseShift}
-                        />
+                        <ShiftStatusBanner shift={shift} />
                     </div>
+
+                    <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 light:border-slate-200 light:bg-white">
+                        <h2 className="font-bold">Resumen visual del turno</h2>
+
+                        <div className="mt-4 space-y-4">
+                            <div>
+                                <div className="mb-2 flex items-center justify-between text-xs text-slate-400 light:text-slate-500">
+                                    <span>Plantas revisadas</span>
+                                    <span>{plantProgress}%</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-slate-900/60 light:bg-slate-100">
+                                    <div
+                                        className="h-2 rounded-full bg-cyan-400"
+                                        style={{ width: `${plantProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <div className="mb-2 flex items-center justify-between text-xs text-slate-400 light:text-slate-500">
+                                    <span>Movimientos completados</span>
+                                    <span>{movementProgress}%</span>
+                                </div>
+                                <div className="h-2 rounded-full bg-slate-900/60 light:bg-slate-100">
+                                    <div
+                                        className="h-2 rounded-full bg-emerald-400"
+                                        style={{ width: `${movementProgress}%` }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
                     <div className="mt-5">
                         <ShiftKpiGrid
@@ -238,39 +272,8 @@ export function InterplantDashboardPage() {
                             totalQuantity={unitMetrics.totalQuantity}
                         />
                     </div>
-
-                    <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 light:border-slate-200 light:bg-white">
-                        <h2 className="font-bold">Acciones rápidas</h2>
-
-                        <div className="mt-4 grid grid-cols-2 gap-3">
-                            <Link
-                                to={`/app/projects/${projectId}/plants`}
-                                className="rounded-3xl bg-cyan-500 px-4 py-4 text-center text-sm font-semibold text-slate-950"
-                            >
-                                Revisar plantas
-                            </Link>
-
-                            <Link
-                                to={`/app/projects/${projectId}/units`}
-                                className="rounded-3xl border border-white/10 bg-slate-950/40 px-4 py-4 text-center text-sm font-semibold text-white light:border-slate-200 light:bg-slate-50 light:text-slate-950"
-                            >
-                                Ver unidades
-                            </Link>
-                        </div>
-                    </section>
                 </>
             )}
-
-            <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 light:border-slate-200 light:bg-white">
-                <button
-                    type="button"
-                    onClick={signOut}
-                    className="flex w-full items-center justify-center gap-2 rounded-2xl bg-red-500 px-4 py-3 text-sm font-semibold text-white"
-                >
-                    <LogOut size={18} />
-                    Cerrar sesión
-                </button>
-            </section>
         </>
     );
 }
