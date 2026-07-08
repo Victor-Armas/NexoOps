@@ -32,7 +32,7 @@ export function UnitMovementsPage() {
     units,
     isLoading: isLoadingUnits,
     errorMessage: unitsErrorMessage,
-  } = useUnits();
+  } = useUnits(projectId);
 
   const {
     plants,
