@@ -1,6 +1,8 @@
+import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
 import { usePlants } from "../../plants/hooks/usePlants";
 import { useShift } from "../../shifts/hooks/useShift";
 import { useLatestUnitMovementsByShift } from "../../unit-movements/hooks/useLatestUnitMovementsByShift";
@@ -23,7 +25,7 @@ export function UnitsPage() {
         units,
         isLoading: isLoadingUnits,
         errorMessage: unitsErrorMessage,
-    } = useUnits();
+    } = useUnits(projectId);
 
     const {
         plants,
@@ -43,19 +45,31 @@ export function UnitsPage() {
         errorMessage: latestMovementsErrorMessage,
     } = useLatestUnitMovementsByShift(shift?.id);
 
+    const latestMovements = useMemo(
+        () => Object.values(latestByUnitId),
+        [latestByUnitId],
+    );
+
+    const {
+        latestByMovementId,
+        isLoading: isLoadingLatestEvents,
+        errorMessage: latestEventsErrorMessage,
+    } = useLatestUnitMovementEventsByMovementIds(latestMovements);
+
     const isLoading =
         isLoadingShift ||
         isLoadingUnits ||
         isLoadingPlants ||
         isLoadingMovementTypes ||
-        Boolean(shift && isLoadingLatestMovements);
+        Boolean(shift && (isLoadingLatestMovements || isLoadingLatestEvents));
 
     const errorMessage =
         shiftErrorMessage ||
         unitsErrorMessage ||
         plantsErrorMessage ||
         movementTypesErrorMessage ||
-        latestMovementsErrorMessage;
+        latestMovementsErrorMessage ||
+        latestEventsErrorMessage;
 
     if (isLoading) {
         return <LoadingScreen message="Cargando unidades..." />;
@@ -84,23 +98,31 @@ export function UnitsPage() {
             )}
 
             <section className="space-y-4">
-                {units.map((unit) => (
-                    <button
-                        key={unit.id}
-                        type="button"
-                        onClick={() =>
-                            navigate(`/app/projects/${projectId}/units/${unit.id}`)
-                        }
-                        className="block w-full text-left"
-                    >
-                        <UnitCard
-                            unit={unit}
-                            latestMovement={latestByUnitId[unit.id] ?? null}
-                            plants={plants}
-                            movementTypes={movementTypes}
-                        />
-                    </button>
-                ))}
+                {units.map((unit) => {
+                    const latestMovement = latestByUnitId[unit.id] ?? null;
+                    const latestEvent = latestMovement
+                        ? latestByMovementId[latestMovement.id] ?? null
+                        : null;
+
+                    return (
+                        <button
+                            key={unit.id}
+                            type="button"
+                            onClick={() =>
+                                navigate(`/app/projects/${projectId}/units/${unit.id}`)
+                            }
+                            className="block w-full text-left"
+                        >
+                            <UnitCard
+                                unit={unit}
+                                latestMovement={latestMovement}
+                                latestEvent={latestEvent}
+                                plants={plants}
+                                movementTypes={movementTypes}
+                            />
+                        </button>
+                    );
+                })}
             </section>
 
             {units.length === 0 && !errorMessage && (
