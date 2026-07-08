@@ -13,13 +13,13 @@ import {
 type UseClosingSummaryParams = {
   projectId: string | undefined;
   supervisorId: string | undefined;
-  roleKey: string | undefined;
+  canCloseShift: boolean;
 };
 
 export function useClosingSummary({
   projectId,
   supervisorId,
-  roleKey,
+  canCloseShift,
 }: UseClosingSummaryParams) {
   const {
     shift,
@@ -80,8 +80,6 @@ export function useClosingSummary({
       }),
     [latestByMovementId, unitMovements],
   );
-
-  const canCloseShift = roleKey === "admin" || roleKey === "supervisor";
 
   const canSubmitClose =
     Boolean(shift) &&
