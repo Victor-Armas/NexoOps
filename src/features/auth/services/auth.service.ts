@@ -3,6 +3,7 @@ import {
   profileRowSchema,
   roleRowSchema,
   type PermissionKey,
+  type RoleKey,
   type UserProfile,
 } from "../schemas/auth.schemas";
 
@@ -14,6 +15,39 @@ type PermissionRow = {
   key: PermissionKey;
 };
 
+const FALLBACK_PERMISSIONS_BY_ROLE: Record<RoleKey, PermissionKey[]> = {
+  admin: [
+    "admin.manage_catalogs",
+    "admin.manage_permissions",
+    "closing.create",
+    "plants.check.create",
+    "shifts.close",
+    "shifts.open",
+    "units.event.create",
+    "units.movement.cancel",
+    "units.movement.complete",
+    "units.movement.create",
+  ],
+  supervisor: [
+    "closing.create",
+    "plants.check.create",
+    "shifts.close",
+    "shifts.open",
+    "units.event.create",
+    "units.movement.cancel",
+    "units.movement.complete",
+    "units.movement.create",
+  ],
+  monitor: ["plants.check.create", "units.event.create"],
+  operator: [
+    "plants.check.create",
+    "units.event.create",
+    "units.movement.complete",
+    "units.movement.create",
+  ],
+  viewer: [],
+};
+
 export async function signInWithPassword(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password });
 }
@@ -22,36 +56,48 @@ export async function signOutUser() {
   await supabase.auth.signOut();
 }
 
-async function getRolePermissions(roleId: string): Promise<PermissionKey[]> {
-  const { data: rolePermissions, error: rolePermissionsError } = await supabase
-    .from("role_permissions")
-    .select("permission_id")
-    .eq("role_id", roleId)
-    .eq("is_enabled", true)
-    .returns<RolePermissionRow[]>();
+async function getRolePermissions(
+  roleId: string,
+  roleKey: RoleKey,
+): Promise<PermissionKey[]> {
+  try {
+    const { data: rolePermissions, error: rolePermissionsError } = await supabase
+      .from("role_permissions")
+      .select("permission_id")
+      .eq("role_id", roleId)
+      .eq("is_enabled", true)
+      .returns<RolePermissionRow[]>();
 
-  if (rolePermissionsError) {
-    throw rolePermissionsError;
+    if (rolePermissionsError) {
+      throw rolePermissionsError;
+    }
+
+    if (!rolePermissions || rolePermissions.length === 0) {
+      return FALLBACK_PERMISSIONS_BY_ROLE[roleKey];
+    }
+
+    const permissionIds = rolePermissions.map((item) => item.permission_id);
+
+    const { data: permissions, error: permissionsError } = await supabase
+      .from("permissions")
+      .select("key")
+      .in("id", permissionIds)
+      .eq("is_active", true)
+      .returns<PermissionRow[]>();
+
+    if (permissionsError) {
+      throw permissionsError;
+    }
+
+    if (!permissions || permissions.length === 0) {
+      return FALLBACK_PERMISSIONS_BY_ROLE[roleKey];
+    }
+
+    return permissions.map((permission) => permission.key);
+  } catch (error) {
+    console.error("No se pudieron cargar los permisos del rol.", error);
+    return FALLBACK_PERMISSIONS_BY_ROLE[roleKey];
   }
-
-  if (rolePermissions.length === 0) {
-    return [];
-  }
-
-  const permissionIds = rolePermissions.map((item) => item.permission_id);
-
-  const { data: permissions, error: permissionsError } = await supabase
-    .from("permissions")
-    .select("key")
-    .in("id", permissionIds)
-    .eq("is_active", true)
-    .returns<PermissionRow[]>();
-
-  if (permissionsError) {
-    throw permissionsError;
-  }
-
-  return permissions.map((permission) => permission.key);
 }
 
 export async function getUserProfile(
@@ -92,7 +138,7 @@ export async function getUserProfile(
   }
 
   const role = roleResult.data;
-  const permissions = await getRolePermissions(role.id);
+  const permissions = await getRolePermissions(role.id, role.key);
 
   return {
     id: profile.id,
