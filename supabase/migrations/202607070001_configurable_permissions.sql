@@ -17,8 +17,27 @@ create table if not exists public.role_permissions (
   primary key (role_id, permission_id)
 );
 
+alter table public.profiles enable row level security;
+alter table public.roles enable row level security;
 alter table public.permissions enable row level security;
 alter table public.role_permissions enable row level security;
+
+drop policy if exists "Users can read their own active profile" on public.profiles;
+create policy "Users can read their own active profile"
+on public.profiles
+for select
+to authenticated
+using (
+  id = auth.uid()
+  and is_active = true
+);
+
+drop policy if exists "Authenticated users can read active roles" on public.roles;
+create policy "Authenticated users can read active roles"
+on public.roles
+for select
+to authenticated
+using (is_active = true);
 
 drop policy if exists "Authenticated users can read active permissions" on public.permissions;
 create policy "Authenticated users can read active permissions"
