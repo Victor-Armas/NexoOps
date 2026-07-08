@@ -7,9 +7,11 @@ import {
 } from "../schemas/auth.schemas";
 
 type RolePermissionRow = {
-  permissions: {
-    key: PermissionKey;
-  } | null;
+  permission_id: string;
+};
+
+type PermissionRow = {
+  key: PermissionKey;
 };
 
 export async function signInWithPassword(email: string, password: string) {
@@ -21,23 +23,35 @@ export async function signOutUser() {
 }
 
 async function getRolePermissions(roleId: string): Promise<PermissionKey[]> {
-  const { data, error } = await supabase
+  const { data: rolePermissions, error: rolePermissionsError } = await supabase
     .from("role_permissions")
-    .select("permissions(key)")
+    .select("permission_id")
     .eq("role_id", roleId)
     .eq("is_enabled", true)
-    .eq("permissions.is_active", true)
     .returns<RolePermissionRow[]>();
 
-  if (error) {
-    throw error;
+  if (rolePermissionsError) {
+    throw rolePermissionsError;
   }
 
-  return data
-    .map((item) => item.permissions?.key)
-    .filter((permissionKey): permissionKey is PermissionKey =>
-      Boolean(permissionKey),
-    );
+  if (rolePermissions.length === 0) {
+    return [];
+  }
+
+  const permissionIds = rolePermissions.map((item) => item.permission_id);
+
+  const { data: permissions, error: permissionsError } = await supabase
+    .from("permissions")
+    .select("key")
+    .in("id", permissionIds)
+    .eq("is_active", true)
+    .returns<PermissionRow[]>();
+
+  if (permissionsError) {
+    throw permissionsError;
+  }
+
+  return permissions.map((permission) => permission.key);
 }
 
 export async function getUserProfile(
