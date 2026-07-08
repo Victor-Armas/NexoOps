@@ -8,6 +8,8 @@ export const roleKeySchema = z.enum([
   "viewer",
 ]);
 
+export const permissionKeySchema = z.string().min(1);
+
 export const profileRowSchema = z.object({
   id: z.uuid(),
   full_name: z.string().min(1),
@@ -32,6 +34,7 @@ export const userProfileSchema = z.object({
   fullName: z.string().min(1),
   email: z.email(),
   role: userRoleSchema,
+  permissions: z.array(permissionKeySchema),
 });
 
 export const loginSchema = z.object({
@@ -39,6 +42,7 @@ export const loginSchema = z.object({
   password: z.string().min(1, "La contraseña es requerida"),
 });
 
+export type PermissionKey = z.infer<typeof permissionKeySchema>;
 export type RoleKey = z.infer<typeof roleKeySchema>;
 export type UserRole = z.infer<typeof userRoleSchema>;
 export type UserProfile = z.infer<typeof userProfileSchema>;
