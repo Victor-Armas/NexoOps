@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Route } from "lucide-react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { Button } from "../../../../components/ui/Button";
 import type { Plant } from "../../plants/types/plant.types";
 import {
@@ -25,6 +25,7 @@ export function UnitMovementForm({
 }: UnitMovementFormProps) {
   const {
     register,
+    control,
     handleSubmit,
     reset,
     formState: { errors },
@@ -38,6 +39,15 @@ export function UnitMovementForm({
       notes: "",
     },
   });
+
+  const selectedOriginPlantId = useWatch({
+    control,
+    name: "originPlantId",
+  });
+
+  const destinationPlants = plants.filter(
+    (plant) => plant.id !== selectedOriginPlantId,
+  );
 
   const handleValidSubmit = async (values: UnitMovementFormValues) => {
     await onSubmit(values);
@@ -106,7 +116,7 @@ export function UnitMovementForm({
                 Sin destino
               </option>
 
-              {plants.map((plant) => (
+              {destinationPlants.map((plant) => (
                 <option
                   key={plant.id}
                   value={plant.id}
@@ -178,7 +188,7 @@ export function UnitMovementForm({
 
           <textarea
             rows={3}
-            placeholder="Ej. Esperando rampa, salida indicada, unidad posicionada..."
+            placeholder="Ej. Sin rampa disponible, esperando descarga, prioridad operativa..."
             className="w-full rounded-sm bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 light:border light:border-slate-200 light:bg-white light:text-slate-900"
             {...register("notes")}
           />
