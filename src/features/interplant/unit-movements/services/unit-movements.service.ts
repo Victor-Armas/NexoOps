@@ -11,6 +11,11 @@ import type {
 const UNIT_MOVEMENT_COLUMNS =
   "id, shift_id, unit_id, origin_plant_id, destination_plant_id, movement_type_id, quantity, status, notes, started_at, completed_at, created_by, created_at, updated_at";
 
+type ShiftContextParams = {
+  shiftId: string;
+  unitIds: string[];
+};
+
 function mapUnitMovement(row: UnitMovementRow): UnitMovement {
   return {
     id: row.id,
@@ -47,6 +52,48 @@ export async function getUnitMovementsByShift(
     .from("unit_movements")
     .select(UNIT_MOVEMENT_COLUMNS)
     .eq("shift_id", shiftId)
+    .order("started_at", { ascending: false })
+    .returns<UnitMovementRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(mapUnitMovement);
+}
+
+export async function getUnitMovementsByShiftContext({
+  shiftId,
+  unitIds,
+}: ShiftContextParams): Promise<UnitMovement[]> {
+  if (unitIds.length === 0) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from("unit_movements")
+    .select(UNIT_MOVEMENT_COLUMNS)
+    .in("unit_id", unitIds)
+    .or(`shift_id.eq.${shiftId},status.eq.open`)
+    .order("started_at", { ascending: false })
+    .returns<UnitMovementRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data.map(mapUnitMovement);
+}
+
+export async function getUnitMovementsByShiftAndUnit(params: {
+  shiftId: string;
+  unitId: string;
+}): Promise<UnitMovement[]> {
+  const { data, error } = await supabase
+    .from("unit_movements")
+    .select(UNIT_MOVEMENT_COLUMNS)
+    .eq("unit_id", params.unitId)
+    .or(`shift_id.eq.${params.shiftId},status.eq.open`)
     .order("started_at", { ascending: false })
     .returns<UnitMovementRow[]>();
 
@@ -141,30 +188,26 @@ export async function getMovementTypes(): Promise<MovementType[]> {
 export function subscribeToUnitMovementsChanges(
   shiftId: string,
   onChange: () => void,
+  includeOpenCarryover = false,
 ) {
   return subscribeToTableChanges({
-    channelName: `unit-movements-${shiftId}`,
+    channelName: includeOpenCarryover
+      ? `unit-movements-context-${shiftId}`
+      : `unit-movements-${shiftId}`,
     table: "unit_movements",
-    filter: `shift_id=eq.${shiftId}`,
+    filter: includeOpenCarryover ? undefined : `shift_id=eq.${shiftId}`,
     onChange,
   });
 }
 
-export async function getUnitMovementsByShiftAndUnit(params: {
-  shiftId: string;
-  unitId: string;
-}): Promise<UnitMovement[]> {
-  const { data, error } = await supabase
-    .from("unit_movements")
-    .select(UNIT_MOVEMENT_COLUMNS)
-    .eq("shift_id", params.shiftId)
-    .eq("unit_id", params.unitId)
-    .order("started_at", { ascending: false })
-    .returns<UnitMovementRow[]>();
-
-  if (error) {
-    throw error;
-  }
-
-  return data.map(mapUnitMovement);
+export function subscribeToUnitMovementChangesByUnit(
+  unitId: string,
+  onChange: () => void,
+) {
+  return subscribeToTableChanges({
+    channelName: `unit-movements-unit-${unitId}`,
+    table: "unit_movements",
+    filter: `unit_id=eq.${unitId}`,
+    onChange,
+  });
 }
