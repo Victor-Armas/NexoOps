@@ -19,7 +19,7 @@ export function UnitMovementsPage() {
     unitId: string;
   }>();
 
-  const { profile } = useAuth();
+  const { profile, can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -60,10 +60,9 @@ export function UnitMovementsPage() {
     [units, unitId],
   );
 
-  const canRegisterMovement =
-    profile?.role.key === "admin" ||
-    profile?.role.key === "supervisor" ||
-    profile?.role.key === "operator";
+  const canRegisterMovement = can("units.movement.create");
+  const canCompleteMovement = can("units.movement.complete");
+  const canCancelMovement = can("units.movement.cancel");
 
   const isLoading =
     isLoadingShift ||
@@ -111,6 +110,11 @@ export function UnitMovementsPage() {
   };
 
   const handleComplete = async (movementId: string) => {
+    if (!canCompleteMovement) {
+      toast.error("No tienes permiso para completar movimientos.");
+      return;
+    }
+
     try {
       await markAsCompleted(movementId);
       toast.success("Movimiento completado.");
@@ -120,6 +124,11 @@ export function UnitMovementsPage() {
   };
 
   const handleCancel = async (movementId: string) => {
+    if (!canCancelMovement) {
+      toast.error("No tienes permiso para cancelar movimientos.");
+      return;
+    }
+
     try {
       await markAsCancelled(movementId);
       toast.success("Movimiento cancelado.");
