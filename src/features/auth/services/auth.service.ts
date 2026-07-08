@@ -2,8 +2,15 @@ import { supabase } from "../../../lib/supabase/client";
 import {
   profileRowSchema,
   roleRowSchema,
+  type PermissionKey,
   type UserProfile,
 } from "../schemas/auth.schemas";
+
+type RolePermissionRow = {
+  permissions: {
+    key: PermissionKey;
+  } | null;
+};
 
 export async function signInWithPassword(email: string, password: string) {
   return supabase.auth.signInWithPassword({ email, password });
@@ -11,6 +18,26 @@ export async function signInWithPassword(email: string, password: string) {
 
 export async function signOutUser() {
   await supabase.auth.signOut();
+}
+
+async function getRolePermissions(roleId: string): Promise<PermissionKey[]> {
+  const { data, error } = await supabase
+    .from("role_permissions")
+    .select("permissions(key)")
+    .eq("role_id", roleId)
+    .eq("is_enabled", true)
+    .eq("permissions.is_active", true)
+    .returns<RolePermissionRow[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data
+    .map((item) => item.permissions?.key)
+    .filter((permissionKey): permissionKey is PermissionKey =>
+      Boolean(permissionKey),
+    );
 }
 
 export async function getUserProfile(
@@ -51,6 +78,7 @@ export async function getUserProfile(
   }
 
   const role = roleResult.data;
+  const permissions = await getRolePermissions(role.id);
 
   return {
     id: profile.id,
@@ -61,5 +89,6 @@ export async function getUserProfile(
       key: role.key,
       name: role.name,
     },
+    permissions,
   };
 }
