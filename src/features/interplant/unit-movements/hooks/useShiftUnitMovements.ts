@@ -1,14 +1,40 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   getUnitMovementsByShift,
+  getUnitMovementsByShiftContext,
   subscribeToUnitMovementsChanges,
 } from "../services/unit-movements.service";
 import type { UnitMovement } from "../types/unit-movement.types";
 
-export function useShiftUnitMovements(shiftId: string | undefined) {
+function getUnitIdsKey(unitIds: string[] | undefined) {
+  return unitIds?.join(",") ?? "";
+}
+
+export function useShiftUnitMovements(
+  shiftId: string | undefined,
+  unitIds?: string[],
+) {
+  const unitIdsKey = useMemo(() => getUnitIdsKey(unitIds), [unitIds]);
+  const hasContextUnits = Boolean(unitIds && unitIds.length > 0);
+
   const [unitMovements, setUnitMovements] = useState<UnitMovement[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(shiftId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const loadUnitMovements = useCallback(async () => {
+    if (!shiftId) {
+      return [];
+    }
+
+    if (unitIds) {
+      return getUnitMovementsByShiftContext({
+        shiftId,
+        unitIds,
+      });
+    }
+
+    return getUnitMovementsByShift(shiftId);
+  }, [shiftId, unitIdsKey]);
 
   useEffect(() => {
     if (!shiftId) {
@@ -17,7 +43,7 @@ export function useShiftUnitMovements(shiftId: string | undefined) {
 
     let isMounted = true;
 
-    void getUnitMovementsByShift(shiftId)
+    void loadUnitMovements()
       .then((data) => {
         if (!isMounted) {
           return;
@@ -44,7 +70,7 @@ export function useShiftUnitMovements(shiftId: string | undefined) {
     return () => {
       isMounted = false;
     };
-  }, [shiftId]);
+  }, [shiftId, loadUnitMovements]);
 
   const refetch = useCallback(async () => {
     if (!shiftId) {
@@ -57,7 +83,7 @@ export function useShiftUnitMovements(shiftId: string | undefined) {
       setIsLoading(true);
       setErrorMessage(null);
 
-      const data = await getUnitMovementsByShift(shiftId);
+      const data = await loadUnitMovements();
 
       setUnitMovements(data);
     } catch {
@@ -65,21 +91,25 @@ export function useShiftUnitMovements(shiftId: string | undefined) {
     } finally {
       setIsLoading(false);
     }
-  }, [shiftId]);
+  }, [shiftId, loadUnitMovements]);
 
   useEffect(() => {
     if (!shiftId) {
       return;
     }
 
-    const channel = subscribeToUnitMovementsChanges(shiftId, () => {
-      void refetch();
-    });
+    const channel = subscribeToUnitMovementsChanges(
+      shiftId,
+      () => {
+        void refetch();
+      },
+      hasContextUnits,
+    );
 
     return () => {
       void channel.unsubscribe();
     };
-  }, [shiftId, refetch]);
+  }, [shiftId, hasContextUnits, refetch]);
 
   return {
     unitMovements,
