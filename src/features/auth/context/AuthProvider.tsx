@@ -17,20 +17,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let isMounted = true;
+    let syncId = 0;
 
     async function syncSession(currentSession: Session | null) {
-      setSession(currentSession);
+      const currentSyncId = syncId + 1;
+      syncId = currentSyncId;
+
+      if (isMounted) {
+        setIsLoading(true);
+        setSession(currentSession);
+      }
 
       try {
-        if (currentSession?.user) {
-          setProfile(await getUserProfile(currentSession.user.id));
-        } else {
+        if (!currentSession?.user) {
+          if (isMounted && currentSyncId === syncId) {
+            setProfile(null);
+          }
+
+          return;
+        }
+
+        const nextProfile = await getUserProfile(currentSession.user.id);
+
+        if (isMounted && currentSyncId === syncId) {
+          setProfile(nextProfile);
+        }
+      } catch (error) {
+        console.error("No se pudo sincronizar el perfil del usuario.", error);
+
+        if (isMounted && currentSyncId === syncId) {
           setProfile(null);
         }
-      } catch {
-        setProfile(null);
       } finally {
-        if (isMounted) {
+        if (isMounted && currentSyncId === syncId) {
           setIsLoading(false);
         }
       }
