@@ -19,3 +19,8 @@ export type UnitRow = {
   created_at: string;
   updated_at: string;
 };
+
+export type ProjectUnitRow = {
+  unit_id: string;
+  sort_order: number;
+};
