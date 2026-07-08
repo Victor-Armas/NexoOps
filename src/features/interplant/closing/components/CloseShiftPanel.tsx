@@ -28,7 +28,7 @@ export function CloseShiftPanel({
                 <div>
                     <h3 className="font-bold">Cerrar turno</h3>
                     <p className="text-sm text-slate-400 light:text-slate-500">
-                        Al cerrar, este turno dejará de aceptar nuevos registros.
+                        El cierre requiere confirmación y guardará la evidencia del turno.
                     </p>
                 </div>
             </div>
@@ -41,7 +41,7 @@ export function CloseShiftPanel({
 
             {hasOpenMovements && (
                 <p className="mb-4 rounded-3xl bg-yellow-400/10 px-4 py-3 text-sm text-yellow-200 light:bg-yellow-50 light:text-yellow-700">
-                    Completa o cancela los movimientos abiertos antes de cerrar.
+                    Hay movimientos abiertos. Podrás cerrar, pero quedarán registrados como pendientes en la evidencia.
                 </p>
             )}
 
@@ -54,7 +54,7 @@ export function CloseShiftPanel({
                     rows={4}
                     value={closingNotes}
                     onChange={(event) => onClosingNotesChange(event.target.value)}
-                    placeholder="Ej. Turno cerrado sin pendientes, incidencias, observaciones de patio..."
+                    placeholder="Ej. Unidades pendientes, incidencias, observaciones de patio..."
                     className="w-full rounded-3xl bg-slate-950/40 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 light:border light:border-slate-200 light:bg-white light:text-slate-900"
                 />
             </label>
