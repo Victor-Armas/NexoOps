@@ -35,11 +35,17 @@ export function useLatestUnitMovementEventsByMovementIds(
 
   useEffect(() => {
     if (!movementIdsKey) {
+      setLatestByMovementId({});
+      setIsLoading(false);
+      setErrorMessage(null);
       return;
     }
 
     let isMounted = true;
     const movementIds = movementIdsKey.split(",");
+
+    setIsLoading(true);
+    setErrorMessage(null);
 
     void getUnitMovementEventsByMovementIds(movementIds)
       .then((events) => {
@@ -48,7 +54,6 @@ export function useLatestUnitMovementEventsByMovementIds(
         }
 
         setLatestByMovementId(mapLatestEventsByMovementId(events));
-        setErrorMessage(null);
       })
       .catch(() => {
         if (!isMounted) {
@@ -74,6 +79,7 @@ export function useLatestUnitMovementEventsByMovementIds(
     if (!movementIdsKey) {
       setLatestByMovementId({});
       setIsLoading(false);
+      setErrorMessage(null);
       return;
     }
 
