@@ -1,24 +1,28 @@
 import { useEffect, useState } from "react";
-import { getUnits } from "../services/units.service";
+import { getUnitsByProject } from "../services/units.service";
 import type { Unit } from "../types/unit.types";
 
-export function useUnits() {
+export function useUnits(projectId: string | undefined) {
   const [units, setUnits] = useState<Unit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(Boolean(projectId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!projectId) {
+      return;
+    }
+
     let isMounted = true;
 
     async function loadUnits() {
       try {
         setIsLoading(true);
+        setErrorMessage(null);
 
-        const unitsData = await getUnits();
+        const unitsData = await getUnitsByProject(projectId);
 
         if (isMounted) {
           setUnits(unitsData);
-          setErrorMessage(null);
         }
       } catch {
         if (isMounted) {
@@ -31,12 +35,20 @@ export function useUnits() {
       }
     }
 
-    loadUnits();
+    void loadUnits();
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [projectId]);
+
+  if (!projectId) {
+    return {
+      units: [],
+      isLoading: false,
+      errorMessage: "Proyecto no válido.",
+    };
+  }
 
   return {
     units,
