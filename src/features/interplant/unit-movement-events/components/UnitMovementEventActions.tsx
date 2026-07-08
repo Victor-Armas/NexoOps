@@ -7,10 +7,6 @@ type UnitMovementEventAction = {
 
 const UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
     {
-        eventType: "departure_requested",
-        label: "Salida indicada",
-    },
-    {
         eventType: "in_transit",
         label: "En camino",
     },
@@ -20,7 +16,7 @@ const UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
     },
     {
         eventType: "positioned",
-        label: "Posicionado",
+        label: "En rampa",
     },
     {
         eventType: "loading",
@@ -32,11 +28,7 @@ const UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
     },
     {
         eventType: "released",
-        label: "Retirado",
-    },
-    {
-        eventType: "meal",
-        label: "Comida",
+        label: "Saliendo de planta",
     },
     {
         eventType: "driver_change",
