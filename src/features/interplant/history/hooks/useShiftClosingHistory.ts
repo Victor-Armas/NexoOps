@@ -58,8 +58,46 @@ export function useShiftClosingHistory(projectId: string | undefined) {
     }, [projectId, filters]);
 
     useEffect(() => {
-        void loadHistory();
-    }, [loadHistory]);
+        let isMounted = true;
+
+        void Promise.resolve().then(async () => {
+            if (!projectId) {
+                if (isMounted) {
+                    setItems([]);
+                    setIsLoading(false);
+                    setErrorMessage("Proyecto no válido.");
+                }
+
+                return;
+            }
+
+            try {
+                setIsLoading(true);
+                setErrorMessage(null);
+
+                const data = await getShiftClosingHistory({
+                    projectId,
+                    filters,
+                });
+
+                if (isMounted) {
+                    setItems(data);
+                }
+            } catch {
+                if (isMounted) {
+                    setErrorMessage("No se pudo cargar el historial de cierres.");
+                }
+            } finally {
+                if (isMounted) {
+                    setIsLoading(false);
+                }
+            }
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [projectId, filters]);
 
     return {
         filters,
