@@ -13,6 +13,10 @@ export type ShiftClosing = {
   movementCancelledCount: number;
   movementOpenCount: number;
   movementQuantityTotal: number;
+  incidentTotalCount: number;
+  incidentOpenCount: number;
+  incidentResolvedCount: number;
+  incidentHighSeverityCount: number;
   notes: string | null;
   closedAt: string;
   createdAt: string;
@@ -34,6 +38,10 @@ export type ShiftClosingRow = {
   movement_cancelled_count: number;
   movement_open_count: number;
   movement_quantity_total: number;
+  incident_total_count: number;
+  incident_open_count: number;
+  incident_resolved_count: number;
+  incident_high_severity_count: number;
   notes: string | null;
   closed_at: string;
   created_at: string;
@@ -53,5 +61,9 @@ export type CreateShiftClosingPayload = {
   movementCancelledCount: number;
   movementOpenCount: number;
   movementQuantityTotal: number;
+  incidentTotalCount: number;
+  incidentOpenCount: number;
+  incidentResolvedCount: number;
+  incidentHighSeverityCount: number;
   notes?: string;
 };
