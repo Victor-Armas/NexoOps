@@ -39,3 +39,11 @@ export type SaveAdminUserSettingPayload = {
   roleId: string;
   isActive: boolean;
 };
+
+export type CreateAdminUserPayload = {
+  fullName: string;
+  email: string;
+  password: string;
+  roleId: string;
+  isActive: boolean;
+};
