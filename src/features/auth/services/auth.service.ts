@@ -68,13 +68,9 @@ export async function updateCurrentUserPassword(password: string) {
     throw new Error("No se pudo actualizar la contraseña.");
   }
 
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .update({
-      must_change_password: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", data.user.id);
+  const { error: profileError } = await supabase.rpc(
+    "complete_password_change",
+  );
 
   if (profileError) {
     throw profileError;
