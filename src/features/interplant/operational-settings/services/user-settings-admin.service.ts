@@ -4,6 +4,7 @@ import type {
   AdminRoleOptionRow,
   AdminUserSetting,
   AdminUserSettingRow,
+  CreateAdminUserPayload,
   SaveAdminUserSettingPayload,
 } from "../types/user-settings-admin.types";
 
@@ -51,6 +52,7 @@ export async function getAdminRoleOptions(): Promise<AdminRoleOption[]> {
   const { data, error } = await supabase
     .from("roles")
     .select(ADMIN_ROLE_COLUMNS)
+    .eq("is_active", true)
     .order("name", { ascending: true })
     .returns<AdminRoleOptionRow[]>();
 
@@ -59,6 +61,33 @@ export async function getAdminRoleOptions(): Promise<AdminRoleOption[]> {
   }
 
   return data.map(mapAdminRoleOption);
+}
+
+export async function createAdminUser(
+  payload: CreateAdminUserPayload,
+): Promise<AdminUserSetting> {
+  const { data, error } = await supabase.functions.invoke<AdminUserSetting>(
+    "create-user",
+    {
+      body: {
+        fullName: payload.fullName.trim(),
+        email: payload.email.trim().toLowerCase(),
+        password: payload.password,
+        roleId: payload.roleId,
+        isActive: payload.isActive,
+      },
+    },
+  );
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data) {
+    throw new Error("La función no devolvió el usuario creado.");
+  }
+
+  return data;
 }
 
 export async function saveAdminUserSetting(
@@ -73,7 +102,8 @@ export async function saveAdminUserSetting(
     })
     .eq("id", payload.userId)
     .select(ADMIN_USER_COLUMNS)
-    .single<AdminUserSettingRow>();
+    .returns<AdminUserSettingRow[]>()
+    .single();
 
   if (error) {
     throw error;
