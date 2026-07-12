@@ -47,15 +47,8 @@ Deno.serve(async (request) => {
   }
 
   const userClient = createClient(supabaseUrl, anonKey, {
-    global: {
-      headers: {
-        Authorization: authorization,
-      },
-    },
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+    global: { headers: { Authorization: authorization } },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const {
@@ -68,10 +61,7 @@ Deno.serve(async (request) => {
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 
   const { data: callerProfile, error: callerProfileError } = await adminClient
@@ -143,9 +133,7 @@ Deno.serve(async (request) => {
       email,
       password,
       email_confirm: true,
-      user_metadata: {
-        full_name: fullName,
-      },
+      user_metadata: { full_name: fullName },
     });
 
   if (createAuthError || !authData.user) {
@@ -167,6 +155,7 @@ Deno.serve(async (request) => {
         email,
         role_id: roleId,
         is_active: isActive,
+        must_change_password: true,
         updated_at: now,
       },
       { onConflict: "id" },
@@ -178,7 +167,6 @@ Deno.serve(async (request) => {
 
   if (profileError || !profile) {
     await adminClient.auth.admin.deleteUser(authData.user.id);
-
     return jsonResponse(
       { message: "No se pudo crear el perfil operativo del usuario." },
       500,
