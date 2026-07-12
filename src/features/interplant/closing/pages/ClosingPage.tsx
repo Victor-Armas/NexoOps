@@ -5,6 +5,7 @@ import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { CloseShiftConfirmationModal } from "../components/CloseShiftConfirmationModal";
 import { CloseShiftPanel } from "../components/CloseShiftPanel";
+import { ClosingIncidentSummary } from "../components/ClosingIncidentSummary";
 import { ClosingOpenMovementsList } from "../components/ClosingOpenMovementsList";
 import { ClosingPlantSummary } from "../components/ClosingPlantSummary";
 import { ClosingShiftSummary } from "../components/ClosingShiftSummary";
@@ -14,146 +15,154 @@ import { useClosingSummary } from "../hooks/useClosingSummary";
 import { upsertShiftClosing } from "../services/shift-closings.service";
 
 export function ClosingPage() {
-    const { projectId } = useParams<{ projectId: string }>();
-    const { profile, can } = useAuth();
-    const [isClosing, setIsClosing] = useState(false);
-    const [closingNotes, setClosingNotes] = useState("");
-    const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const { projectId } = useParams<{ projectId: string }>();
+  const { profile, can } = useAuth();
+  const [isClosing, setIsClosing] = useState(false);
+  const [closingNotes, setClosingNotes] = useState("");
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
 
-    const closingSummary = useClosingSummary({
-        projectId,
-        supervisorId: profile?.id,
-        canCloseShift: can("closing.create"),
-    });
+  const closingSummary = useClosingSummary({
+    projectId,
+    supervisorId: profile?.id,
+    canCloseShift: can("closing.create"),
+  });
 
-    if (closingSummary.isLoading) {
-        return <LoadingScreen message="Cargando cierre..." />;
+  if (closingSummary.isLoading) {
+    return <LoadingScreen message="Cargando cierre..." />;
+  }
+
+  const handleRequestCloseShift = () => {
+    if (!closingSummary.shift) {
+      toast.error("No hay turno abierto.");
+      return;
     }
 
-    const handleRequestCloseShift = () => {
-        if (!closingSummary.shift) {
-            toast.error("No hay turno abierto.");
-            return;
-        }
+    if (!closingSummary.canSubmitClose) {
+      toast.error("No tienes permiso para cerrar turno.");
+      return;
+    }
 
-        if (!closingSummary.canSubmitClose) {
-            toast.error("No tienes permiso para cerrar turno.");
-            return;
-        }
+    setIsConfirmModalOpen(true);
+  };
 
-        setIsConfirmModalOpen(true);
-    };
+  const handleConfirmCloseShift = async () => {
+    if (!closingSummary.shift) {
+      toast.error("No hay turno abierto.");
+      return;
+    }
 
-    const handleConfirmCloseShift = async () => {
-        if (!closingSummary.shift) {
-            toast.error("No hay turno abierto.");
-            return;
-        }
+    try {
+      setIsClosing(true);
 
-        try {
-            setIsClosing(true);
+      await upsertShiftClosing({
+        shiftId: closingSummary.shift.id,
 
-            await upsertShiftClosing({
-                shiftId: closingSummary.shift.id,
+        plantCheckedCount: closingSummary.plantMetrics.checkedPlants,
+        plantTotalCount: closingSummary.plantMetrics.totalPlants,
+        fullCount: closingSummary.plantMetrics.fullCount,
+        emptyCount: closingSummary.plantMetrics.emptyCount,
+        pendingCount: closingSummary.plantMetrics.pendingCount,
+        highRiskPlantCount: closingSummary.plantMetrics.highRiskPlants,
 
-                plantCheckedCount: closingSummary.plantMetrics.checkedPlants,
-                plantTotalCount: closingSummary.plantMetrics.totalPlants,
-                fullCount: closingSummary.plantMetrics.fullCount,
-                emptyCount: closingSummary.plantMetrics.emptyCount,
-                pendingCount: closingSummary.plantMetrics.pendingCount,
-                highRiskPlantCount: closingSummary.plantMetrics.highRiskPlants,
+        movementTotalCount: closingSummary.movementMetrics.totalMovements,
+        movementCompletedCount:
+          closingSummary.movementMetrics.completedMovements.length,
+        movementCancelledCount:
+          closingSummary.movementMetrics.cancelledMovements.length,
+        movementOpenCount: closingSummary.movementMetrics.openMovements.length,
+        movementQuantityTotal: closingSummary.movementMetrics.totalQuantity,
 
-                movementTotalCount: closingSummary.movementMetrics.totalMovements,
-                movementCompletedCount:
-                    closingSummary.movementMetrics.completedMovements.length,
-                movementCancelledCount:
-                    closingSummary.movementMetrics.cancelledMovements.length,
-                movementOpenCount: closingSummary.movementMetrics.openMovements.length,
-                movementQuantityTotal: closingSummary.movementMetrics.totalQuantity,
+        incidentTotalCount: closingSummary.incidentMetrics.totalIncidents,
+        incidentOpenCount: closingSummary.incidentMetrics.openIncidents,
+        incidentResolvedCount: closingSummary.incidentMetrics.resolvedIncidents,
+        incidentHighSeverityCount:
+          closingSummary.incidentMetrics.highSeverityIncidents,
 
-                notes: closingNotes,
-            });
+        notes: closingNotes,
+      });
 
-            await closingSummary.closeShift();
-            setIsConfirmModalOpen(false);
+      await closingSummary.closeShift();
+      setIsConfirmModalOpen(false);
 
-            toast.success("Turno cerrado y evidencia guardada.");
-        } catch {
-            toast.error("No se pudo cerrar el turno.");
-        } finally {
-            setIsClosing(false);
-        }
-    };
+      toast.success("Turno cerrado y evidencia guardada.");
+    } catch {
+      toast.error("No se pudo cerrar el turno.");
+    } finally {
+      setIsClosing(false);
+    }
+  };
 
-    return (
+  return (
+    <>
+      <section className="mb-5">
+        <h2 className="text-2xl font-bold">Cierre de turno</h2>
+
+        <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+          Revisa plantas, movimientos, incidencias y pendientes antes de cerrar.
+        </p>
+      </section>
+
+      {!closingSummary.shift && (
+        <section className="rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
+          No hay turno abierto para cerrar.
+        </section>
+      )}
+
+      {closingSummary.errorMessage && (
+        <section className="mb-5 rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
+          {closingSummary.errorMessage}
+        </section>
+      )}
+
+      {closingSummary.shift && (
         <>
-            <section className="mb-5">
-                <h2 className="text-2xl font-bold">Cierre de turno</h2>
+          <ClosingShiftSummary shift={closingSummary.shift} />
 
-                <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-                    Revisa plantas, movimientos y pendientes antes de cerrar.
-                </p>
-            </section>
+          <ClosingValidationSummary
+            plantMetrics={closingSummary.plantMetrics}
+            movementMetrics={closingSummary.movementMetrics}
+          />
 
-            {!closingSummary.shift && (
-                <section className="rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
-                    No hay turno abierto para cerrar.
-                </section>
-            )}
+          <ClosingPlantSummary plantMetrics={closingSummary.plantMetrics} />
 
-            {closingSummary.errorMessage && (
-                <section className="mb-5 rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
-                    {closingSummary.errorMessage}
-                </section>
-            )}
+          <ClosingUnitSummary movementMetrics={closingSummary.movementMetrics} />
 
-            {closingSummary.shift && (
-                <>
-                    <ClosingShiftSummary shift={closingSummary.shift} />
+          <ClosingIncidentSummary
+            incidentMetrics={closingSummary.incidentMetrics}
+          />
 
-                    <ClosingValidationSummary
-                        plantMetrics={closingSummary.plantMetrics}
-                        movementMetrics={closingSummary.movementMetrics}
-                    />
+          <ClosingOpenMovementsList
+            openMovements={closingSummary.movementMetrics.openMovements}
+            units={closingSummary.units}
+            plants={closingSummary.plants}
+            latestByMovementId={closingSummary.latestByMovementId}
+          />
 
-                    <ClosingPlantSummary plantMetrics={closingSummary.plantMetrics} />
+          <CloseShiftPanel
+            canCloseShift={closingSummary.canCloseShift}
+            hasOpenMovements={
+              closingSummary.movementMetrics.openMovements.length > 0
+            }
+            canSubmitClose={closingSummary.canSubmitClose}
+            isClosing={isClosing}
+            closingNotes={closingNotes}
+            onClosingNotesChange={setClosingNotes}
+            onCloseShift={handleRequestCloseShift}
+          />
 
-                    <ClosingUnitSummary
-                        movementMetrics={closingSummary.movementMetrics}
-                    />
-
-                    <ClosingOpenMovementsList
-                        openMovements={closingSummary.movementMetrics.openMovements}
-                        units={closingSummary.units}
-                        plants={closingSummary.plants}
-                        latestByMovementId={closingSummary.latestByMovementId}
-                    />
-
-                    <CloseShiftPanel
-                        canCloseShift={closingSummary.canCloseShift}
-                        hasOpenMovements={
-                            closingSummary.movementMetrics.openMovements.length > 0
-                        }
-                        canSubmitClose={closingSummary.canSubmitClose}
-                        isClosing={isClosing}
-                        closingNotes={closingNotes}
-                        onClosingNotesChange={setClosingNotes}
-                        onCloseShift={handleRequestCloseShift}
-                    />
-
-                    {isConfirmModalOpen && (
-                        <CloseShiftConfirmationModal
-                            openMovements={closingSummary.movementMetrics.openMovements}
-                            units={closingSummary.units}
-                            plants={closingSummary.plants}
-                            latestByMovementId={closingSummary.latestByMovementId}
-                            isClosing={isClosing}
-                            onCancel={() => setIsConfirmModalOpen(false)}
-                            onConfirm={() => void handleConfirmCloseShift()}
-                        />
-                    )}
-                </>
-            )}
+          {isConfirmModalOpen && (
+            <CloseShiftConfirmationModal
+              openMovements={closingSummary.movementMetrics.openMovements}
+              units={closingSummary.units}
+              plants={closingSummary.plants}
+              latestByMovementId={closingSummary.latestByMovementId}
+              isClosing={isClosing}
+              onCancel={() => setIsConfirmModalOpen(false)}
+              onConfirm={() => void handleConfirmCloseShift()}
+            />
+          )}
         </>
-    );
+      )}
+    </>
+  );
 }
