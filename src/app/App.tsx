@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AuthProvider } from "../features/auth/context/AuthProvider";
+import { ChangePasswordPage } from "../features/auth/pages/ChangePasswordPage";
 import { LoginPage } from "../features/auth/pages/LoginPage";
 import { ProtectedRoute } from "../features/auth/routes/ProtectedRoute";
 import { PublicRoute } from "../features/auth/routes/PublicRoute";
@@ -32,6 +33,8 @@ export function App() {
           <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
           <Route element={<ProtectedRoute />}>
+            <Route path="/change-password" element={<ChangePasswordPage />} />
+
             <Route path="/app" element={<AppShell />}>
               <Route index element={<ProjectMenuPage />} />
             </Route>
