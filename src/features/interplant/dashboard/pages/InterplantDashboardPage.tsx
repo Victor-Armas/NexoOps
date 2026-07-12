@@ -4,6 +4,8 @@ import { useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import { useIncidents } from "../../incidents/hooks/useIncidents";
+import { getIncidentMetrics } from "../../incidents/utils/incident-metrics";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
 import { usePlants } from "../../plants/hooks/usePlants";
@@ -14,6 +16,7 @@ import { useShift } from "../../shifts/hooks/useShift";
 import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
 import { useShiftUnitMovements } from "../../unit-movements/hooks/useShiftUnitMovements";
 import { useUnits } from "../../units/hooks/useUnits";
+import { IncidentKpiGrid } from "../components/IncidentKpiGrid";
 import { ShiftKpiGrid } from "../components/ShiftKpiGrid";
 import { UnitMovementKpiGrid } from "../components/UnitMovementKpiGrid";
 
@@ -68,6 +71,12 @@ export function InterplantDashboardPage() {
     isLoading: isLoadingLatestEvents,
     errorMessage: latestEventsErrorMessage,
   } = useLatestUnitMovementEventsByMovementIds(unitMovements);
+
+  const {
+    incidents,
+    isLoading: isLoadingIncidents,
+    errorMessage: incidentsErrorMessage,
+  } = useIncidents(shift?.id);
 
   const canOpenShift = can("shifts.open");
 
@@ -140,6 +149,11 @@ export function InterplantDashboardPage() {
     };
   }, [latestByMovementId, unitMovements, units.length]);
 
+  const incidentMetrics = useMemo(
+    () => getIncidentMetrics(incidents),
+    [incidents],
+  );
+
   const plantProgress = getPercentage(
     plantMetrics.checkedPlants,
     plantMetrics.totalPlants,
@@ -157,7 +171,8 @@ export function InterplantDashboardPage() {
           isLoadingUnits ||
           isLoadingLatestChecks ||
           isLoadingUnitMovements ||
-          isLoadingLatestEvents),
+          isLoadingLatestEvents ||
+          isLoadingIncidents),
     );
 
   const errorMessage =
@@ -166,7 +181,8 @@ export function InterplantDashboardPage() {
     unitsErrorMessage ||
     latestChecksErrorMessage ||
     unitMovementsErrorMessage ||
-    latestEventsErrorMessage;
+    latestEventsErrorMessage ||
+    incidentsErrorMessage;
 
   if (isLoading) {
     return <LoadingScreen message="Cargando turno..." />;
@@ -278,6 +294,15 @@ export function InterplantDashboardPage() {
               waitingDockUnits={unitMetrics.waitingDockUnits}
               loadingOrUnloadingUnits={unitMetrics.loadingOrUnloadingUnits}
               totalQuantity={unitMetrics.totalQuantity}
+            />
+          </div>
+
+          <div className="mt-5">
+            <IncidentKpiGrid
+              totalIncidents={incidentMetrics.totalIncidents}
+              openIncidents={incidentMetrics.openIncidents}
+              resolvedIncidents={incidentMetrics.resolvedIncidents}
+              highSeverityIncidents={incidentMetrics.highSeverityIncidents}
             />
           </div>
         </>
