@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useIncidents } from "../../incidents/hooks/useIncidents";
+import { getIncidentMetrics } from "../../incidents/utils/incident-metrics";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
 import { usePlants } from "../../plants/hooks/usePlants";
@@ -60,6 +62,12 @@ export function useClosingSummary({
     errorMessage: latestEventsErrorMessage,
   } = useLatestUnitMovementEventsByMovementIds(unitMovements);
 
+  const {
+    incidents,
+    isLoading: isLoadingIncidents,
+    errorMessage: incidentsErrorMessage,
+  } = useIncidents(shift?.id);
+
   const latestPlantChecks = useMemo(
     () => Object.values(latestByPlantId),
     [latestByPlantId],
@@ -83,6 +91,11 @@ export function useClosingSummary({
     [latestByMovementId, unitMovements],
   );
 
+  const incidentMetrics = useMemo(
+    () => getIncidentMetrics(incidents),
+    [incidents],
+  );
+
   const canSubmitClose = Boolean(shift) && canCloseShift;
 
   const isLoading =
@@ -93,7 +106,8 @@ export function useClosingSummary({
           isLoadingUnits ||
           isLoadingPlantChecks ||
           isLoadingUnitMovements ||
-          isLoadingLatestEvents),
+          isLoadingLatestEvents ||
+          isLoadingIncidents),
     );
 
   const errorMessage =
@@ -102,7 +116,8 @@ export function useClosingSummary({
     unitsErrorMessage ||
     plantChecksErrorMessage ||
     unitMovementsErrorMessage ||
-    latestEventsErrorMessage;
+    latestEventsErrorMessage ||
+    incidentsErrorMessage;
 
   return {
     shift,
@@ -111,6 +126,7 @@ export function useClosingSummary({
     latestByMovementId,
     plantMetrics,
     movementMetrics,
+    incidentMetrics,
     canCloseShift,
     canSubmitClose,
     isLoading,
