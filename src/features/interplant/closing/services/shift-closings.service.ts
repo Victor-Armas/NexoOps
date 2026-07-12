@@ -6,7 +6,7 @@ import type {
 } from "../types/shift-closing.types";
 
 const SHIFT_CLOSING_COLUMNS =
-  "id, shift_id, closed_by, plant_checked_count, plant_total_count, full_count, empty_count, pending_count, high_risk_plant_count, movement_total_count, movement_completed_count, movement_cancelled_count, movement_open_count, movement_quantity_total, notes, closed_at, created_at, updated_at";
+  "id, shift_id, closed_by, plant_checked_count, plant_total_count, full_count, empty_count, pending_count, high_risk_plant_count, movement_total_count, movement_completed_count, movement_cancelled_count, movement_open_count, movement_quantity_total, incident_total_count, incident_open_count, incident_resolved_count, incident_high_severity_count, notes, closed_at, created_at, updated_at";
 
 function mapShiftClosing(row: ShiftClosingRow): ShiftClosing {
   return {
@@ -24,6 +24,10 @@ function mapShiftClosing(row: ShiftClosingRow): ShiftClosing {
     movementCancelledCount: row.movement_cancelled_count,
     movementOpenCount: row.movement_open_count,
     movementQuantityTotal: row.movement_quantity_total,
+    incidentTotalCount: row.incident_total_count,
+    incidentOpenCount: row.incident_open_count,
+    incidentResolvedCount: row.incident_resolved_count,
+    incidentHighSeverityCount: row.incident_high_severity_count,
     notes: row.notes,
     closedAt: row.closed_at,
     createdAt: row.created_at,
@@ -50,6 +54,10 @@ export async function upsertShiftClosing(
         movement_cancelled_count: payload.movementCancelledCount,
         movement_open_count: payload.movementOpenCount,
         movement_quantity_total: payload.movementQuantityTotal,
+        incident_total_count: payload.incidentTotalCount,
+        incident_open_count: payload.incidentOpenCount,
+        incident_resolved_count: payload.incidentResolvedCount,
+        incident_high_severity_count: payload.incidentHighSeverityCount,
         notes: payload.notes?.trim() || null,
       },
       {
