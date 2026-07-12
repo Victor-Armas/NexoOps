@@ -13,6 +13,7 @@ import { UnitMovementEventActionSettingsPanel } from "../components/UnitMovement
 import { ProjectUnitSettingsPanel } from "../components/ProjectUnitSettingsPanel";
 import { MovementTypeSettingsPanel } from "../components/MovementTypeSettingsPanel";
 import { ProjectPlantSettingsPanel } from "../components/ProjectPlantSettingsPanel";
+import { UserSettingsPanel } from "../components/UserSettingsPanel";
 
 type OperationalSettingsFormProps = {
     settings: OperationalSettings;
@@ -247,6 +248,7 @@ export function AdminPage() {
         useOperationalSettings(projectId);
 
     const canManageAdmin = can("admin.manage_catalogs");
+    const canManagePermissions = can("admin.manage_permissions");
 
     if (isLoading) {
         return <LoadingScreen message="Cargando administración..." />;
@@ -345,6 +347,11 @@ export function AdminPage() {
             <ProjectPlantSettingsPanel projectId={projectId} />
 
             <MovementTypeSettingsPanel />
+
+            <UserSettingsPanel
+                currentUserId={profile.id}
+                canManagePermissions={canManagePermissions}
+            />
         </>
     );
 }
