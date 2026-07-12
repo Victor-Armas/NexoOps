@@ -121,6 +121,7 @@ export function ClosingPage() {
           <ClosingValidationSummary
             plantMetrics={closingSummary.plantMetrics}
             movementMetrics={closingSummary.movementMetrics}
+            incidentMetrics={closingSummary.incidentMetrics}
           />
 
           <ClosingPlantSummary plantMetrics={closingSummary.plantMetrics} />
