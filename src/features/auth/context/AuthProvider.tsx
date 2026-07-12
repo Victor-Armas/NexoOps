@@ -55,11 +55,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    supabase.auth.getSession().then(({ data: { session: initialSession } }) => {
-      if (isMounted) {
-        void syncSession(initialSession);
+    function refreshCurrentSession() {
+      void supabase.auth
+        .getSession()
+        .then(({ data: { session: currentSession } }) => {
+          if (isMounted) {
+            void syncSession(currentSession);
+          }
+        });
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        refreshCurrentSession();
       }
-    });
+    }
+
+    refreshCurrentSession();
 
     const {
       data: { subscription },
@@ -69,9 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
+    window.addEventListener("focus", refreshCurrentSession);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
       isMounted = false;
       subscription.unsubscribe();
+      window.removeEventListener("focus", refreshCurrentSession);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
