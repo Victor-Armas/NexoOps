@@ -9,6 +9,7 @@ import {
 
 type RolePermissionRow = {
   permission_id: string;
+  is_enabled: boolean;
 };
 
 type PermissionRow = {
@@ -87,9 +88,8 @@ async function getRolePermissions(
   try {
     const { data: rolePermissions, error: rolePermissionsError } = await supabase
       .from("role_permissions")
-      .select("permission_id")
+      .select("permission_id, is_enabled")
       .eq("role_id", roleId)
-      .eq("is_enabled", true)
       .returns<RolePermissionRow[]>();
 
     if (rolePermissionsError) {
@@ -100,7 +100,13 @@ async function getRolePermissions(
       return FALLBACK_PERMISSIONS_BY_ROLE[roleKey];
     }
 
-    const permissionIds = rolePermissions.map((item) => item.permission_id);
+    const permissionIds = rolePermissions
+      .filter((item) => item.is_enabled)
+      .map((item) => item.permission_id);
+
+    if (permissionIds.length === 0) {
+      return [];
+    }
 
     const { data: permissions, error: permissionsError } = await supabase
       .from("permissions")
@@ -111,10 +117,6 @@ async function getRolePermissions(
 
     if (permissionsError) {
       throw permissionsError;
-    }
-
-    if (!permissions || permissions.length === 0) {
-      return FALLBACK_PERMISSIONS_BY_ROLE[roleKey];
     }
 
     return permissions.map((permission) => permission.key);
