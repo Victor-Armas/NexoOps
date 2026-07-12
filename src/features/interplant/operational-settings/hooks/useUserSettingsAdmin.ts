@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import {
+  createAdminUser,
   getAdminRoleOptions,
   getAdminUserSettings,
   saveAdminUserSetting,
@@ -7,6 +8,7 @@ import {
 import type {
   AdminRoleOption,
   AdminUserSetting,
+  CreateAdminUserPayload,
   SaveAdminUserSettingPayload,
 } from "../types/user-settings-admin.types";
 
@@ -50,6 +52,31 @@ export function useUserSettingsAdmin() {
     };
   }, []);
 
+  const createUser = useCallback(async (payload: CreateAdminUserPayload) => {
+    try {
+      setIsSaving(true);
+      setErrorMessage(null);
+
+      const createdUser = await createAdminUser(payload);
+
+      setUsers((currentUsers) =>
+        [...currentUsers, createdUser].sort((first, second) =>
+          first.fullName.localeCompare(second.fullName, "es"),
+        ),
+      );
+
+      return createdUser;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "No se pudo crear el usuario.";
+
+      setErrorMessage(message);
+      throw error;
+    } finally {
+      setIsSaving(false);
+    }
+  }, []);
+
   const saveUser = useCallback(
     async (payload: SaveAdminUserSettingPayload) => {
       try {
@@ -84,6 +111,7 @@ export function useUserSettingsAdmin() {
     isLoading,
     isSaving,
     errorMessage,
+    createUser,
     saveUser,
   };
 }
