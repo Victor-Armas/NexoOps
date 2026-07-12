@@ -1,4 +1,4 @@
-import { LogOut, Settings } from "lucide-react";
+import { ClipboardList, LogOut, Settings } from "lucide-react";
 import { NavLink, useParams } from "react-router-dom";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 import { ThemeToggle } from "../../features/theme/ThemeToggle";
@@ -11,6 +11,22 @@ export function HeaderActions() {
 
   return (
     <div className="flex items-center gap-2">
+      {projectId && (
+        <NavLink
+          to={`/app/projects/${projectId}/history`}
+          className={({ isActive }) =>
+            `inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${isActive
+              ? "border-cyan-400/40 bg-cyan-400/20 text-cyan-200 light:border-cyan-300 light:bg-cyan-50 light:text-cyan-700"
+              : "border-white/10 bg-white/10 text-slate-300 hover:border-cyan-400/40 hover:text-cyan-300 light:border-slate-200 light:bg-white light:text-slate-600 light:hover:border-cyan-300 light:hover:text-cyan-700"
+            }`
+          }
+          aria-label="Historial de cierres"
+          title="Historial de cierres"
+        >
+          <ClipboardList size={17} />
+        </NavLink>
+      )}
+
       {projectId && canManageAdmin && (
         <NavLink
           to={`/app/projects/${projectId}/admin`}
