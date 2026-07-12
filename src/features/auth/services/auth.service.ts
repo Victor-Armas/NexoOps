@@ -56,6 +56,30 @@ export async function signOutUser() {
   await supabase.auth.signOut();
 }
 
+export async function updateCurrentUserPassword(password: string) {
+  const { data, error } = await supabase.auth.updateUser({ password });
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data.user) {
+    throw new Error("No se pudo actualizar la contraseña.");
+  }
+
+  const { error: profileError } = await supabase
+    .from("profiles")
+    .update({
+      must_change_password: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", data.user.id);
+
+  if (profileError) {
+    throw profileError;
+  }
+}
+
 async function getRolePermissions(
   roleId: string,
   roleKey: RoleKey,
@@ -105,7 +129,7 @@ export async function getUserProfile(
 ): Promise<UserProfile | null> {
   const { data: profileData, error: profileError } = await supabase
     .from("profiles")
-    .select("id, full_name, email, role_id")
+    .select("id, full_name, email, role_id, must_change_password")
     .eq("id", userId)
     .eq("is_active", true)
     .maybeSingle();
@@ -150,5 +174,6 @@ export async function getUserProfile(
       name: role.name,
     },
     permissions,
+    mustChangePassword: profile.must_change_password,
   };
 }
