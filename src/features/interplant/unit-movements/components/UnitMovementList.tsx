@@ -5,16 +5,18 @@ import type {
   MovementType,
   UnitMovement,
 } from "../types/unit-movement.types";
+import type { UnitMovementEventAction } from "../../unit-movement-events/types/unit-movement-event-action.types";
 
 type UnitMovementListProps = {
   unitMovements: UnitMovement[];
   units: Unit[];
   plants: Plant[];
   movementTypes: MovementType[];
-  onComplete: (movementId: string) => Promise<void>;
-  onCancel: (movementId: string) => Promise<void>;
   mealTargetMinutes: number;
   mealDelayLimitMinutes: number;
+  eventActions: UnitMovementEventAction[];
+  onComplete: (movementId: string) => Promise<void>;
+  onCancel: (movementId: string) => Promise<void>;
 };
 
 export function UnitMovementList({
@@ -24,6 +26,7 @@ export function UnitMovementList({
   movementTypes,
   mealTargetMinutes,
   mealDelayLimitMinutes,
+  eventActions,
   onComplete,
   onCancel,
 }: UnitMovementListProps) {
@@ -40,6 +43,7 @@ export function UnitMovementList({
           movementTypes={movementTypes}
           mealTargetMinutes={mealTargetMinutes}
           mealDelayLimitMinutes={mealDelayLimitMinutes}
+          eventActions={eventActions}
           onComplete={onComplete}
           onCancel={onCancel}
         />

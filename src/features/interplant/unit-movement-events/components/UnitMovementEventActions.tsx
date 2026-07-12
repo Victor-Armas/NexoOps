@@ -1,58 +1,29 @@
+import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
 import type { UnitMovementEventType } from "../types/unit-movement-event.types";
 
-type UnitMovementEventAction = {
-    eventType: UnitMovementEventType;
-    label: string;
-};
-
-const UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
-    {
-        eventType: "in_transit",
-        label: "En camino",
-    },
-    {
-        eventType: "waiting_dock",
-        label: "Esperando rampa",
-    },
-    {
-        eventType: "positioned",
-        label: "En rampa",
-    },
-    {
-        eventType: "loading",
-        label: "Cargando",
-    },
-    {
-        eventType: "unloading",
-        label: "Descargando",
-    },
-    {
-        eventType: "released",
-        label: "Saliendo de planta",
-    },
-    {
-        eventType: "driver_change",
-        label: "Cambio operador",
-    },
-];
-
 type UnitMovementEventActionsProps = {
+    actions: UnitMovementEventAction[];
     disabled: boolean;
     isSubmitting: boolean;
     onCreateEvent: (eventType: UnitMovementEventType) => Promise<void>;
 };
 
 export function UnitMovementEventActions({
+    actions,
     disabled,
     isSubmitting,
     onCreateEvent,
 }: UnitMovementEventActionsProps) {
+    if (actions.length === 0) {
+        return null;
+    }
+
     return (
         <section className="mt-4 rounded-3xl border border-white/10 bg-slate-950/30 p-4 light:border-slate-200 light:bg-slate-50">
             <h4 className="text-sm font-bold">Actualizar estado</h4>
 
             <div className="mt-3 grid grid-cols-2 gap-2">
-                {UNIT_MOVEMENT_EVENT_ACTIONS.map((action) => (
+                {actions.map((action) => (
                     <button
                         key={action.eventType}
                         type="button"

@@ -9,6 +9,9 @@ import { useAuth } from "../../../auth/hooks/useAuth";
 import { useOperationalSettings } from "../hooks/useOperationalSettings";
 import type { OperationalSettings } from "../types/operational-settings.types";
 import { PlantCheckFieldSettingsPanel } from "../components/PlantCheckFieldSettingsPanel";
+import { UnitMovementEventActionSettingsPanel } from "../components/UnitMovementEventActionSettingsPanel";
+import { ProjectUnitSettingsPanel } from "../components/ProjectUnitSettingsPanel";
+import { MovementTypeSettingsPanel } from "../components/MovementTypeSettingsPanel";
 
 type OperationalSettingsFormProps = {
     settings: OperationalSettings;
@@ -329,6 +332,16 @@ export function AdminPage() {
                 projectId={projectId}
                 profileId={profile.id}
             />
+
+
+            <UnitMovementEventActionSettingsPanel
+                projectId={projectId}
+                profileId={profile.id}
+            />
+
+            <ProjectUnitSettingsPanel projectId={projectId} />
+
+            <MovementTypeSettingsPanel />
         </>
     );
 }

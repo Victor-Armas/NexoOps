@@ -24,6 +24,7 @@ import type {
   UnitMovement,
 } from "../types/unit-movement.types";
 import { UNIT_MOVEMENT_STATUS_LABELS } from "../types/unit-movement.types";
+import type { UnitMovementEventAction } from "../../unit-movement-events/types/unit-movement-event-action.types";
 
 
 type UnitMovementCardProps = {
@@ -33,6 +34,7 @@ type UnitMovementCardProps = {
   movementTypes: MovementType[];
   mealTargetMinutes: number;
   mealDelayLimitMinutes: number;
+  eventActions: UnitMovementEventAction[];
   onComplete: (movementId: string) => Promise<void>;
   onCancel: (movementId: string) => Promise<void>;
 };
@@ -88,6 +90,7 @@ export function UnitMovementCard({
   movementTypes,
   mealTargetMinutes,
   mealDelayLimitMinutes,
+  eventActions,
   onComplete,
   onCancel,
 }: UnitMovementCardProps) {
@@ -299,6 +302,7 @@ export function UnitMovementCard({
           {isOpen && (
             <>
               <UnitMovementEventActions
+                actions={eventActions}
                 disabled={!isOpen || isMealActive}
                 isSubmitting={isEventSubmitting}
                 onCreateEvent={handleCreateEvent}

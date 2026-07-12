@@ -13,6 +13,7 @@ import { useMovementTypes } from "../hooks/useMovementTypes";
 import { useUnitMovements } from "../hooks/useUnitMovements";
 import type { UnitMovementFormValues } from "../schemas/unit-movement.schemas";
 import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
+import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
 
 export function UnitMovementsPage() {
   const { projectId, unitId } = useParams<{
@@ -48,6 +49,12 @@ export function UnitMovementsPage() {
   } = useMovementTypes();
 
   const {
+    actions: eventActions,
+    isLoading: isLoadingEventActions,
+    errorMessage: eventActionsErrorMessage,
+  } = useUnitMovementEventActions(projectId);
+
+  const {
     settings: operationalSettings,
     errorMessage: operationalSettingsErrorMessage,
   } = useOperationalSettings(projectId);
@@ -75,6 +82,7 @@ export function UnitMovementsPage() {
     isLoadingUnits ||
     isLoadingPlants ||
     isLoadingMovementTypes ||
+    isLoadingEventActions ||
     Boolean(shift && isLoadingUnitMovements);
 
   const errorMessage =
@@ -83,6 +91,7 @@ export function UnitMovementsPage() {
     plantsErrorMessage ||
     movementTypesErrorMessage ||
     unitMovementsErrorMessage ||
+    eventActionsErrorMessage ||
     operationalSettingsErrorMessage;
 
   if (isLoading) {
@@ -200,6 +209,7 @@ export function UnitMovementsPage() {
           plants={plants}
           movementTypes={movementTypes}
           mealTargetMinutes={operationalSettings?.mealTargetMinutes ?? 60}
+          eventActions={eventActions}
           mealDelayLimitMinutes={
             operationalSettings?.mealDelayLimitMinutes ?? 75
           }
