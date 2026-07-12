@@ -22,6 +22,27 @@ function mapProjectUnitSetting(params: {
   };
 }
 
+async function assertUnitCanBeDisabled(unitId: string) {
+  const { count, error } = await supabase
+    .from("unit_movements")
+    .select("id", {
+      count: "exact",
+      head: true,
+    })
+    .eq("unit_id", unitId)
+    .eq("status", "open");
+
+  if (error) {
+    throw error;
+  }
+
+  if ((count ?? 0) > 0) {
+    throw new Error(
+      "No puedes desactivar esta unidad porque tiene un movimiento abierto.",
+    );
+  }
+}
+
 export async function getProjectUnitSettings(
   projectId: string,
 ): Promise<ProjectUnitSetting[]> {
@@ -73,6 +94,10 @@ export async function getProjectUnitSettings(
 export async function saveProjectUnitSetting(
   payload: SaveProjectUnitSettingPayload,
 ): Promise<ProjectUnitSetting> {
+  if (!payload.isActive) {
+    await assertUnitCanBeDisabled(payload.unitId);
+  }
+
   const { error } = await supabase
     .from("project_units")
     .update({

@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  getProjectUnitSettings,
-  saveProjectUnitSetting,
-} from "../services/project-unit-settings-admin.service";
+  getProjectPlantSettings,
+  saveProjectPlantSetting,
+} from "../services/project-plant-settings-admin.service";
 import type {
-  ProjectUnitSetting,
-  SaveProjectUnitSettingPayload,
-} from "../types/project-unit-settings-admin.types";
+  ProjectPlantSetting,
+  SaveProjectPlantSettingPayload,
+} from "../types/project-plant-settings-admin.types";
 
-export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
-  const [unitSettings, setUnitSettings] = useState<ProjectUnitSetting[]>([]);
+export function useProjectPlantSettingsAdmin(projectId: string | undefined) {
+  const [plantSettings, setPlantSettings] = useState<ProjectPlantSetting[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(projectId));
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -20,7 +20,7 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
     void Promise.resolve().then(async () => {
       if (!projectId) {
         if (isMounted) {
-          setUnitSettings([]);
+          setPlantSettings([]);
           setIsLoading(false);
           setErrorMessage("Proyecto no válido.");
         }
@@ -32,14 +32,14 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
         setIsLoading(true);
         setErrorMessage(null);
 
-        const data = await getProjectUnitSettings(projectId);
+        const data = await getProjectPlantSettings(projectId);
 
         if (isMounted) {
-          setUnitSettings(data);
+          setPlantSettings(data);
         }
       } catch {
         if (isMounted) {
-          setErrorMessage("No se pudieron cargar las unidades del proyecto.");
+          setErrorMessage("No se pudieron cargar las plantas del proyecto.");
         }
       } finally {
         if (isMounted) {
@@ -53,30 +53,30 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
     };
   }, [projectId]);
 
-  const saveUnitSetting = useCallback(
-    async (payload: SaveProjectUnitSettingPayload) => {
+  const savePlantSetting = useCallback(
+    async (payload: SaveProjectPlantSettingPayload) => {
       try {
         setIsSaving(true);
         setErrorMessage(null);
 
-        const savedUnitSetting = await saveProjectUnitSetting(payload);
+        const savedPlantSetting = await saveProjectPlantSetting(payload);
 
-        setUnitSettings((currentUnitSettings) =>
-          currentUnitSettings
-            .map((unitSetting) =>
-              unitSetting.unitId === savedUnitSetting.unitId
-                ? savedUnitSetting
-                : unitSetting,
+        setPlantSettings((currentPlantSettings) =>
+          currentPlantSettings
+            .map((plantSetting) =>
+              plantSetting.plantId === savedPlantSetting.plantId
+                ? savedPlantSetting
+                : plantSetting,
             )
             .sort((first, second) => first.sortOrder - second.sortOrder),
         );
 
-        return savedUnitSetting;
+        return savedPlantSetting;
       } catch (error) {
         const message =
           error instanceof Error
             ? error.message
-            : "No se pudo guardar la unidad.";
+            : "No se pudo guardar la planta.";
 
         setErrorMessage(message);
         throw error;
@@ -88,10 +88,10 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
   );
 
   return {
-    unitSettings,
+    plantSettings,
     isLoading,
     isSaving,
     errorMessage,
-    saveUnitSetting,
+    savePlantSetting,
   };
 }

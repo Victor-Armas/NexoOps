@@ -12,6 +12,7 @@ import { PlantCheckFieldSettingsPanel } from "../components/PlantCheckFieldSetti
 import { UnitMovementEventActionSettingsPanel } from "../components/UnitMovementEventActionSettingsPanel";
 import { ProjectUnitSettingsPanel } from "../components/ProjectUnitSettingsPanel";
 import { MovementTypeSettingsPanel } from "../components/MovementTypeSettingsPanel";
+import { ProjectPlantSettingsPanel } from "../components/ProjectPlantSettingsPanel";
 
 type OperationalSettingsFormProps = {
     settings: OperationalSettings;
@@ -340,6 +341,8 @@ export function AdminPage() {
             />
 
             <ProjectUnitSettingsPanel projectId={projectId} />
+
+            <ProjectPlantSettingsPanel projectId={projectId} />
 
             <MovementTypeSettingsPanel />
         </>
