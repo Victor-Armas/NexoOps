@@ -15,6 +15,7 @@ export const profileRowSchema = z.object({
   full_name: z.string().min(1),
   email: z.email(),
   role_id: z.uuid(),
+  must_change_password: z.boolean(),
 });
 
 export const roleRowSchema = z.object({
@@ -35,6 +36,7 @@ export const userProfileSchema = z.object({
   email: z.email(),
   role: userRoleSchema,
   permissions: z.array(permissionKeySchema),
+  mustChangePassword: z.boolean(),
 });
 
 export const loginSchema = z.object({
