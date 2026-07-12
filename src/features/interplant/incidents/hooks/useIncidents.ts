@@ -69,9 +69,14 @@ export function useIncidents(shiftId: string | undefined) {
         ]);
 
         return savedIncident;
-      } catch {
-        setErrorMessage("No se pudo registrar la incidencia.");
-        throw new Error("No se pudo registrar la incidencia.");
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo registrar la incidencia.";
+
+        setErrorMessage(message);
+        throw error;
       } finally {
         setIsSaving(false);
       }
@@ -94,9 +99,14 @@ export function useIncidents(shiftId: string | undefined) {
         );
 
         return savedIncident;
-      } catch {
-        setErrorMessage("No se pudo actualizar la incidencia.");
-        throw new Error("No se pudo actualizar la incidencia.");
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "No se pudo actualizar la incidencia.";
+
+        setErrorMessage(message);
+        throw error;
       } finally {
         setIsSaving(false);
       }
