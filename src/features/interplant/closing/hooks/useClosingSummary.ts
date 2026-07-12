@@ -40,6 +40,8 @@ export function useClosingSummary({
     errorMessage: unitsErrorMessage,
   } = useUnits(projectId);
 
+  const unitIds = useMemo(() => units.map((unit) => unit.id), [units]);
+
   const {
     latestByPlantId,
     isLoading: isLoadingPlantChecks,
@@ -50,7 +52,7 @@ export function useClosingSummary({
     unitMovements,
     isLoading: isLoadingUnitMovements,
     errorMessage: unitMovementsErrorMessage,
-  } = useShiftUnitMovements(shift?.id);
+  } = useShiftUnitMovements(shift?.id, unitIds);
 
   const {
     latestByMovementId,
@@ -87,11 +89,11 @@ export function useClosingSummary({
     isLoadingShift ||
     Boolean(
       shift &&
-      (isLoadingPlants ||
-        isLoadingUnits ||
-        isLoadingPlantChecks ||
-        isLoadingUnitMovements ||
-        isLoadingLatestEvents),
+        (isLoadingPlants ||
+          isLoadingUnits ||
+          isLoadingPlantChecks ||
+          isLoadingUnitMovements ||
+          isLoadingLatestEvents),
     );
 
   const errorMessage =
