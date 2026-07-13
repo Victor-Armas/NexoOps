@@ -1,6 +1,4 @@
-import type {
-  UnitMovementEventBehavior,
-} from "../../unit-movement-events/types/unit-movement-event-action.types";
+import type { UnitMovementEventBehavior } from "../../unit-movement-events/types/unit-movement-event-action.types";
 import type { UnitMovementEventType } from "../../unit-movement-events/types/unit-movement-event.types";
 
 export type UnitMovementEventActionSetting = {
@@ -40,14 +38,17 @@ export type UnitMovementEventActionSettingRow = {
 };
 
 export type SaveUnitMovementEventActionSettingPayload = {
+  id?: string | null;
   projectId: string;
   eventType: UnitMovementEventType;
   label: string;
   sortOrder: number;
   requiresMovement: boolean;
   showAsAction: boolean;
+  behavior?: UnitMovementEventBehavior;
   iconKey: string;
   colorKey: string;
+  isSystem?: boolean;
   isActive: boolean;
   updatedBy: string;
 };
