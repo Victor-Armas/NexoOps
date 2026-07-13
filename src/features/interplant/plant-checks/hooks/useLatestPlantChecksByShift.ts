@@ -6,6 +6,7 @@ import {
 import type { PlantCheck } from "../types/plant-check.types";
 
 type LatestPlantChecksByPlantId = Record<string, PlantCheck>;
+type ReviewCountByPlantId = Record<string, number>;
 
 function mapLatestChecksByPlantId(
   plantChecks: PlantCheck[],
@@ -22,14 +23,30 @@ function mapLatestChecksByPlantId(
   );
 }
 
+function mapReviewCountByPlantId(
+  plantChecks: PlantCheck[],
+): ReviewCountByPlantId {
+  return plantChecks.reduce<ReviewCountByPlantId>((reviewCounts, plantCheck) => {
+    reviewCounts[plantCheck.plantId] =
+      (reviewCounts[plantCheck.plantId] ?? 0) + 1;
+
+    return reviewCounts;
+  }, {});
+}
+
 export function useLatestPlantChecksByShift(shiftId: string | undefined) {
   const [latestByPlantId, setLatestByPlantId] =
     useState<LatestPlantChecksByPlantId>({});
+  const [reviewCountByPlantId, setReviewCountByPlantId] =
+    useState<ReviewCountByPlantId>({});
   const [isLoading, setIsLoading] = useState(Boolean(shiftId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!shiftId) {
+      setLatestByPlantId({});
+      setReviewCountByPlantId({});
+      setIsLoading(false);
       return;
     }
 
@@ -42,6 +59,7 @@ export function useLatestPlantChecksByShift(shiftId: string | undefined) {
         }
 
         setLatestByPlantId(mapLatestChecksByPlantId(data));
+        setReviewCountByPlantId(mapReviewCountByPlantId(data));
         setErrorMessage(null);
       })
       .catch(() => {
@@ -67,6 +85,7 @@ export function useLatestPlantChecksByShift(shiftId: string | undefined) {
   const refetch = useCallback(async () => {
     if (!shiftId) {
       setLatestByPlantId({});
+      setReviewCountByPlantId({});
       setIsLoading(false);
       return;
     }
@@ -78,6 +97,7 @@ export function useLatestPlantChecksByShift(shiftId: string | undefined) {
       const data = await getPlantChecksByShift(shiftId);
 
       setLatestByPlantId(mapLatestChecksByPlantId(data));
+      setReviewCountByPlantId(mapReviewCountByPlantId(data));
     } catch {
       setErrorMessage("No se pudo cargar el último estatus de plantas.");
     } finally {
@@ -101,6 +121,7 @@ export function useLatestPlantChecksByShift(shiftId: string | undefined) {
 
   return {
     latestByPlantId,
+    reviewCountByPlantId,
     isLoading,
     errorMessage,
     refetch,
