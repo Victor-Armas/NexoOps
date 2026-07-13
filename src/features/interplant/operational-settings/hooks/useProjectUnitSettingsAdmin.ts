@@ -80,6 +80,7 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
 
         setErrorMessage(message);
         throw error;
+        2;
       } finally {
         setIsSaving(false);
       }

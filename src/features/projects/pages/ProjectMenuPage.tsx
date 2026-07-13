@@ -14,8 +14,8 @@ export function ProjectMenuPage() {
     return (
         <>
             <section className="mb-5">
-                <h2 className="text-2xl font-bold">Proyectos asignados</h2>
-                <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+                <h2 className="text-2xl font-bold tittle">Proyectos asignados</h2>
+                <p className="mt-1 text-sm sub light:text-slate-500">
                     Selecciona una operación para continuar
                 </p>
             </section>

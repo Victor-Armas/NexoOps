@@ -7,7 +7,14 @@ export function Button({ className, ...props }: ButtonProps) {
     return (
         <button
             className={cn(
-                "inline-flex h-12 shadow items-center justify-center rounded-sm bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer",
+                // Estilos base y transiciones
+                "inline-block h-12 shadow items-center tracking-[.07em] justify-center uppercase rounded-sm bg-[#E8A33D] px-5 text-sm font-semibold text-slate-950 font-barlow-condensed cursor-pointer transition-all duration-100 ease-out",
+                // Hover (Escritorio)
+                "hover:bg-[#b57e2d]",
+                // EFECTO DE PRESIÓN TÁCTIL (Móvil / Clic)
+                "active:scale-95 active:shadow-inner active:brightness-95",
+                // Estados deshabilitados
+                "disabled:cursor-not-allowed disabled:opacity-60 disabled:scale-100",
                 className,
             )}
             {...props}

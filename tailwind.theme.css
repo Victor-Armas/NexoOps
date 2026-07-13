@@ -1,0 +1,57 @@
+@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant light (&:where(.light, .light *));
+
+@theme {
+  --font-sans:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-barlow-condensed: "Barlow Condensed", sans-serif;
+  --font-ibm-plex-mono: "IBM Plex Mono", monospace;
+
+  --color-surface-dark: #15130f;
+  --color-surface-light: #f8fafc;
+  --color-foreground-dark: #ffffff;
+  --color-foreground-light: #0f172a;
+  --color-muted: #b9b2a2;
+  --text-faint:#847C6C;
+  --color-principal: #E8A33D;
+
+  --text-sub: 12.5px;
+  --tracking-title: 0.005em;
+}
+
+@utility tittle {
+  margin: 2px 0 0;
+  font-family: var(--font-barlow-condensed);
+  font-weight: 700;
+  letter-spacing: var(--tracking-title);
+}
+
+@utility sub {
+  margin: 3px 0 0;
+  font-family: var(--font-ibm-plex-mono);
+  font-size: var(--text-sub);
+  color: var(--color-muted);
+}
+
+@utility infield {
+  color: var(--text-faint);
+}
+
+@utility principal {
+  color: var(--color-principal);
+}
+
+@utility icon-principal {
+  color: var(--color-principal);
+  /* Mezcla un 20% de tu color y el resto lo deja transparente */
+  background-color: color-mix(in srgb, var(--color-principal) 20%, transparent);
+}
+
+
+
+
+
+
+
+

@@ -14,7 +14,7 @@ export function PageHeader({ title, subtitle, badge, action }: PageHeaderProps) 
     return (
         <header className="mb-3 flex items-center justify-between gap-4">
             <div>
-                <Link to="/" className="text-base font-semibold uppercase tracking-[0.4em] text-cyan-300 light:text-cyan-700">
+                <Link to="/" className="text-base font-semibold uppercase tracking-[0.4em] text-[#E8A33D] light:text-cyan-700">
                     NexoOps
                 </Link>
                 {title && (

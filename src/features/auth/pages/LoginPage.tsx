@@ -39,33 +39,33 @@ export function LoginPage() {
 
     return (
         <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-5 py-8">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,#0891b233,transparent_35%),linear-gradient(135deg,#020617,#0f172a_55%,#111827)] light:bg-[radial-gradient(circle_at_top,#06b6d433,transparent_35%),linear-gradient(135deg,#f8fafc,#e2e8f0)]" />
+            <div className="absolute inset-0 " />
 
             <div className="absolute right-5 top-5 z-10">
                 <ThemeToggle />
             </div>
 
-            <section className="relative z-10 w-full max-w-md rounded-sm shadow-sm bg-white/10 p-6  backdrop-blur-xl light:border-slate-200 light:bg-white/80">
+            <section className="relative z-10 w-full max-w-md rounded-sm shadow-sm  p-6  backdrop-blur-xl light:border-slate-200 light:bg-white/80">
                 <div className="mb-8 flex flex-col items-center text-center">
 
 
-                    <h1 className="text-3xl font-bold tracking-tight">NexoOps</h1>
+                    <h1 className="text-4xl tittle">NexoOps</h1>
 
-                    <p className="mt-2 text-sm text-slate-300 light:text-slate-500">
+                    <p className="mt-2 text-sm light:text-slate-500 sub">
                         Control operativo y trazabilidad
                     </p>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                     <label className="block space-y-2">
-                        <span className="text-sm font-medium text-slate-300 light:text-slate-700">
+                        <span className="text-sm font-medium infield light:text-slate-700">
                             Correo
                         </span>
 
                         <div className="relative">
                             <Mail
                                 size={18}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 infield"
                             />
 
                             <Input
@@ -85,14 +85,14 @@ export function LoginPage() {
                     </label>
 
                     <label className="block space-y-2">
-                        <span className="text-sm font-medium text-slate-300 light:text-slate-700">
+                        <span className="text-sm font-medium infield light:text-slate-700">
                             Contraseña
                         </span>
 
                         <div className="relative">
                             <Lock
                                 size={18}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 infield"
                             />
 
                             <Input
@@ -122,7 +122,7 @@ export function LoginPage() {
                     </Button>
                 </form>
 
-                <p className="mt-6 text-center text-xs text-slate-400 light:text-slate-500">
+                <p className="mt-6 text-center text-xs infield light:text-slate-500">
                     Acceso exclusivo para usuarios autorizados.
                 </p>
             </section>
