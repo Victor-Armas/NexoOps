@@ -1,4 +1,4 @@
-import { Building2, Clock3 } from "lucide-react";
+import { ChevronRight, Clock3 } from "lucide-react";
 import type { Plant } from "../types/plant.types";
 import {
     PLANT_RISK_LABELS,
@@ -19,10 +19,11 @@ function formatTime(value: string) {
 
 export function PlantCard({ plant, latestCheck }: PlantCardProps) {
     return (
-        <article className="rounded-3xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur transition hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500">
+        <article className="flex justify-between rounded-sm border border-white/10 card p-5 shadow-xl backdrop-blur transition hover:border-principal/50 hover:bg-principal/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500">
+
             <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/15 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-                    <Building2 size={24} />
+                <div className="mincard text-white ">
+                    <p>{plant.code}</p>
                 </div>
 
                 <div className="min-w-0 flex-1">
@@ -30,7 +31,7 @@ export function PlantCard({ plant, latestCheck }: PlantCardProps) {
                         <div>
                             <h3 className="font-semibold">{plant.name}</h3>
 
-                            <p className="mt-1 line-clamp-2 text-sm text-slate-400 light:text-slate-500">
+                            <p className="mt-1 line-clamp-2 text-sm infield light:text-slate-500">
                                 {plant.description ?? "Sin descripción"}
                             </p>
                         </div>
@@ -42,7 +43,7 @@ export function PlantCard({ plant, latestCheck }: PlantCardProps) {
                         )}
                     </div>
 
-                    {latestCheck ? (
+                    {latestCheck && (
                         <>
                             <div className="mt-4 grid grid-cols-3 gap-2 text-center">
                                 <div className="rounded-2xl bg-slate-950/40 p-3 light:bg-slate-50">
@@ -68,12 +69,12 @@ export function PlantCard({ plant, latestCheck }: PlantCardProps) {
                                 <span>Última revisión: {formatTime(latestCheck.checkedAt)}</span>
                             </div>
                         </>
-                    ) : (
-                        <p className="mt-4 rounded-2xl bg-slate-950/40 px-4 py-3 text-sm text-slate-400 light:bg-slate-50 light:text-slate-500">
-                            Sin estatus registrado en este turno.
-                        </p>
                     )}
                 </div>
+
+            </div>
+            <div>
+                <ChevronRight />
             </div>
         </article>
     );

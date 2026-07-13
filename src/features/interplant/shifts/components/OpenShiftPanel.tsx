@@ -38,11 +38,9 @@ export function OpenShiftPanel({
 
     return (
         <section className="rounded-4xl border border-white/10 bg-white/10 p-6 text-center shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-3xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-                <PlayCircle size={28} />
-            </div>
 
-            <h2 className="mt-4 text-xl font-bold">No hay turno abierto</h2>
+
+            <h2 className="mt-4 text-xl tittle uppercase ">No hay turno abierto</h2>
 
             {!canManage && (
                 <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
@@ -52,17 +50,17 @@ export function OpenShiftPanel({
 
             {canManage && !isFormVisible && (
                 <>
-                    <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+                    <p className="mt-1 text-sm infield">
                         Abre un turno para comenzar a registrar la operación.
                     </p>
 
-                    <button
+                    <Button
                         type="button"
                         onClick={() => setIsFormVisible(true)}
-                        className="mt-5 inline-flex h-12 w-full items-center justify-center rounded-sm bg-cyan-500 px-5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-400"
+                        className="mt-5 inline-flex h-12 w-full"
                     >
                         Abrir turno
-                    </button>
+                    </Button>
                 </>
             )}
 

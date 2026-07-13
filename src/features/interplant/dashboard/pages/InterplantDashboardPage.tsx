@@ -167,12 +167,12 @@ export function InterplantDashboardPage() {
     isLoadingShift ||
     Boolean(
       shift &&
-        (isLoadingPlants ||
-          isLoadingUnits ||
-          isLoadingLatestChecks ||
-          isLoadingUnitMovements ||
-          isLoadingLatestEvents ||
-          isLoadingIncidents),
+      (isLoadingPlants ||
+        isLoadingUnits ||
+        isLoadingLatestChecks ||
+        isLoadingUnitMovements ||
+        isLoadingLatestEvents ||
+        isLoadingIncidents),
     );
 
   const errorMessage =
@@ -203,11 +203,11 @@ export function InterplantDashboardPage() {
   return (
     <>
       <section>
-        <h2 className="text-2xl font-bold">
+        <h2 className="text-2xl font-bold tittle">
           {shift ? SHIFT_TYPE_LABELS[shift.shiftType] : "Sin turno activo"}
         </h2>
 
-        <div className="flex justify-between gap-2 pt-1 text-sm text-slate-400 light:text-slate-500">
+        <div className="flex justify-between gap-2 pt-1 text-sm infield light:text-slate-500">
           <p>{profile?.fullName}</p>
 
           <div className="flex items-center gap-1">

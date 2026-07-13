@@ -42,14 +42,14 @@ export function PlantsPage() {
     return (
         <>
             <section className="mb-5">
-                <h2 className="text-2xl font-bold">Plantas</h2>
-                <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
+                <h2 className="text-2xl font-bold tittle uppercase">Plantas</h2>
+                <p className="mt-1 text-sm infield light:text-slate-500">
                     Selecciona una planta para consultar o registrar estatus.
                 </p>
             </section>
 
             {!shift && (
-                <section className="mb-5 rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
+                <section className="mb-5 rounded-sm border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
                     No hay turno abierto. Abre un turno para registrar estatus por planta.
                 </section>
             )}

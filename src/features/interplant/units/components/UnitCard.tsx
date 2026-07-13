@@ -124,7 +124,7 @@ function getCardClassName(
         return "border-yellow-400/30 bg-yellow-400/5 light:border-yellow-300 light:bg-yellow-50";
     }
 
-    return "border-white/10 bg-white/10 hover:border-cyan-400/50 hover:bg-cyan-400/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500";
+    return "card hover:border-principal/50 hover:bg-principal/10 light:border-slate-200 light:bg-white light:hover:border-cyan-500";
 }
 
 export function UnitCard({
@@ -157,37 +157,30 @@ export function UnitCard({
 
     return (
         <article
-            className={`rounded-[2rem] border p-5 shadow-xl backdrop-blur-xl transition ${getCardClassName(
+            className={`flex justify-between rounded-sm border p-5 transition ${getCardClassName(
                 latestMovement,
                 latestEvent,
             )}`}
         >
             <div className="flex items-start gap-4">
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-3xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-                    <Truck size={26} />
+                <div className="mincard text-white ">
+                    <p>U{unit.code}</p>
                 </div>
 
                 <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                         <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300 light:text-cyan-700">
+                            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-principal light:text-cyan-700">
                                 Unidad {unit.code}
                             </p>
 
                             <h2 className="mt-1 text-xl font-bold">{unit.name}</h2>
                         </div>
 
-                        <span
-                            className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
-                                latestMovement,
-                                latestEvent,
-                            )}`}
-                        >
-                            {currentStatusLabel}
-                        </span>
+
                     </div>
 
-                    {latestMovement ? (
+                    {latestMovement && (
                         <>
                             <div className="mt-4 rounded-3xl border border-white/10 bg-slate-950/40 p-4 light:border-slate-200 light:bg-slate-50">
                                 <div className="flex items-center justify-between gap-3 text-sm">
@@ -240,12 +233,18 @@ export function UnitCard({
                                 </p>
                             )}
                         </>
-                    ) : (
-                        <p className="mt-4 rounded-3xl bg-slate-950/40 px-4 py-3 text-sm text-slate-400 light:bg-slate-50 light:text-slate-500">
-                            Sin movimiento activo.
-                        </p>
                     )}
                 </div>
+            </div>
+            <div>
+                <span
+                    className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${getStatusClassName(
+                        latestMovement,
+                        latestEvent,
+                    )}`}
+                >
+                    {currentStatusLabel}
+                </span>
             </div>
         </article>
     );

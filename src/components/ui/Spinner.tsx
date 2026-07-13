@@ -15,11 +15,11 @@ export function Spinner({ className }: SpinnerProps) {
             aria-label="Cargando"
             role="status"
         >
-            <div className="absolute inset-0 rounded-full border-2 border-cyan-400/20" />
+            <div className="absolute inset-0 rounded-full border-2 border-principal/20" />
 
-            <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-cyan-400 border-r-cyan-400" />
+            <div className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-principal border-r-principal" />
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl  text-cyan-300">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl text-principal">
                 <Route size={22} />
             </div>
         </div>
