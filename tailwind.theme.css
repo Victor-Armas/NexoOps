@@ -26,6 +26,116 @@
   --tracking-title: 0.1em;
 }
 
+@keyframes dashboard-forklift {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1.5px);
+  }
+}
+
+@keyframes dashboard-load-in {
+  0%,
+  100% {
+    transform: translateX(2px);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+}
+
+@keyframes dashboard-load-out {
+  0%,
+  100% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes dashboard-drive {
+  0%,
+  100% {
+    transform: translateX(-1px);
+  }
+  50% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes dashboard-road {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(210%);
+  }
+}
+
+@keyframes dashboard-ring {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+}
+
+@keyframes dashboard-pin {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes dashboard-utensils {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  35% {
+    transform: rotate(-5deg);
+  }
+  70% {
+    transform: rotate(4deg);
+  }
+}
+
+@keyframes dashboard-steam {
+  0% {
+    opacity: 0;
+    transform: translateY(3px) scaleY(0.6);
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-4px) scaleY(1.15);
+  }
+}
+
+@keyframes dashboard-rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @utility tittle {
   margin: 2px 0 0;
   font-family: var(--font-barlow-condensed);
@@ -93,4 +203,78 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--color-foreground-dark);
+}
+
+@utility dashboard-status-icon {
+  position: relative;
+  display: flex;
+  height: 52px;
+  width: 52px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-width: 1px;
+  border-radius: 8px;
+}
+
+@utility animate-dashboard-forklift {
+  animation: dashboard-forklift 1.1s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@utility animate-dashboard-load-in {
+  animation: dashboard-load-in 1.55s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@utility animate-dashboard-load-out {
+  animation: dashboard-load-out 1.55s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@utility animate-dashboard-drive {
+  animation: dashboard-drive 1.15s ease-in-out infinite;
+}
+
+@utility animate-dashboard-road {
+  animation: dashboard-road 1.05s linear infinite;
+}
+
+@utility animate-dashboard-ring {
+  animation: dashboard-ring 1.55s ease-in-out infinite;
+}
+
+@utility animate-dashboard-pin {
+  animation: dashboard-pin 1.5s ease-in-out infinite;
+}
+
+@utility animate-dashboard-utensils {
+  animation: dashboard-utensils 1.7s ease-in-out infinite;
+}
+
+@utility animate-dashboard-steam {
+  animation: dashboard-steam 1.35s ease-in-out infinite;
+}
+
+@utility animate-dashboard-rotate {
+  animation: dashboard-rotate 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-dashboard-forklift,
+  .animate-dashboard-load-in,
+  .animate-dashboard-load-out,
+  .animate-dashboard-drive,
+  .animate-dashboard-road,
+  .animate-dashboard-ring,
+  .animate-dashboard-pin,
+  .animate-dashboard-utensils,
+  .animate-dashboard-steam,
+  .animate-dashboard-rotate {
+    animation: none !important;
+  }
 }
