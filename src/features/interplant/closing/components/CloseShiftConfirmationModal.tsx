@@ -44,8 +44,8 @@ export function CloseShiftConfirmationModal({
   const hasOpenMovements = openMovements.length > 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/70 px-4 py-5 backdrop-blur-sm sm:items-center">
-      <section className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-4xl border border-white/10 bg-slate-950 p-5 shadow-2xl light:border-slate-200 light:bg-white">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-slate-950/70 px-4 py-6 backdrop-blur-sm">
+      <section className="max-h-[calc(100dvh-3rem)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-4xl border border-white/10 bg-slate-950 p-5 shadow-2xl light:border-slate-200 light:bg-white">
         <div className="flex items-start gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-yellow-400/10 text-yellow-200 light:bg-yellow-50 light:text-yellow-700">
             <AlertTriangle size={22} />
@@ -123,7 +123,7 @@ export function CloseShiftConfirmationModal({
           </p>
         )}
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="sticky bottom-0 mt-5 grid grid-cols-2 gap-3 bg-slate-950 pt-3 light:bg-white">
           <button
             type="button"
             disabled={isClosing}
