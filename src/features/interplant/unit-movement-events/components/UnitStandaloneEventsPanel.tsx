@@ -1,45 +1,43 @@
 import { Repeat2, Utensils } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../../auth/hooks/useAuth";
-import { useUnitEvents } from "../hooks/useUnitEvents";
+import type {
+  UnitMovementEvent,
+  UnitMovementEventType,
+} from "../types/unit-movement-event.types";
 import { UnitMovementTimeline } from "./UnitMovementTimeline";
 
 type UnitStandaloneEventsPanelProps = {
-  unitId: string;
-  shiftId: string;
   unitName: string;
   hasOpenMovement: boolean;
-  onMealStateChange?: (isMealActive: boolean) => void;
+  standaloneEvents: UnitMovementEvent[];
+  isMealActive: boolean;
+  isLoading: boolean;
+  errorMessage: string | null;
+  onAddEvent: (payload: {
+    eventType: UnitMovementEventType;
+    notes?: string;
+  }) => Promise<unknown>;
 };
 
 export function UnitStandaloneEventsPanel({
-  unitId,
-  shiftId,
   unitName,
   hasOpenMovement,
-  onMealStateChange,
+  standaloneEvents,
+  isMealActive,
+  isLoading,
+  errorMessage,
+  onAddEvent,
 }: UnitStandaloneEventsPanelProps) {
   const { can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const {
-    standaloneEvents,
-    isMealActive,
-    isLoading,
-    errorMessage,
-    addEvent,
-  } = useUnitEvents(unitId, shiftId);
-
-  useEffect(() => {
-    onMealStateChange?.(isMealActive);
-  }, [isMealActive, onMealStateChange]);
-
   const canCreateEvent = can("units.event.create");
 
   const handleMeal = async () => {
     try {
       setIsSubmitting(true);
-      await addEvent({
+      await onAddEvent({
         eventType: isMealActive ? "meal_finished" : "meal",
         notes: isMealActive
           ? "Hora de comida finalizada."
@@ -58,7 +56,7 @@ export function UnitStandaloneEventsPanel({
   const handleDriverChange = async () => {
     try {
       setIsSubmitting(true);
-      await addEvent({
+      await onAddEvent({
         eventType: "driver_change",
         notes: "Cambio de operador registrado.",
       });
