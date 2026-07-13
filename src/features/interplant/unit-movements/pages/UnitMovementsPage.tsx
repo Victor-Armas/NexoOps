@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -24,6 +24,7 @@ export function UnitMovementsPage() {
 
   const { profile, can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isStandaloneMealActive, setIsStandaloneMealActive] = useState(false);
 
   const {
     shift,
@@ -79,9 +80,14 @@ export function UnitMovementsPage() {
     [unitMovements],
   );
 
+  const handleMealStateChange = useCallback((isActive: boolean) => {
+    setIsStandaloneMealActive(isActive);
+  }, []);
+
   const canRegisterMovement = can("units.movement.create");
   const canCompleteMovement = can("units.movement.complete");
   const canCancelMovement = can("units.movement.cancel");
+  const canCreateMovementNow = !hasOpenMovement && !isStandaloneMealActive;
 
   const isLoading =
     isLoadingShift ||
@@ -107,6 +113,11 @@ export function UnitMovementsPage() {
   const handleSubmit = async (values: UnitMovementFormValues) => {
     if (!shift || !unitId) {
       toast.error("No hay turno abierto para registrar movimientos.");
+      return;
+    }
+
+    if (isStandaloneMealActive) {
+      toast.error("Finaliza la comida antes de iniciar un movimiento.");
       return;
     }
 
@@ -202,6 +213,7 @@ export function UnitMovementsPage() {
           shiftId={shift.id}
           unitName={`U${unit?.code ?? "--"}`}
           hasOpenMovement={hasOpenMovement}
+          onMealStateChange={handleMealStateChange}
         />
       )}
 
@@ -223,7 +235,7 @@ export function UnitMovementsPage() {
         </div>
       )}
 
-      {shift && canRegisterMovement && !hasOpenMovement && (
+      {shift && canRegisterMovement && canCreateMovementNow && (
         <div className="mb-5">
           <UnitMovementForm
             plants={plants}
@@ -234,9 +246,11 @@ export function UnitMovementsPage() {
         </div>
       )}
 
-      {shift && canRegisterMovement && hasOpenMovement && (
+      {shift && canRegisterMovement && !canCreateMovementNow && (
         <section className="mb-5 rounded-sm border border-line bg-panel p-5 text-sm text-muted">
-          Completa o cancela el movimiento abierto antes de registrar uno nuevo.
+          {isStandaloneMealActive
+            ? "Finaliza la comida antes de registrar un movimiento nuevo."
+            : "Completa o cancela el movimiento abierto antes de registrar uno nuevo."}
         </section>
       )}
 
