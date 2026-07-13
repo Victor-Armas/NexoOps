@@ -44,9 +44,6 @@ export function useLatestPlantChecksByShift(shiftId: string | undefined) {
 
   useEffect(() => {
     if (!shiftId) {
-      setLatestByPlantId({});
-      setReviewCountByPlantId({});
-      setIsLoading(false);
       return;
     }
 
