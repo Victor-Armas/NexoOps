@@ -1,22 +1,11 @@
-export type UnitMovementEventType =
-  | "departure_requested"
-  | "in_transit"
-  | "waiting_dock"
-  | "positioned"
-  | "loading"
-  | "unloading"
-  | "released"
-  | "meal"
-  | "meal_finished"
-  | "driver_change"
-  | "completed"
-  | "cancelled";
+export type UnitMovementEventType = string;
 
 export type UnitMovementEvent = {
   id: string;
   unitId: string;
   shiftId: string;
   unitMovementId: string | null;
+  eventTypeId: string;
   eventType: UnitMovementEventType;
   notes: string | null;
   eventAt: string;
@@ -30,6 +19,7 @@ export type UnitMovementEventRow = {
   unit_id: string;
   shift_id: string;
   unit_movement_id: string | null;
+  event_type_id: string;
   event_type: UnitMovementEventType;
   notes: string | null;
   event_at: string;
@@ -42,11 +32,12 @@ export type CreateUnitMovementEventPayload = {
   unitMovementId?: string;
   unitId?: string;
   shiftId?: string;
+  eventTypeId?: string;
   eventType: UnitMovementEventType;
   notes?: string;
 };
 
-export const UNIT_MOVEMENT_EVENT_LABELS: Record<UnitMovementEventType, string> = {
+const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
   departure_requested: "Salida indicada",
   in_transit: "En camino",
   waiting_dock: "Esperando rampa",
@@ -59,4 +50,30 @@ export const UNIT_MOVEMENT_EVENT_LABELS: Record<UnitMovementEventType, string> =
   driver_change: "Cambio operador",
   completed: "Completado",
   cancelled: "Cancelado",
+  guard: "Resguardo",
 };
+
+function humanizeEventType(eventType: string) {
+  return eventType
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+export function getDefaultUnitMovementEventLabel(eventType: string) {
+  return BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS[eventType] ?? humanizeEventType(eventType);
+}
+
+export const UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = new Proxy(
+  BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS,
+  {
+    get(target, property) {
+      if (typeof property !== "string") {
+        return Reflect.get(target, property);
+      }
+
+      return target[property] ?? humanizeEventType(property);
+    },
+  },
+);
