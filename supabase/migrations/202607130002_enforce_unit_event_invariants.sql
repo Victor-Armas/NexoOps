@@ -9,7 +9,26 @@ as $$
 declare
   movement_record public.unit_movements%rowtype;
   latest_meal_event text;
+  shift_project_id uuid;
 begin
+  select s.project_id
+  into shift_project_id
+  from public.shifts s
+  where s.id = new.shift_id;
+
+  if not found then
+    raise exception 'El turno asociado no existe.';
+  end if;
+
+  if not exists (
+    select 1
+    from public.project_units pu
+    where pu.project_id = shift_project_id
+      and pu.unit_id = new.unit_id
+  ) then
+    raise exception 'La unidad no pertenece al proyecto del turno.';
+  end if;
+
   if new.unit_movement_id is not null then
     select *
     into movement_record
