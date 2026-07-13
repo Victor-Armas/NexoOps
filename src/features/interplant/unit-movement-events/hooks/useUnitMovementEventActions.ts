@@ -1,14 +1,22 @@
 import { useEffect, useState } from "react";
 import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
+import { registerUnitMovementEventLabels } from "../types/unit-movement-event.types";
 import {
   getDefaultUnitMovementEventActions,
   getUnitMovementEventActionSettings,
 } from "../services/unit-movement-event-actions.service";
 
+function applyActions(
+  actions: UnitMovementEventAction[],
+  setActions: (actions: UnitMovementEventAction[]) => void,
+) {
+  registerUnitMovementEventLabels(actions);
+  setActions(actions);
+}
+
 export function useUnitMovementEventActions(projectId: string | undefined) {
-  const [actions, setActions] = useState<UnitMovementEventAction[]>(
-    getDefaultUnitMovementEventActions(),
-  );
+  const defaultActions = getDefaultUnitMovementEventActions();
+  const [actions, setActions] = useState<UnitMovementEventAction[]>(defaultActions);
   const [isLoading, setIsLoading] = useState(Boolean(projectId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -18,11 +26,10 @@ export function useUnitMovementEventActions(projectId: string | undefined) {
     void Promise.resolve().then(async () => {
       if (!projectId) {
         if (isMounted) {
-          setActions(getDefaultUnitMovementEventActions());
+          applyActions(getDefaultUnitMovementEventActions(), setActions);
           setIsLoading(false);
           setErrorMessage(null);
         }
-
         return;
       }
 
@@ -33,15 +40,16 @@ export function useUnitMovementEventActions(projectId: string | undefined) {
         const data = await getUnitMovementEventActionSettings(projectId);
 
         if (isMounted) {
-          setActions(
+          applyActions(
             data.length > 0 ? data : getDefaultUnitMovementEventActions(),
+            setActions,
           );
         }
       } catch {
         if (isMounted) {
-          setActions(getDefaultUnitMovementEventActions());
+          applyActions(getDefaultUnitMovementEventActions(), setActions);
           setErrorMessage(
-            "No se pudieron cargar los botones configurados. Se usó la configuración base.",
+            "No se pudieron cargar los estatus configurados. Se usó la configuración base.",
           );
         }
       } finally {
