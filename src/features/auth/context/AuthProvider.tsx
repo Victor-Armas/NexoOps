@@ -55,23 +55,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
 
-    function refreshCurrentSession() {
-      void supabase.auth
-        .getSession()
-        .then(({ data: { session: currentSession } }) => {
+    async function refreshCurrentSession() {
+      try {
+        const {
+          data: { session: currentSession },
+          error,
+        } = await supabase.auth.getSession();
+
+        if (error) {
+          console.warn("La sesión almacenada dejó de ser válida.", error);
+          await supabase.auth.signOut({ scope: "local" });
+
           if (isMounted) {
-            void syncSession(currentSession);
+            await syncSession(null);
           }
-        });
+
+          return;
+        }
+
+        if (isMounted) {
+          await syncSession(currentSession);
+        }
+      } catch (error) {
+        console.error("No se pudo recuperar la sesión actual.", error);
+
+        if (isMounted) {
+          await syncSession(null);
+        }
+      }
     }
 
     function handleVisibilityChange() {
       if (document.visibilityState === "visible") {
-        refreshCurrentSession();
+        void refreshCurrentSession();
       }
     }
 
-    refreshCurrentSession();
+    void refreshCurrentSession();
 
     const {
       data: { subscription },
