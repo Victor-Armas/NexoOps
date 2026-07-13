@@ -10,14 +10,17 @@
 
   --color-surface-dark: #15130f;
   --color-surface-light: #f8fafc;
-  --color-foreground-dark: #ffffff;
+  --color-foreground-dark: #f4efe5;
   --color-foreground-light: #0f172a;
+  --color-panel: #1e1b16;
+  --color-panel-strong: #252119;
   --color-muted: #b9b2a2;
-  --text-faint:#847C6C;
-  --color-principal: #E8A33D;
-  --surface:#1E1B16;
-  --line:rgba(237,230,214,.12);
-  --line-strong:rgba(237,230,214,.24);
+  --color-faint: #847c6c;
+  --color-principal: #e8a33d;
+  --color-line: rgba(237, 230, 214, 0.12);
+  --color-line-strong: rgba(237, 230, 214, 0.24);
+  --color-success: #82ad70;
+  --color-danger: #d95745;
 
   --text-sub: 12.5px;
   --tracking-title: 0.1em;
@@ -38,7 +41,7 @@
 }
 
 @utility infield {
-  color: var(--text-faint);
+  color: var(--color-faint);
 }
 
 @utility principal {
@@ -47,39 +50,47 @@
 
 @utility icon-principal {
   color: var(--color-principal);
-  /* Mezcla un 20% de tu color y el resto lo deja transparente */
   background-color: color-mix(in srgb, var(--color-principal) 20%, transparent);
 }
 
 @utility menutext {
   font-family: var(--font-barlow-condensed);
-  color: var(--text-faint);
+  color: var(--color-faint);
+}
+
+@utility section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-barlow-condensed);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-faint);
 }
 
 @utility card {
   display: flex;
   align-items: center;
   gap: 10px;
-  background-color: var(--surface);
-  border: 1px solid var(--line);
+  background-color: var(--color-panel);
+  border: 1px solid var(--color-line);
   border-radius: 7px;
   padding: 11px 12px;
 }
 
 @utility mincard {
-  font-family: var(--f-mono);
+  display: inline-flex;
+  min-height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-line-strong);
+  border-radius: 5px;
+  padding: 4px 10px;
+  font-family: var(--font-ibm-plex-mono);
   font-size: 15px;
-  font-weight: 500;
-  letter-spacing: .02em;
-  border: 1px solid var(--line-strong);
-  border-radius: 4px;
-  padding: 3px 9px;
-  display: inline-block;
-  color: var(--text);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--color-foreground-dark);
 }
-
-
-
-
-
-
