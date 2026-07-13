@@ -3,7 +3,6 @@ import {
   AlertTriangle,
   CheckCircle2,
   CircleSlash2,
-  Clock3,
   Utensils,
 } from "lucide-react";
 import { toast } from "sonner";
