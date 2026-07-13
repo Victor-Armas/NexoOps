@@ -37,7 +37,12 @@ export function isProtectedUnitEvent(
   eventType: string,
 ) {
   const behavior = findUnitEventAction(actions, eventType)?.behavior;
-  return behavior === "movement_complete" || behavior === "movement_cancel";
+  return (
+    behavior === "movement_complete" ||
+    behavior === "movement_cancel" ||
+    eventType === "completed" ||
+    eventType === "cancelled"
+  );
 }
 
 export function getUnitEventColorKey(
