@@ -144,27 +144,30 @@ export function PlantCheckForm({
   };
 
   return (
-    <section>
-      <form onSubmit={handleSubmit(handleValidSubmit)} className="space-y-6">
-        <section>
+    <section className="min-w-0 overflow-hidden">
+      <form
+        onSubmit={handleSubmit(handleValidSubmit)}
+        className="min-w-0 space-y-6"
+      >
+        <section className="min-w-0">
           <p className="section-label before:h-px before:flex-1 before:bg-line">
             Registrar estatus
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
+          <div className="mt-4 grid min-w-0 grid-cols-2 gap-3">
             {fields.map((field) => {
               const value = normalizedCheckValues[field.key] ?? 0;
 
               return (
                 <label
                   key={field.key}
-                  className="rounded-sm border border-line bg-panel p-3"
+                  className="min-w-0 rounded-sm border border-line bg-panel p-3"
                 >
                   <span className="block min-h-10 text-sm text-muted">
                     {field.label}
                   </span>
 
-                  <div className="mt-2 flex items-center justify-between gap-2">
+                  <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
                     <button
                       type="button"
                       onClick={() => handleStep(field.key, -1)}
@@ -205,12 +208,12 @@ export function PlantCheckForm({
           )}
         </section>
 
-        <section>
+        <section className="min-w-0 overflow-hidden">
           <p className="section-label before:h-px before:flex-1 before:bg-line">
             Condición operativa
           </p>
 
-          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+          <div className="mt-4 flex w-full max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-2 pr-1 touch-pan-x">
             {OPERATIONAL_CONDITIONS.map((condition) => {
               const isSelected = watchedOperationalCondition === condition;
 
@@ -236,9 +239,9 @@ export function PlantCheckForm({
           </div>
         </section>
 
-        <section>
-          <div className="flex items-center justify-between gap-3">
-            <p className="section-label flex-1 before:h-px before:flex-1 before:bg-line">
+        <section className="min-w-0">
+          <div className="flex min-w-0 items-center justify-between gap-3">
+            <p className="section-label min-w-0 flex-1 before:h-px before:flex-1 before:bg-line">
               Riesgo operativo
             </p>
 
@@ -251,7 +254,7 @@ export function PlantCheckForm({
             </button>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2">
+          <div className="mt-4 grid min-w-0 grid-cols-3 gap-2">
             {RISK_LEVELS.map((riskLevel) => {
               const isSelected = watchedRiskLevel === riskLevel;
               const selectedClass =
@@ -264,7 +267,7 @@ export function PlantCheckForm({
               return (
                 <label
                   key={riskLevel}
-                  className={`flex min-h-12 cursor-pointer items-center justify-center rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.08em] transition ${
+                  className={`flex min-h-12 min-w-0 cursor-pointer items-center justify-center rounded-sm border px-2 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.08em] transition ${
                     isSelected
                       ? selectedClass
                       : "border-line-strong text-muted"
@@ -288,7 +291,7 @@ export function PlantCheckForm({
           </p>
         </section>
 
-        <label className="block space-y-2">
+        <label className="block min-w-0 space-y-2">
           <span className="section-label before:h-px before:flex-1 before:bg-line">
             Comentarios
           </span>
@@ -296,7 +299,7 @@ export function PlantCheckForm({
           <textarea
             rows={3}
             placeholder="Ej. Sin espacio para descarga, sin rampa disponible, prioridad para P6..."
-            className="w-full rounded-sm border border-line bg-panel px-4 py-3 text-sm text-foreground-dark outline-none placeholder:text-faint focus:border-principal light:border-slate-200 light:bg-white light:text-slate-900"
+            className="w-full min-w-0 rounded-sm border border-line bg-panel px-4 py-3 text-base text-foreground-dark outline-none placeholder:text-faint focus:border-principal light:border-slate-200 light:bg-white light:text-slate-900"
             {...register("notes")}
           />
 
