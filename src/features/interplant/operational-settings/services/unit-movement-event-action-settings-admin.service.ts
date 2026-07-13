@@ -40,44 +40,58 @@ export async function getUnitMovementEventActionSettingsByProject(
     .order("sort_order", { ascending: true })
     .returns<UnitMovementEventActionSettingRow[]>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data.map(mapUnitMovementEventActionSetting);
 }
 
 export async function saveUnitMovementEventActionSetting(
   payload: SaveUnitMovementEventActionSettingPayload,
 ): Promise<UnitMovementEventActionSetting> {
+  const commonValues = {
+    label: payload.label,
+    sort_order: payload.sortOrder,
+    show_as_action: payload.showAsAction,
+    icon_key: payload.iconKey,
+    color_key: payload.colorKey,
+    is_active: payload.isActive,
+    updated_by: payload.updatedBy,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (payload.id) {
+    const { data, error } = await supabase
+      .from("unit_movement_event_action_settings")
+      .update({
+        ...commonValues,
+        ...(payload.isSystem
+          ? {}
+          : {
+              requires_movement: payload.requiresMovement,
+              behavior: payload.behavior ?? "status",
+            }),
+      })
+      .eq("id", payload.id)
+      .eq("project_id", payload.projectId)
+      .select(UNIT_MOVEMENT_EVENT_ACTION_COLUMNS)
+      .single<UnitMovementEventActionSettingRow>();
+
+    if (error) throw error;
+    return mapUnitMovementEventActionSetting(data);
+  }
+
   const { data, error } = await supabase
     .from("unit_movement_event_action_settings")
-    .upsert(
-      {
-        project_id: payload.projectId,
-        event_type: payload.eventType,
-        label: payload.label,
-        sort_order: payload.sortOrder,
-        requires_movement: payload.requiresMovement,
-        show_as_action: payload.showAsAction,
-        behavior: "status",
-        icon_key: payload.iconKey,
-        color_key: payload.colorKey,
-        is_system: false,
-        is_active: payload.isActive,
-        updated_by: payload.updatedBy,
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: "project_id,event_type",
-      },
-    )
+    .insert({
+      project_id: payload.projectId,
+      event_type: payload.eventType,
+      ...commonValues,
+      requires_movement: payload.requiresMovement,
+      behavior: payload.behavior ?? "status",
+      is_system: false,
+    })
     .select(UNIT_MOVEMENT_EVENT_ACTION_COLUMNS)
     .single<UnitMovementEventActionSettingRow>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return mapUnitMovementEventActionSetting(data);
 }
