@@ -1,5 +1,5 @@
 import { Repeat2, Utensils } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { useUnitEvents } from "../hooks/useUnitEvents";
@@ -10,6 +10,7 @@ type UnitStandaloneEventsPanelProps = {
   shiftId: string;
   unitName: string;
   hasOpenMovement: boolean;
+  onMealStateChange?: (isMealActive: boolean) => void;
 };
 
 export function UnitStandaloneEventsPanel({
@@ -17,6 +18,7 @@ export function UnitStandaloneEventsPanel({
   shiftId,
   unitName,
   hasOpenMovement,
+  onMealStateChange,
 }: UnitStandaloneEventsPanelProps) {
   const { can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,6 +29,10 @@ export function UnitStandaloneEventsPanel({
     errorMessage,
     addEvent,
   } = useUnitEvents(unitId, shiftId);
+
+  useEffect(() => {
+    onMealStateChange?.(isMealActive);
+  }, [isMealActive, onMealStateChange]);
 
   const canCreateEvent = can("units.event.create");
 
