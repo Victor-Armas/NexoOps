@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { useOperationalSettings } from "../../operational-settings/hooks/useOper
 import { usePlants } from "../../plants/hooks/usePlants";
 import { useShift } from "../../shifts/hooks/useShift";
 import { UnitStandaloneEventsPanel } from "../../unit-movement-events/components/UnitStandaloneEventsPanel";
+import { useUnitEvents } from "../../unit-movement-events/hooks/useUnitEvents";
 import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
 import { useUnits } from "../../units/hooks/useUnits";
 import { UnitMovementForm } from "../components/UnitMovementForm";
@@ -24,7 +25,6 @@ export function UnitMovementsPage() {
 
   const { profile, can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isStandaloneMealActive, setIsStandaloneMealActive] = useState(false);
 
   const {
     shift,
@@ -70,6 +70,14 @@ export function UnitMovementsPage() {
     markAsCancelled,
   } = useUnitMovements(shift?.id, unitId);
 
+  const {
+    standaloneEvents,
+    isMealActive: isStandaloneMealActive,
+    isLoading: isLoadingUnitEvents,
+    errorMessage: unitEventsErrorMessage,
+    addEvent: addStandaloneEvent,
+  } = useUnitEvents(unitId, shift?.id);
+
   const unit = useMemo(
     () => units.find((item) => item.id === unitId) ?? null,
     [units, unitId],
@@ -79,10 +87,6 @@ export function UnitMovementsPage() {
     () => unitMovements.some((movement) => movement.status === "open"),
     [unitMovements],
   );
-
-  const handleMealStateChange = useCallback((isActive: boolean) => {
-    setIsStandaloneMealActive(isActive);
-  }, []);
 
   const canRegisterMovement = can("units.movement.create");
   const canCompleteMovement = can("units.movement.complete");
@@ -95,7 +99,7 @@ export function UnitMovementsPage() {
     isLoadingPlants ||
     isLoadingMovementTypes ||
     isLoadingEventActions ||
-    Boolean(shift && isLoadingUnitMovements);
+    Boolean(shift && (isLoadingUnitMovements || isLoadingUnitEvents));
 
   const errorMessage =
     shiftErrorMessage ||
@@ -103,6 +107,7 @@ export function UnitMovementsPage() {
     plantsErrorMessage ||
     movementTypesErrorMessage ||
     unitMovementsErrorMessage ||
+    unitEventsErrorMessage ||
     eventActionsErrorMessage ||
     operationalSettingsErrorMessage;
 
@@ -209,11 +214,13 @@ export function UnitMovementsPage() {
 
       {shift && unitId && (
         <UnitStandaloneEventsPanel
-          unitId={unitId}
-          shiftId={shift.id}
           unitName={`U${unit?.code ?? "--"}`}
           hasOpenMovement={hasOpenMovement}
-          onMealStateChange={handleMealStateChange}
+          standaloneEvents={standaloneEvents}
+          isMealActive={isStandaloneMealActive}
+          isLoading={isLoadingUnitEvents}
+          errorMessage={unitEventsErrorMessage}
+          onAddEvent={addStandaloneEvent}
         />
       )}
 
