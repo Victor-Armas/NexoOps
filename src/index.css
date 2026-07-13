@@ -5,12 +5,34 @@ html,
 body,
 #root {
   min-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+html {
+  background-color: var(--color-surface-dark);
+  -webkit-text-size-adjust: 100%;
 }
 
 @layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
   body {
     margin: 0;
+    min-width: 0;
     font-family: var(--font-sans);
+    overscroll-behavior-x: none;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 16px;
   }
 
   .dark body {
