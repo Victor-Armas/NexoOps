@@ -73,6 +73,20 @@ alter table public.unit_events enable row level security;
 
 grant select, insert, delete on table public.unit_events to authenticated;
 
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'public'
+      and tablename = 'unit_events'
+  ) then
+    alter publication supabase_realtime add table public.unit_events;
+  end if;
+end;
+$$;
+
 drop policy if exists "unit_events_select_by_project" on public.unit_events;
 create policy "unit_events_select_by_project"
 on public.unit_events
