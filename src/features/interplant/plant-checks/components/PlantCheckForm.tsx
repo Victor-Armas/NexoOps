@@ -1,255 +1,316 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ClipboardCheck } from "lucide-react";
+import { Minus, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { Button } from "../../../../components/ui/Button";
 import {
-    getDefaultPlantCheckValues,
-    getSuggestedRiskLevel,
-    type PlantCheckField,
-    type PlantRiskThresholds,
+  getDefaultPlantCheckValues,
+  getSuggestedRiskLevel,
+  type PlantCheckField,
+  type PlantRiskThresholds,
 } from "../config/plant-check-field.config";
 import {
-    plantCheckSchema,
-    type PlantCheckFormInput,
-    type PlantCheckFormValues,
+  plantCheckSchema,
+  type PlantCheckFormInput,
+  type PlantCheckFormValues,
 } from "../schemas/plant-check.schemas";
 import {
-    PLANT_OPERATIONAL_CONDITION_LABELS,
-    PLANT_RISK_LABELS,
-    type PlantCheckValues,
-    type PlantOperationalCondition,
-    type PlantRiskLevel,
+  PLANT_OPERATIONAL_CONDITION_LABELS,
+  PLANT_RISK_LABELS,
+  type PlantCheckValues,
+  type PlantOperationalCondition,
+  type PlantRiskLevel,
 } from "../types/plant-check.types";
 
 type PlantCheckFormProps = {
-    fields: PlantCheckField[];
-    isSubmitting: boolean;
-    riskThresholds: PlantRiskThresholds;
-    onSubmit: (values: PlantCheckFormValues) => Promise<void>;
+  fields: PlantCheckField[];
+  isSubmitting: boolean;
+  riskThresholds: PlantRiskThresholds;
+  onSubmit: (values: PlantCheckFormValues) => Promise<void>;
 };
 
 const RISK_LEVELS: PlantRiskLevel[] = ["low", "medium", "high"];
 
 const OPERATIONAL_CONDITIONS: PlantOperationalCondition[] = [
-    "normal",
-    "no_unload_space",
-    "no_dock_available",
-    "material_priority",
-    "other",
+  "normal",
+  "no_unload_space",
+  "no_dock_available",
+  "material_priority",
+  "other",
 ];
 
 function normalizeCheckValues(
-    values: Record<string, unknown> | undefined,
-    fallback: PlantCheckValues,
+  values: Record<string, unknown> | undefined,
+  fallback: PlantCheckValues,
 ): PlantCheckValues {
-    if (!values) {
-        return fallback;
-    }
+  if (!values) {
+    return fallback;
+  }
 
-    return Object.entries(values).reduce<PlantCheckValues>(
-        (normalizedValues, [key, value]) => {
-            const numericValue = Number(value);
+  return Object.entries(values).reduce<PlantCheckValues>(
+    (normalizedValues, [key, value]) => {
+      const numericValue = Number(value);
 
-            normalizedValues[key] = Number.isFinite(numericValue)
-                ? numericValue
-                : 0;
+      normalizedValues[key] = Number.isFinite(numericValue)
+        ? numericValue
+        : 0;
 
-            return normalizedValues;
-        },
-        {},
-    );
+      return normalizedValues;
+    },
+    {},
+  );
 }
 
 export function PlantCheckForm({
-    fields,
-    riskThresholds,
-    isSubmitting,
-    onSubmit,
+  fields,
+  riskThresholds,
+  isSubmitting,
+  onSubmit,
 }: PlantCheckFormProps) {
-    const defaultCheckValues = useMemo(
-        () => getDefaultPlantCheckValues(fields),
-        [fields],
-    );
+  const defaultCheckValues = useMemo(
+    () => getDefaultPlantCheckValues(fields),
+    [fields],
+  );
 
-    const {
-        register,
-        control,
-        handleSubmit,
-        reset,
-        setValue,
-        formState: { errors },
-    } = useForm<PlantCheckFormInput, unknown, PlantCheckFormValues>({
-        resolver: zodResolver(plantCheckSchema),
-        defaultValues: {
-            checkValues: defaultCheckValues,
-            operationalCondition: "normal",
-            riskLevel: "low",
-            notes: "",
-        },
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    setValue,
+    formState: { errors },
+  } = useForm<PlantCheckFormInput, unknown, PlantCheckFormValues>({
+    resolver: zodResolver(plantCheckSchema),
+    defaultValues: {
+      checkValues: defaultCheckValues,
+      operationalCondition: "normal",
+      riskLevel: "low",
+      notes: "",
+    },
+  });
+
+  const watchedCheckValues = useWatch({
+    control,
+    name: "checkValues",
+  });
+
+  const watchedOperationalCondition = useWatch({
+    control,
+    name: "operationalCondition",
+  });
+
+  const watchedRiskLevel = useWatch({
+    control,
+    name: "riskLevel",
+  });
+
+  const normalizedCheckValues = normalizeCheckValues(
+    watchedCheckValues,
+    defaultCheckValues,
+  );
+
+  const suggestedRiskLevel = getSuggestedRiskLevel({
+    values: normalizedCheckValues,
+    fields,
+    operationalCondition: watchedOperationalCondition ?? "normal",
+    riskThresholds,
+  });
+
+  const handleStep = (fieldKey: string, delta: number) => {
+    const currentValue = normalizedCheckValues[fieldKey] ?? 0;
+
+    setValue(`checkValues.${fieldKey}`, Math.max(0, currentValue + delta), {
+      shouldDirty: true,
+      shouldValidate: true,
     });
+  };
 
-    const watchedCheckValues = useWatch({
-        control,
-        name: "checkValues",
+  const handleApplySuggestedRisk = () => {
+    setValue("riskLevel", suggestedRiskLevel, {
+      shouldDirty: true,
+      shouldValidate: true,
     });
+  };
 
-    const watchedOperationalCondition = useWatch({
-        control,
-        name: "operationalCondition",
+  const handleValidSubmit = async (values: PlantCheckFormValues) => {
+    await onSubmit(values);
+
+    reset({
+      checkValues: defaultCheckValues,
+      operationalCondition: "normal",
+      riskLevel: "low",
+      notes: "",
     });
+  };
 
-    const normalizedCheckValues = normalizeCheckValues(
-        watchedCheckValues,
-        defaultCheckValues,
-    );
+  return (
+    <section>
+      <form onSubmit={handleSubmit(handleValidSubmit)} className="space-y-6">
+        <section>
+          <p className="section-label before:h-px before:flex-1 before:bg-line">
+            Registrar estatus
+          </p>
 
-    const suggestedRiskLevel = getSuggestedRiskLevel({
-        values: normalizedCheckValues,
-        fields,
-        operationalCondition: watchedOperationalCondition ?? "normal",
-        riskThresholds,
-    });
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {fields.map((field) => {
+              const value = normalizedCheckValues[field.key] ?? 0;
 
-    const handleApplySuggestedRisk = () => {
-        setValue("riskLevel", suggestedRiskLevel, {
-            shouldDirty: true,
-            shouldValidate: true,
-        });
-    };
+              return (
+                <label
+                  key={field.key}
+                  className="rounded-sm border border-line bg-panel p-3"
+                >
+                  <span className="block min-h-10 text-sm text-muted">
+                    {field.label}
+                  </span>
 
-    const handleValidSubmit = async (values: PlantCheckFormValues) => {
-        await onSubmit(values);
-
-        reset({
-            checkValues: defaultCheckValues,
-            operationalCondition: "normal",
-            riskLevel: "low",
-            notes: "",
-        });
-    };
-
-    return (
-        <section className="rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
-            <div className="mb-5 flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-                    <ClipboardCheck size={22} />
-                </div>
-
-                <div>
-                    <h2 className="font-bold">Registrar estatus</h2>
-                    <p className="text-sm text-slate-400 light:text-slate-500">
-                        Captura los carros y la condición operativa actual.
-                    </p>
-                </div>
-            </div>
-
-            <form onSubmit={handleSubmit(handleValidSubmit)} className="space-y-4">
-                <div className="grid grid-cols-2 gap-3">
-                    {fields.map((field) => (
-                        <label key={field.key} className="space-y-2">
-                            <span className="text-xs font-medium text-slate-300 light:text-slate-700">
-                                {field.label}
-                            </span>
-
-                            <input
-                                type="number"
-                                min={0}
-                                className="h-12 w-full rounded-sm bg-white/10 px-3 text-center text-sm text-white outline-none light:border light:border-slate-200 light:bg-white light:text-slate-900"
-                                {...register(`checkValues.${field.key}`)}
-                            />
-                        </label>
-                    ))}
-                </div>
-
-                {errors.checkValues && (
-                    <p className="text-sm text-red-400 light:text-red-600">
-                        Revisa las cantidades capturadas.
-                    </p>
-                )}
-
-                <label className="block space-y-2">
-                    <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-                        Condición operativa
-                    </span>
-
-                    <select
-                        className="h-12 w-full rounded-sm bg-white/10 px-4 text-sm text-white outline-none light:border light:border-slate-200 light:bg-white light:text-slate-900"
-                        {...register("operationalCondition")}
+                  <div className="mt-2 flex items-center justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleStep(field.key, -1)}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line-strong text-muted transition hover:border-principal hover:text-principal"
+                      aria-label={`Restar a ${field.label}`}
                     >
-                        {OPERATIONAL_CONDITIONS.map((condition) => (
-                            <option
-                                key={condition}
-                                value={condition}
-                                className="text-slate-900"
-                            >
-                                {PLANT_OPERATIONAL_CONDITION_LABELS[condition]}
-                            </option>
-                        ))}
-                    </select>
-                </label>
+                      <Minus size={18} />
+                    </button>
 
-                <section className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 light:border-slate-200 light:bg-slate-50">
-                    <div className="flex items-center justify-between gap-3">
-                        <div>
-                            <p className="text-sm font-bold">Riesgo operativo</p>
-                            <p className="mt-1 text-xs text-slate-400 light:text-slate-500">
-                                Sugerido: {PLANT_RISK_LABELS[suggestedRiskLevel]}
-                                Umbrales: llenos ≥ {riskThresholds.mediumFullCountThreshold}, vacíos ≥{" "}
-                                {riskThresholds.mediumEmptyCountThreshold}
-                            </p>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={handleApplySuggestedRisk}
-                            className="rounded-2xl border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-xs font-semibold text-cyan-300 light:text-cyan-700"
-                        >
-                            Usar sugerido
-                        </button>
-                    </div>
-
-                    <div className="mt-3 grid grid-cols-3 gap-2">
-                        {RISK_LEVELS.map((riskLevel) => (
-                            <label
-                                key={riskLevel}
-                                className="flex cursor-pointer items-center justify-center rounded-2xl border border-white/10 bg-white/10 px-3 py-2 text-xs font-semibold text-slate-200 light:border-slate-200 light:bg-white light:text-slate-700"
-                            >
-                                <input
-                                    type="radio"
-                                    value={riskLevel}
-                                    className="sr-only"
-                                    {...register("riskLevel")}
-                                />
-                                {PLANT_RISK_LABELS[riskLevel]}
-                            </label>
-                        ))}
-                    </div>
-                </section>
-
-                <label className="block space-y-2">
-                    <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-                        Comentarios
-                    </span>
-
-                    <textarea
-                        rows={3}
-                        placeholder="Ej. Sin espacio para descarga, sin rampa disponible, prioridad para P6..."
-                        className="w-full rounded-sm bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 light:border light:border-slate-200 light:bg-white light:text-slate-900"
-                        {...register("notes")}
+                    <input
+                      type="number"
+                      min={0}
+                      inputMode="numeric"
+                      className="h-10 min-w-0 flex-1 bg-transparent text-center font-ibm-plex-mono text-xl font-semibold text-foreground-dark outline-none light:text-slate-900"
+                      {...register(`checkValues.${field.key}`)}
                     />
 
-                    {errors.notes && (
-                        <p className="text-sm text-red-400 light:text-red-600">
-                            {errors.notes.message}
-                        </p>
-                    )}
-                </label>
+                    <button
+                      type="button"
+                      onClick={() => handleStep(field.key, 1)}
+                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line-strong text-muted transition hover:border-principal hover:text-principal"
+                      aria-label={`Sumar a ${field.label}`}
+                    >
+                      <Plus size={18} />
+                    </button>
+                  </div>
 
-                <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? "Guardando..." : "Guardar estatus"}
-                </Button>
-            </form>
+                  <span className="sr-only">Valor actual: {value}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          {errors.checkValues && (
+            <p className="mt-3 text-sm text-red-400 light:text-red-600">
+              Revisa las cantidades capturadas.
+            </p>
+          )}
         </section>
-    );
+
+        <section>
+          <p className="section-label before:h-px before:flex-1 before:bg-line">
+            Condición operativa
+          </p>
+
+          <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
+            {OPERATIONAL_CONDITIONS.map((condition) => {
+              const isSelected = watchedOperationalCondition === condition;
+
+              return (
+                <label
+                  key={condition}
+                  className={`flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border px-4 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.06em] transition ${
+                    isSelected
+                      ? "border-principal bg-principal text-slate-950"
+                      : "border-line-strong bg-transparent text-muted"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value={condition}
+                    className="sr-only"
+                    {...register("operationalCondition")}
+                  />
+                  {PLANT_OPERATIONAL_CONDITION_LABELS[condition]}
+                </label>
+              );
+            })}
+          </div>
+        </section>
+
+        <section>
+          <div className="flex items-center justify-between gap-3">
+            <p className="section-label flex-1 before:h-px before:flex-1 before:bg-line">
+              Riesgo operativo
+            </p>
+
+            <button
+              type="button"
+              onClick={handleApplySuggestedRisk}
+              className="shrink-0 font-barlow-condensed text-xs font-semibold uppercase tracking-[0.08em] text-principal"
+            >
+              Usar sugerido
+            </button>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {RISK_LEVELS.map((riskLevel) => {
+              const isSelected = watchedRiskLevel === riskLevel;
+              const selectedClass =
+                riskLevel === "low"
+                  ? "border-success bg-success/10 text-success"
+                  : riskLevel === "high"
+                    ? "border-danger bg-danger/10 text-danger"
+                    : "border-principal bg-principal/10 text-principal";
+
+              return (
+                <label
+                  key={riskLevel}
+                  className={`flex min-h-12 cursor-pointer items-center justify-center rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.08em] transition ${
+                    isSelected
+                      ? selectedClass
+                      : "border-line-strong text-muted"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    value={riskLevel}
+                    className="sr-only"
+                    {...register("riskLevel")}
+                  />
+                  {PLANT_RISK_LABELS[riskLevel]}
+                </label>
+              );
+            })}
+          </div>
+
+          <p className="sub mt-3">
+            Sugerido: {PLANT_RISK_LABELS[suggestedRiskLevel]} · umbral llenos ≥{" "}
+            {riskThresholds.mediumFullCountThreshold}
+          </p>
+        </section>
+
+        <label className="block space-y-2">
+          <span className="section-label before:h-px before:flex-1 before:bg-line">
+            Comentarios
+          </span>
+
+          <textarea
+            rows={3}
+            placeholder="Ej. Sin espacio para descarga, sin rampa disponible, prioridad para P6..."
+            className="w-full rounded-sm border border-line bg-panel px-4 py-3 text-sm text-foreground-dark outline-none placeholder:text-faint focus:border-principal light:border-slate-200 light:bg-white light:text-slate-900"
+            {...register("notes")}
+          />
+
+          {errors.notes && (
+            <p className="text-sm text-red-400 light:text-red-600">
+              {errors.notes.message}
+            </p>
+          )}
+        </label>
+
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Guardando..." : "Guardar estatus"}
+        </Button>
+      </form>
+    </section>
+  );
 }
