@@ -1,3 +1,8 @@
+import { Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+import { useAuth } from "../../../auth/hooks/useAuth";
+import { deleteUnitMovementEvent } from "../services/unit-movement-events.service";
 import {
   UNIT_MOVEMENT_EVENT_LABELS,
   type UnitMovementEvent,
@@ -21,6 +26,10 @@ export function UnitMovementTimeline({
   isLoading,
   errorMessage,
 }: UnitMovementTimelineProps) {
+  const { can } = useAuth();
+  const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const canDeleteEvents = can("units.event.delete");
+
   if (isLoading) {
     return <p className="sub mt-5">Cargando timeline...</p>;
   }
@@ -36,10 +45,28 @@ export function UnitMovementTimeline({
   if (events.length === 0) {
     return (
       <p className="mt-5 rounded-sm border border-line bg-surface-dark px-4 py-3 text-sm text-muted light:bg-slate-50">
-        Sin eventos registrados en este movimiento.
+        Sin eventos registrados.
       </p>
     );
   }
+
+  const handleDelete = async (event: UnitMovementEvent) => {
+    const confirmed = window.confirm(
+      `¿Eliminar realmente la actualización “${UNIT_MOVEMENT_EVENT_LABELS[event.eventType]}”? El estado regresará al evento anterior.`,
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeletingEventId(event.id);
+      await deleteUnitMovementEvent(event.id);
+      toast.success("Actualización eliminada.");
+    } catch {
+      toast.error("No se pudo eliminar la actualización.");
+    } finally {
+      setDeletingEventId(null);
+    }
+  };
 
   return (
     <section className="mt-5">
@@ -48,28 +75,47 @@ export function UnitMovementTimeline({
       </p>
 
       <div className="mt-4 rounded-sm border border-line bg-surface-dark px-4 light:bg-slate-50">
-        {events.map((event, index) => (
-          <article
-            key={event.id}
-            className={`grid grid-cols-[auto_1fr] gap-4 py-4 ${
-              index < events.length - 1 ? "border-b border-dashed border-line-strong" : ""
-            }`}
-          >
-            <time className="font-ibm-plex-mono text-sm text-muted">
-              {formatTime(event.eventAt)}
-            </time>
+        {events.map((event, index) => {
+          const isProtected =
+            event.eventType === "completed" || event.eventType === "cancelled";
 
-            <div className="min-w-0">
-              <p className="font-medium text-foreground-dark light:text-slate-900">
-                {UNIT_MOVEMENT_EVENT_LABELS[event.eventType]}
-              </p>
+          return (
+            <article
+              key={event.id}
+              className={`grid grid-cols-[auto_1fr_auto] items-start gap-4 py-4 ${
+                index < events.length - 1
+                  ? "border-b border-dashed border-line-strong"
+                  : ""
+              }`}
+            >
+              <time className="font-ibm-plex-mono text-sm text-muted">
+                {formatTime(event.eventAt)}
+              </time>
 
-              {event.notes && (
-                <p className="sub mt-1 line-clamp-2">{event.notes}</p>
+              <div className="min-w-0">
+                <p className="font-medium text-foreground-dark light:text-slate-900">
+                  {UNIT_MOVEMENT_EVENT_LABELS[event.eventType]}
+                </p>
+
+                {event.notes && (
+                  <p className="sub mt-1 line-clamp-2">{event.notes}</p>
+                )}
+              </div>
+
+              {canDeleteEvents && !isProtected && (
+                <button
+                  type="button"
+                  disabled={deletingEventId === event.id}
+                  onClick={() => void handleDelete(event)}
+                  className="flex h-10 w-10 items-center justify-center rounded-sm border border-danger/40 text-danger transition active:scale-95 disabled:opacity-50"
+                  aria-label={`Eliminar ${UNIT_MOVEMENT_EVENT_LABELS[event.eventType]}`}
+                >
+                  <Trash2 size={16} />
+                </button>
               )}
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </section>
   );
