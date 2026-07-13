@@ -1,5 +1,6 @@
 import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
 import type { UnitMovementEventType } from "../types/unit-movement-event.types";
+import { getMovementStatusActions } from "../utils/unit-event-actions";
 
 type UnitMovementEventActionsProps = {
   actions: UnitMovementEventAction[];
@@ -16,7 +17,9 @@ export function UnitMovementEventActions({
   isSubmitting,
   onCreateEvent,
 }: UnitMovementEventActionsProps) {
-  if (actions.length === 0) {
+  const visibleActions = getMovementStatusActions(actions);
+
+  if (visibleActions.length === 0) {
     return null;
   }
 
@@ -27,12 +30,12 @@ export function UnitMovementEventActions({
       </p>
 
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-        {actions.map((action) => {
+        {visibleActions.map((action) => {
           const isActive = activeEventType === action.eventType;
 
           return (
             <button
-              key={action.eventType}
+              key={action.id}
               type="button"
               disabled={disabled || isSubmitting}
               onClick={() => void onCreateEvent(action.eventType)}
