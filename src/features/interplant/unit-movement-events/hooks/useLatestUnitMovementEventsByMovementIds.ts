@@ -12,6 +12,10 @@ function mapLatestEventsByMovementId(
   events: UnitMovementEvent[],
 ): LatestEventsByMovementId {
   return events.reduce<LatestEventsByMovementId>((latestEvents, event) => {
+    if (!event.unitMovementId) {
+      return latestEvents;
+    }
+
     if (!latestEvents[event.unitMovementId]) {
       latestEvents[event.unitMovementId] = event;
     }
