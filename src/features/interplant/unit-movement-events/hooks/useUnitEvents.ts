@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createUnitMovementEvent,
   deleteUnitMovementEvent,
+  getStandaloneMealEvents,
   getUnitEvents,
   subscribeToUnitEventsChanges,
 } from "../services/unit-movement-events.service";
@@ -15,21 +16,24 @@ export function useUnitEvents(
   shiftId: string | undefined,
 ) {
   const [events, setEvents] = useState<UnitMovementEvent[]>([]);
+  const [mealEvents, setMealEvents] = useState<UnitMovementEvent[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(unitId && shiftId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const refetch = useCallback(async () => {
     if (!unitId || !shiftId) {
-      setEvents([]);
-      setIsLoading(false);
       return;
     }
 
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const data = await getUnitEvents({ unitId, shiftId });
-      setEvents(data);
+      const [currentShiftEvents, standaloneMealEvents] = await Promise.all([
+        getUnitEvents({ unitId, shiftId }),
+        getStandaloneMealEvents(unitId),
+      ]);
+      setEvents(currentShiftEvents);
+      setMealEvents(standaloneMealEvents);
     } catch {
       setErrorMessage("No se pudieron cargar los eventos de la unidad.");
     } finally {
@@ -42,28 +46,13 @@ export function useUnitEvents(
       return;
     }
 
-    let isMounted = true;
-
-    void getUnitEvents({ unitId, shiftId })
-      .then((data) => {
-        if (!isMounted) return;
-        setEvents(data);
-        setErrorMessage(null);
-      })
-      .catch(() => {
-        if (!isMounted) return;
-        setErrorMessage("No se pudieron cargar los eventos de la unidad.");
-      })
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
+    void Promise.resolve().then(refetch);
 
     const channel = subscribeToUnitEventsChanges(unitId, () => {
       void refetch();
     });
 
     return () => {
-      isMounted = false;
       void channel.unsubscribe();
     };
   }, [refetch, shiftId, unitId]);
@@ -74,10 +63,8 @@ export function useUnitEvents(
   );
 
   const latestStandaloneEvent = standaloneEvents[0] ?? null;
-  const latestMealStart = standaloneEvents.find(
-    (event) => event.eventType === "meal",
-  );
-  const latestMealFinished = standaloneEvents.find(
+  const latestMealStart = mealEvents.find((event) => event.eventType === "meal");
+  const latestMealFinished = mealEvents.find(
     (event) => event.eventType === "meal_finished",
   );
   const isMealActive = Boolean(
@@ -102,6 +89,14 @@ export function useUnitEvents(
       });
 
       setEvents((current) => [created, ...current]);
+
+      if (
+        created.unitMovementId === null &&
+        (created.eventType === "meal" || created.eventType === "meal_finished")
+      ) {
+        setMealEvents((current) => [created, ...current]);
+      }
+
       return created;
     },
     [shiftId, unitId],
@@ -110,6 +105,7 @@ export function useUnitEvents(
   const removeEvent = useCallback(async (eventId: string) => {
     await deleteUnitMovementEvent(eventId);
     setEvents((current) => current.filter((event) => event.id !== eventId));
+    setMealEvents((current) => current.filter((event) => event.id !== eventId));
   }, []);
 
   return {
