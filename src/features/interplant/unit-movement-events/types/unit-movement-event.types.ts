@@ -61,6 +61,16 @@ function humanizeEventType(eventType: string) {
     .join(" ");
 }
 
+export function registerUnitMovementEventLabels(
+  entries: Array<{ eventType: string; label: string }>,
+) {
+  entries.forEach(({ eventType, label }) => {
+    if (eventType && label.trim()) {
+      BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS[eventType] = label.trim();
+    }
+  });
+}
+
 export function getDefaultUnitMovementEventLabel(eventType: string) {
   return BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS[eventType] ?? humanizeEventType(eventType);
 }
