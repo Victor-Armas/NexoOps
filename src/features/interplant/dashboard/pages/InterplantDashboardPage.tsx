@@ -16,9 +16,11 @@ import {
   INCIDENT_SEVERITY_LABELS,
   type IncidentSeverity,
 } from "../../incidents/types/incident.types";
+import { useLatestUnitEventsByUnitIds } from "../../unit-movement-events/hooks/useLatestUnitEventsByUnitIds";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
 import {
   UNIT_MOVEMENT_EVENT_LABELS,
+  type UnitMovementEvent,
   type UnitMovementEventType,
 } from "../../unit-movement-events/types/unit-movement-event.types";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
@@ -69,13 +71,10 @@ function formatElapsedLabel(startedAt: string, now: Date) {
     Math.floor((now.getTime() - new Date(startedAt).getTime()) / 60_000),
   );
 
-  if (elapsedMinutes < 60) {
-    return `${elapsedMinutes} min`;
-  }
+  if (elapsedMinutes < 60) return `${elapsedMinutes} min`;
 
   const hours = Math.floor(elapsedMinutes / 60);
   const minutes = elapsedMinutes % 60;
-
   return `${hours} h ${minutes.toString().padStart(2, "0")} min`;
 }
 
@@ -84,7 +83,6 @@ function getPlantRiskClasses(riskLevel?: PlantRiskLevel) {
     return {
       border: "border-l-danger",
       icon: "border-danger/50 bg-danger/10 text-danger",
-      text: "text-danger",
     };
   }
 
@@ -92,7 +90,6 @@ function getPlantRiskClasses(riskLevel?: PlantRiskLevel) {
     return {
       border: "border-l-principal",
       icon: "border-principal/50 bg-principal/10 text-principal",
-      text: "text-principal",
     };
   }
 
@@ -100,14 +97,12 @@ function getPlantRiskClasses(riskLevel?: PlantRiskLevel) {
     return {
       border: "border-l-success",
       icon: "border-success/50 bg-success/10 text-success",
-      text: "text-success",
     };
   }
 
   return {
     border: "border-l-principal",
     icon: "border-principal/50 bg-principal/10 text-principal",
-    text: "text-muted",
   };
 }
 
@@ -135,43 +130,71 @@ function getIncidentClasses(severity: IncidentSeverity) {
   };
 }
 
+function isStandaloneActiveEvent(event: UnitMovementEvent | null) {
+  return (
+    event?.unitMovementId === null &&
+    (event.eventType === "meal" || event.eventType === "driver_change")
+  );
+}
+
+function resolveUnitEvent(params: {
+  movement: UnitMovement | null;
+  movementEvent: UnitMovementEvent | null;
+  unitEvent: UnitMovementEvent | null;
+}) {
+  const { movement, movementEvent, unitEvent } = params;
+
+  if (!unitEvent || unitEvent.eventType === "meal_finished") {
+    return movementEvent;
+  }
+
+  if (
+    movement?.status === "open" &&
+    new Date(movement.startedAt).getTime() > new Date(unitEvent.eventAt).getTime()
+  ) {
+    return movementEvent;
+  }
+
+  if (!movementEvent) return unitEvent;
+
+  return new Date(unitEvent.eventAt).getTime() >=
+    new Date(movementEvent.eventAt).getTime()
+    ? unitEvent
+    : movementEvent;
+}
+
 function getUnitStatusLabel(
   movement: UnitMovement | null,
-  eventType?: UnitMovementEventType | null,
+  event: UnitMovementEvent | null,
 ) {
-  if (!movement || movement.status !== "open") {
-    return "Disponible";
+  if (isStandaloneActiveEvent(event)) {
+    return UNIT_MOVEMENT_EVENT_LABELS[event!.eventType];
   }
 
-  if (!eventType || eventType === "meal_finished") {
-    return "En movimiento";
-  }
-
-  return UNIT_MOVEMENT_EVENT_LABELS[eventType];
+  if (!movement || movement.status !== "open") return "Disponible";
+  if (!event || event.eventType === "meal_finished") return "En movimiento";
+  return UNIT_MOVEMENT_EVENT_LABELS[event.eventType];
 }
 
 function getUnitAccentClass(
   movement: UnitMovement | null,
-  eventType?: UnitMovementEventType | null,
+  event: UnitMovementEvent | null,
 ) {
-  if (!movement || movement.status !== "open") {
-    return "text-foreground-dark light:text-slate-900";
-  }
-
   if (
-    eventType === "waiting_dock" ||
-    eventType === "meal" ||
-    eventType === "positioned"
+    event?.eventType === "waiting_dock" ||
+    event?.eventType === "meal" ||
+    event?.eventType === "positioned" ||
+    event?.eventType === "driver_change"
   ) {
     return "text-principal";
   }
 
-  if (eventType === "cancelled") {
-    return "text-danger";
+  if (event?.eventType === "loading" || event?.eventType === "unloading") {
+    return "text-blue-300 light:text-blue-700";
   }
 
-  if (eventType === "loading" || eventType === "unloading") {
-    return "text-blue-300 light:text-blue-700";
+  if (!movement || movement.status !== "open") {
+    return "text-foreground-dark light:text-slate-900";
   }
 
   return "text-foreground-dark light:text-slate-900";
@@ -219,9 +242,15 @@ export function InterplantDashboardPage() {
 
   const {
     latestByMovementId,
-    isLoading: isLoadingLatestEvents,
-    errorMessage: latestEventsErrorMessage,
+    isLoading: isLoadingLatestMovementEvents,
+    errorMessage: latestMovementEventsErrorMessage,
   } = useLatestUnitMovementEventsByMovementIds(unitMovements);
+
+  const {
+    latestByUnitId: latestEventByUnitId,
+    isLoading: isLoadingLatestUnitEvents,
+    errorMessage: latestUnitEventsErrorMessage,
+  } = useLatestUnitEventsByUnitIds(unitIds, shift?.id);
 
   const {
     incidents,
@@ -230,17 +259,10 @@ export function InterplantDashboardPage() {
   } = useIncidents(shift?.id);
 
   useEffect(() => {
-    if (!shift) {
-      return;
-    }
+    if (!shift) return;
 
-    const intervalId = window.setInterval(() => {
-      setNow(new Date());
-    }, 1_000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
+    const intervalId = window.setInterval(() => setNow(new Date()), 1_000);
+    return () => window.clearInterval(intervalId);
   }, [shift]);
 
   const canOpenShift = can("shifts.open");
@@ -249,35 +271,29 @@ export function InterplantDashboardPage() {
     () =>
       incidents
         .filter((incident) => incident.status === "open")
-        .sort((firstIncident, secondIncident) => {
+        .sort((first, second) => {
           const severityDifference =
-            INCIDENT_SEVERITY_WEIGHT[secondIncident.severity] -
-            INCIDENT_SEVERITY_WEIGHT[firstIncident.severity];
+            INCIDENT_SEVERITY_WEIGHT[second.severity] -
+            INCIDENT_SEVERITY_WEIGHT[first.severity];
 
-          if (severityDifference !== 0) {
-            return severityDifference;
-          }
+          if (severityDifference !== 0) return severityDifference;
 
           return (
-            new Date(secondIncident.occurredAt).getTime() -
-            new Date(firstIncident.occurredAt).getTime()
+            new Date(second.occurredAt).getTime() -
+            new Date(first.occurredAt).getTime()
           );
         }),
     [incidents],
   );
 
-  const latestMovementByUnitId = useMemo(() => {
-    return unitMovements.reduce<Record<string, UnitMovement>>(
-      (latestMovements, movement) => {
-        if (!latestMovements[movement.unitId]) {
-          latestMovements[movement.unitId] = movement;
-        }
-
-        return latestMovements;
-      },
-      {},
-    );
-  }, [unitMovements]);
+  const latestMovementByUnitId = useMemo(
+    () =>
+      unitMovements.reduce<Record<string, UnitMovement>>((latest, movement) => {
+        if (!latest[movement.unitId]) latest[movement.unitId] = movement;
+        return latest;
+      }, {}),
+    [unitMovements],
+  );
 
   const isLoading =
     isLoadingShift ||
@@ -287,7 +303,8 @@ export function InterplantDashboardPage() {
           isLoadingUnits ||
           isLoadingLatestChecks ||
           isLoadingUnitMovements ||
-          isLoadingLatestEvents ||
+          isLoadingLatestMovementEvents ||
+          isLoadingLatestUnitEvents ||
           isLoadingIncidents),
     );
 
@@ -297,12 +314,11 @@ export function InterplantDashboardPage() {
     unitsErrorMessage ||
     latestChecksErrorMessage ||
     unitMovementsErrorMessage ||
-    latestEventsErrorMessage ||
+    latestMovementEventsErrorMessage ||
+    latestUnitEventsErrorMessage ||
     incidentsErrorMessage;
 
-  if (isLoading) {
-    return <LoadingScreen message="Cargando turno..." />;
-  }
+  if (isLoading) return <LoadingScreen message="Cargando turno..." />;
 
   const handleOpenShift = async (values: OpenShiftFormValues) => {
     try {
@@ -357,7 +373,6 @@ export function InterplantDashboardPage() {
                   {profile?.fullName}
                 </p>
               </div>
-
               <span className="mincard shrink-0 text-xs uppercase light:text-slate-900">
                 {profile?.role.name}
               </span>
@@ -371,7 +386,9 @@ export function InterplantDashboardPage() {
                 className={openIncidents.length > 0 ? "text-danger" : "text-muted"}
               />
               <span>
-                {openIncidents.length > 0 ? "Prioridad · Incidencias" : "Incidencias"}
+                {openIncidents.length > 0
+                  ? "Prioridad · Incidencias"
+                  : "Incidencias"}
               </span>
               <span className="h-px flex-1 bg-line" />
               {openIncidents.length > 0 && (
@@ -405,14 +422,12 @@ export function InterplantDashboardPage() {
                     >
                       <AlertTriangle size={23} />
                     </span>
-
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground-dark light:text-slate-900">
                         {incident.title}
                       </p>
                       <p className="sub mt-1 truncate">{metadata}</p>
                     </div>
-
                     <span
                       className={`mincard min-h-9 shrink-0 border px-3 text-sm ${classes.badge}`}
                     >
@@ -431,7 +446,9 @@ export function InterplantDashboardPage() {
                     <CheckCircle2 size={24} />
                   </span>
                   <div>
-                    <p className="font-medium text-success">Sin incidencias abiertas</p>
+                    <p className="font-medium text-success">
+                      Sin incidencias abiertas
+                    </p>
                     <p className="sub mt-1">Turno sin pendientes críticos</p>
                   </div>
                 </Link>
@@ -465,14 +482,15 @@ export function InterplantDashboardPage() {
                         <Factory
                           size={23}
                           className={
-                            latestCheck.riskLevel === "high" ? "animate-pulse" : undefined
+                            latestCheck.riskLevel === "high"
+                              ? "animate-pulse"
+                              : undefined
                           }
                         />
                       ) : (
                         <AlertTriangle size={22} />
                       )}
                     </span>
-
                     <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground-dark light:text-slate-900">
                         {plant.name}
@@ -485,11 +503,12 @@ export function InterplantDashboardPage() {
                           : "Sin revisar este turno"}
                       </p>
                     </div>
-
                     <div className="shrink-0 text-right">
                       <p
                         className={`font-ibm-plex-mono text-2xl font-semibold ${
-                          reviewCount === 0 ? "text-faint" : "text-foreground-dark light:text-slate-900"
+                          reviewCount === 0
+                            ? "text-faint"
+                            : "text-foreground-dark light:text-slate-900"
                         }`}
                       >
                         {reviewCount}
@@ -514,28 +533,40 @@ export function InterplantDashboardPage() {
             <div className="mt-4 space-y-3">
               {units.map((unit) => {
                 const movement = latestMovementByUnitId[unit.id] ?? null;
-                const latestEvent = movement
+                const movementEvent = movement
                   ? latestByMovementId[movement.id] ?? null
                   : null;
-                const isAvailable = !movement || movement.status !== "open";
-                const rawEventType = latestEvent?.eventType ?? null;
-                const visualEventType =
-                  rawEventType === "meal_finished"
-                    ? "in_transit"
-                    : rawEventType ?? (isAvailable ? null : "in_transit");
-                const statusLabel = getUnitStatusLabel(movement, rawEventType);
-                const statusStartedAt = latestEvent?.eventAt ?? movement?.startedAt ?? null;
+                const unitEvent = latestEventByUnitId[unit.id] ?? null;
+                const event = resolveUnitEvent({
+                  movement,
+                  movementEvent,
+                  unitEvent,
+                });
+                const standaloneActive = isStandaloneActiveEvent(event);
+                const isAvailable =
+                  !standaloneActive && (!movement || movement.status !== "open");
+                const visualEventType: UnitMovementEventType | null =
+                  event?.eventType === "meal_finished"
+                    ? movement?.status === "open"
+                      ? "in_transit"
+                      : null
+                    : event?.eventType ??
+                      (movement?.status === "open" ? "in_transit" : null);
+                const statusLabel = getUnitStatusLabel(movement, event);
+                const statusStartedAt =
+                  event?.eventAt ?? movement?.startedAt ?? null;
                 const locationPlantId =
                   movement?.destinationPlantId ?? movement?.originPlantId ?? null;
-                const location = plants.find((plant) => plant.id === locationPlantId);
+                const location = plants.find(
+                  (plant) => plant.id === locationPlantId,
+                );
 
                 return (
                   <Link
                     key={unit.id}
                     to={`/app/projects/${projectId}/units/${unit.id}`}
                     className={`flex items-center gap-4 rounded-sm border border-line bg-panel p-4 transition active:scale-[0.99] ${
-                      !isAvailable &&
-                      (rawEventType === "waiting_dock" || rawEventType === "meal")
+                      event?.eventType === "waiting_dock" || standaloneActive
                         ? "border-l-4 border-l-principal"
                         : ""
                     }`}
@@ -544,12 +575,11 @@ export function InterplantDashboardPage() {
                       eventType={visualEventType}
                       isAvailable={isAvailable}
                     />
-
                     <div className="min-w-0 flex-1">
                       <p
                         className={`font-medium ${getUnitAccentClass(
                           movement,
-                          rawEventType,
+                          event,
                         )}`}
                       >
                         {statusLabel}
@@ -561,9 +591,8 @@ export function InterplantDashboardPage() {
                           : " · Sin movimiento activo"}
                       </p>
                     </div>
-
                     <span className="mincard min-h-10 shrink-0 light:text-slate-900">
-                      {location?.code ?? "—"}
+                      {standaloneActive ? "—" : location?.code ?? "—"}
                     </span>
                   </Link>
                 );
