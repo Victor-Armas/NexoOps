@@ -54,6 +54,23 @@ export async function getUnitEvents(params: {
   return data.map(mapUnitMovementEvent);
 }
 
+export async function getStandaloneMealEvents(
+  unitId: string,
+): Promise<UnitMovementEvent[]> {
+  const { data, error } = await supabase
+    .from("unit_events")
+    .select(UNIT_EVENT_COLUMNS)
+    .eq("unit_id", unitId)
+    .is("unit_movement_id", null)
+    .in("event_type", ["meal", "meal_finished"])
+    .order("event_at", { ascending: false })
+    .limit(20)
+    .returns<UnitMovementEventRow[]>();
+
+  if (error) throw error;
+  return data.map(mapUnitMovementEvent);
+}
+
 export async function getUnitEventsByUnitIds(
   unitIds: string[],
 ): Promise<UnitMovementEvent[]> {
