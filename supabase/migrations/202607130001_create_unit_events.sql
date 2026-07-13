@@ -42,8 +42,6 @@ create index if not exists unit_events_movement_event_at_idx
   on public.unit_events (unit_movement_id, event_at desc)
   where unit_movement_id is not null;
 
--- Preserve the complete existing timeline. The legacy table remains available
--- during the transition and can be removed in a later migration after validation.
 insert into public.unit_events (
   id,
   unit_id,
@@ -97,24 +95,37 @@ to authenticated
 with check (
   created_by = auth.uid()
   and public.has_permission('units.event.create')
-  and exists (
-    select 1
-    from public.shifts s
-    where s.id = unit_events.shift_id
-      and public.can_access_project(s.project_id)
-      and s.status = 'open'
-  )
   and (
     (
       unit_movement_id is null
       and event_type in ('meal', 'meal_finished', 'driver_change')
+      and exists (
+        select 1
+        from public.shifts s
+        where s.id = unit_events.shift_id
+          and s.status = 'open'
+          and public.can_access_project(s.project_id)
+      )
     )
     or exists (
       select 1
       from public.unit_movements um
+      join public.shifts movement_shift on movement_shift.id = um.shift_id
       where um.id = unit_events.unit_movement_id
         and um.unit_id = unit_events.unit_id
-        and um.shift_id = unit_events.shift_id
+        and um.status = 'open'
+        and public.can_access_project(movement_shift.project_id)
+    )
+    or (
+      event_type in ('completed', 'cancelled')
+      and exists (
+        select 1
+        from public.unit_movements um
+        join public.shifts movement_shift on movement_shift.id = um.shift_id
+        where um.id = unit_events.unit_movement_id
+          and um.unit_id = unit_events.unit_id
+          and public.can_access_project(movement_shift.project_id)
+      )
     )
   )
 );
