@@ -2,13 +2,27 @@ import { useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import { useLatestUnitEventsByUnitIds } from "../../unit-movement-events/hooks/useLatestUnitEventsByUnitIds";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
+import type { UnitMovementEvent } from "../../unit-movement-events/types/unit-movement-event.types";
 import { usePlants } from "../../plants/hooks/usePlants";
 import { useShift } from "../../shifts/hooks/useShift";
 import { useLatestUnitMovementsByShift } from "../../unit-movements/hooks/useLatestUnitMovementsByShift";
 import { useMovementTypes } from "../../unit-movements/hooks/useMovementTypes";
 import { UnitCard } from "../components/UnitCard";
 import { useUnits } from "../hooks/useUnits";
+
+function getLatestEvent(
+  first: UnitMovementEvent | null,
+  second: UnitMovementEvent | null,
+) {
+  if (!first) return second;
+  if (!second) return first;
+
+  return new Date(first.eventAt).getTime() >= new Date(second.eventAt).getTime()
+    ? first
+    : second;
+}
 
 export function UnitsPage() {
   const navigate = useNavigate();
@@ -58,16 +72,27 @@ export function UnitsPage() {
 
   const {
     latestByMovementId,
-    isLoading: isLoadingLatestEvents,
-    errorMessage: latestEventsErrorMessage,
+    isLoading: isLoadingLatestMovementEvents,
+    errorMessage: latestMovementEventsErrorMessage,
   } = useLatestUnitMovementEventsByMovementIds(latestMovements);
+
+  const {
+    latestByUnitId: latestEventByUnitId,
+    isLoading: isLoadingLatestUnitEvents,
+    errorMessage: latestUnitEventsErrorMessage,
+  } = useLatestUnitEventsByUnitIds(unitIds, shift?.id);
 
   const isLoading =
     isLoadingShift ||
     isLoadingUnits ||
     isLoadingPlants ||
     isLoadingMovementTypes ||
-    Boolean(shift && (isLoadingLatestMovements || isLoadingLatestEvents));
+    Boolean(
+      shift &&
+        (isLoadingLatestMovements ||
+          isLoadingLatestMovementEvents ||
+          isLoadingLatestUnitEvents),
+    );
 
   const errorMessage =
     shiftErrorMessage ||
@@ -75,7 +100,8 @@ export function UnitsPage() {
     plantsErrorMessage ||
     movementTypesErrorMessage ||
     latestMovementsErrorMessage ||
-    latestEventsErrorMessage;
+    latestMovementEventsErrorMessage ||
+    latestUnitEventsErrorMessage;
 
   if (isLoading) {
     return <LoadingScreen message="Cargando unidades..." />;
@@ -106,9 +132,11 @@ export function UnitsPage() {
       <section className="space-y-3">
         {units.map((unit) => {
           const latestMovement = latestByUnitId[unit.id] ?? null;
-          const latestEvent = latestMovement
+          const movementEvent = latestMovement
             ? latestByMovementId[latestMovement.id] ?? null
             : null;
+          const unitEvent = latestEventByUnitId[unit.id] ?? null;
+          const latestEvent = getLatestEvent(movementEvent, unitEvent);
 
           return (
             <button
