@@ -23,7 +23,8 @@ create table if not exists public.unit_events (
   ),
   notes text null,
   event_at timestamptz not null default now(),
-  created_by uuid not null references auth.users(id),
+  created_by uuid not null default auth.uid()
+    references public.profiles(id) on delete restrict,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint unit_events_standalone_type_check check (
@@ -42,6 +43,7 @@ create index if not exists unit_events_movement_event_at_idx
   on public.unit_events (unit_movement_id, event_at desc)
   where unit_movement_id is not null;
 
+-- Preserve the complete existing timeline before switching the frontend.
 insert into public.unit_events (
   id,
   unit_id,
@@ -160,18 +162,28 @@ using (
   )
 );
 
-insert into public.permissions (key, name, is_active)
-values ('units.event.delete', 'Eliminar actualización de estado', true)
+insert into public.permissions (key, name, description, is_active)
+values (
+  'units.event.delete',
+  'Eliminar actualización de estado',
+  'Permite eliminar definitivamente una actualización intermedia del estado de una unidad.',
+  true
+)
 on conflict (key) do update
 set name = excluded.name,
-    is_active = true;
+    description = excluded.description,
+    is_active = true,
+    updated_at = now();
 
 insert into public.role_permissions (role_id, permission_id, is_enabled)
-select r.id, p.id, true
+select
+  r.id,
+  p.id,
+  r.key in ('admin', 'supervisor')
 from public.roles r
 join public.permissions p on p.key = 'units.event.delete'
-where r.key in ('admin', 'supervisor')
 on conflict (role_id, permission_id) do update
-set is_enabled = excluded.is_enabled;
+set is_enabled = excluded.is_enabled,
+    updated_at = now();
 
 commit;
