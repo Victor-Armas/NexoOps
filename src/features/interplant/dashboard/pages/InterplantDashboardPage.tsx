@@ -18,11 +18,17 @@ import {
 } from "../../incidents/types/incident.types";
 import { useLatestUnitEventsByUnitIds } from "../../unit-movement-events/hooks/useLatestUnitEventsByUnitIds";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
+import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
+import type { UnitMovementEvent } from "../../unit-movement-events/types/unit-movement-event.types";
 import {
-  UNIT_MOVEMENT_EVENT_LABELS,
-  type UnitMovementEvent,
-  type UnitMovementEventType,
-} from "../../unit-movement-events/types/unit-movement-event.types";
+  getUnitEventColorKey,
+  getUnitEventIconKey,
+  getUnitEventLabel,
+} from "../../unit-movement-events/utils/unit-event-actions";
+import {
+  isStandaloneActiveUnitEvent,
+  resolveCurrentUnitEvent,
+} from "../../unit-movement-events/utils/unit-event-status";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
 import {
   PLANT_RISK_LABELS,
@@ -30,8 +36,8 @@ import {
 } from "../../plant-checks/types/plant-check.types";
 import { usePlants } from "../../plants/hooks/usePlants";
 import { OpenShiftPanel } from "../../shifts/components/OpenShiftPanel";
-import type { OpenShiftFormValues } from "../../shifts/schemas/shift.schemas";
 import { useShift } from "../../shifts/hooks/useShift";
+import type { OpenShiftFormValues } from "../../shifts/schemas/shift.schemas";
 import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
 import { useShiftUnitMovements } from "../../unit-movements/hooks/useShiftUnitMovements";
 import type { UnitMovement } from "../../unit-movements/types/unit-movement.types";
@@ -130,74 +136,29 @@ function getIncidentClasses(severity: IncidentSeverity) {
   };
 }
 
-function isStandaloneActiveEvent(event: UnitMovementEvent | null) {
-  return (
-    event?.unitMovementId === null &&
-    (event.eventType === "meal" || event.eventType === "driver_change")
-  );
+function getUnitAccentClass(colorKey: string) {
+  if (colorKey === "amber") return "text-principal";
+  if (colorKey === "blue") return "text-blue-300 light:text-blue-700";
+  if (colorKey === "success") return "text-success";
+  if (colorKey === "danger") return "text-danger";
+  return "text-foreground-dark light:text-slate-900";
 }
 
-function resolveUnitEvent(params: {
+function getUnitStatusLabel(params: {
   movement: UnitMovement | null;
-  movementEvent: UnitMovementEvent | null;
-  unitEvent: UnitMovementEvent | null;
+  event: UnitMovementEvent | null;
+  standaloneActive: boolean;
+  eventActions: ReturnType<typeof useUnitMovementEventActions>["actions"];
 }) {
-  const { movement, movementEvent, unitEvent } = params;
+  const { movement, event, standaloneActive, eventActions } = params;
 
-  if (!unitEvent || unitEvent.eventType === "meal_finished") {
-    return movementEvent;
-  }
-
-  if (
-    movement?.status === "open" &&
-    new Date(movement.startedAt).getTime() > new Date(unitEvent.eventAt).getTime()
-  ) {
-    return movementEvent;
-  }
-
-  if (!movementEvent) return unitEvent;
-
-  return new Date(unitEvent.eventAt).getTime() >=
-    new Date(movementEvent.eventAt).getTime()
-    ? unitEvent
-    : movementEvent;
-}
-
-function getUnitStatusLabel(
-  movement: UnitMovement | null,
-  event: UnitMovementEvent | null,
-) {
-  if (isStandaloneActiveEvent(event)) {
-    return UNIT_MOVEMENT_EVENT_LABELS[event!.eventType];
+  if (standaloneActive && event) {
+    return getUnitEventLabel(eventActions, event.eventType);
   }
 
   if (!movement || movement.status !== "open") return "Disponible";
-  if (!event || event.eventType === "meal_finished") return "En movimiento";
-  return UNIT_MOVEMENT_EVENT_LABELS[event.eventType];
-}
-
-function getUnitAccentClass(
-  movement: UnitMovement | null,
-  event: UnitMovementEvent | null,
-) {
-  if (
-    event?.eventType === "waiting_dock" ||
-    event?.eventType === "meal" ||
-    event?.eventType === "positioned" ||
-    event?.eventType === "driver_change"
-  ) {
-    return "text-principal";
-  }
-
-  if (event?.eventType === "loading" || event?.eventType === "unloading") {
-    return "text-blue-300 light:text-blue-700";
-  }
-
-  if (!movement || movement.status !== "open") {
-    return "text-foreground-dark light:text-slate-900";
-  }
-
-  return "text-foreground-dark light:text-slate-900";
+  if (!event) return "En movimiento";
+  return getUnitEventLabel(eventActions, event.eventType);
 }
 
 export function InterplantDashboardPage() {
@@ -226,6 +187,11 @@ export function InterplantDashboardPage() {
   } = useUnits(projectId);
 
   const unitIds = useMemo(() => units.map((unit) => unit.id), [units]);
+
+  const {
+    actions: eventActions,
+    errorMessage: eventActionsErrorMessage,
+  } = useUnitMovementEventActions(projectId);
 
   const {
     latestByPlantId,
@@ -316,7 +282,8 @@ export function InterplantDashboardPage() {
     unitMovementsErrorMessage ||
     latestMovementEventsErrorMessage ||
     latestUnitEventsErrorMessage ||
-    incidentsErrorMessage;
+    incidentsErrorMessage ||
+    eventActionsErrorMessage;
 
   if (isLoading) return <LoadingScreen message="Cargando turno..." />;
 
@@ -536,23 +503,33 @@ export function InterplantDashboardPage() {
                 const movementEvent = movement
                   ? latestByMovementId[movement.id] ?? null
                   : null;
-                const unitEvent = latestEventByUnitId[unit.id] ?? null;
-                const event = resolveUnitEvent({
+                const latestUnitEvent = latestEventByUnitId[unit.id] ?? null;
+                const event = resolveCurrentUnitEvent({
                   movement,
                   movementEvent,
-                  unitEvent,
+                  latestUnitEvent,
+                  eventActions,
                 });
-                const standaloneActive = isStandaloneActiveEvent(event);
+                const standaloneActive = isStandaloneActiveUnitEvent(
+                  event,
+                  eventActions,
+                );
                 const isAvailable =
                   !standaloneActive && (!movement || movement.status !== "open");
-                const visualEventType: UnitMovementEventType | null =
-                  event?.eventType === "meal_finished"
-                    ? movement?.status === "open"
-                      ? "in_transit"
-                      : null
-                    : event?.eventType ??
-                      (movement?.status === "open" ? "in_transit" : null);
-                const statusLabel = getUnitStatusLabel(movement, event);
+                const statusLabel = getUnitStatusLabel({
+                  movement,
+                  event,
+                  standaloneActive,
+                  eventActions,
+                });
+                const colorKey = getUnitEventColorKey(
+                  eventActions,
+                  event?.eventType,
+                );
+                const iconKey = getUnitEventIconKey(
+                  eventActions,
+                  event?.eventType,
+                );
                 const statusStartedAt =
                   event?.eventAt ?? movement?.startedAt ?? null;
                 const locationPlantId =
@@ -566,21 +543,20 @@ export function InterplantDashboardPage() {
                     key={unit.id}
                     to={`/app/projects/${projectId}/units/${unit.id}`}
                     className={`flex items-center gap-4 rounded-sm border border-line bg-panel p-4 transition active:scale-[0.99] ${
-                      event?.eventType === "waiting_dock" || standaloneActive
+                      standaloneActive || colorKey === "amber" || colorKey === "danger"
                         ? "border-l-4 border-l-principal"
                         : ""
                     }`}
                   >
                     <AnimatedUnitStatusIcon
-                      eventType={visualEventType}
+                      eventType={event?.eventType ?? null}
+                      iconKey={iconKey}
+                      colorKey={colorKey}
                       isAvailable={isAvailable}
                     />
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`font-medium ${getUnitAccentClass(
-                          movement,
-                          event,
-                        )}`}
+                        className={`font-medium ${getUnitAccentClass(colorKey)}`}
                       >
                         {statusLabel}
                       </p>
