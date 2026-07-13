@@ -1,6 +1,11 @@
 import { ChevronRight } from "lucide-react";
+import type { UnitMovementEventAction } from "../../unit-movement-events/types/unit-movement-event-action.types";
 import type { UnitMovementEvent } from "../../unit-movement-events/types/unit-movement-event.types";
-import { UNIT_MOVEMENT_EVENT_LABELS } from "../../unit-movement-events/types/unit-movement-event.types";
+import {
+  getUnitEventColorKey,
+  getUnitEventLabel,
+} from "../../unit-movement-events/utils/unit-event-actions";
+import { isStandaloneActiveUnitEvent } from "../../unit-movement-events/utils/unit-event-status";
 import type { Plant } from "../../plants/types/plant.types";
 import type {
   MovementType,
@@ -13,6 +18,7 @@ type UnitCardProps = {
   unit: Unit;
   latestMovement?: UnitMovement | null;
   latestEvent?: UnitMovementEvent | null;
+  eventActions: UnitMovementEventAction[];
   plants?: Plant[];
   movementTypes?: MovementType[];
 };
@@ -26,10 +32,7 @@ function formatElapsedTime(startedAt: string) {
   const hours = Math.floor(diffInMinutes / 60);
   const minutes = diffInMinutes % 60;
 
-  if (hours === 0) {
-    return `${minutes} min`;
-  }
-
+  if (hours === 0) return `${minutes} min`;
   return `${hours} h ${minutes.toString().padStart(2, "0")} min`;
 }
 
@@ -38,63 +41,30 @@ function findNameById<T extends { id: string; name: string }>(
   id: string | null,
   fallback: string,
 ) {
-  if (!id) {
-    return fallback;
-  }
-
+  if (!id) return fallback;
   return items?.find((item) => item.id === id)?.name ?? fallback;
 }
 
-function isStandaloneActiveEvent(event?: UnitMovementEvent | null) {
-  return (
-    event?.unitMovementId === null &&
-    (event.eventType === "meal" || event.eventType === "driver_change")
-  );
-}
-
-function getStatusLabel(
-  latestMovement?: UnitMovement | null,
-  latestEvent?: UnitMovementEvent | null,
-) {
-  if (isStandaloneActiveEvent(latestEvent)) {
-    return UNIT_MOVEMENT_EVENT_LABELS[latestEvent!.eventType];
-  }
-
-  if (!latestMovement) {
-    return "Disponible";
-  }
-
-  if (latestMovement.status !== "open") {
-    return UNIT_MOVEMENT_STATUS_LABELS[latestMovement.status];
-  }
-
-  if (!latestEvent || latestEvent.eventType === "meal_finished") {
-    return "En movimiento";
-  }
-
-  return UNIT_MOVEMENT_EVENT_LABELS[latestEvent.eventType];
-}
-
 function getStatusTextClassName(
+  eventActions: UnitMovementEventAction[],
   latestMovement?: UnitMovement | null,
   latestEvent?: UnitMovementEvent | null,
 ) {
-  if (
-    latestEvent?.eventType === "meal" ||
-    latestEvent?.eventType === "waiting_dock" ||
-    latestEvent?.eventType === "driver_change"
-  ) {
-    return "text-principal";
-  }
+  const colorKey = getUnitEventColorKey(
+    eventActions,
+    latestEvent?.eventType,
+  );
+
+  if (colorKey === "amber") return "text-principal";
+  if (colorKey === "blue") return "text-blue-300 light:text-blue-700";
+  if (colorKey === "success") return "text-success";
+  if (colorKey === "danger") return "text-danger";
 
   if (!latestMovement || latestMovement.status === "completed") {
     return "text-success";
   }
 
-  if (latestMovement.status === "cancelled") {
-    return "text-danger";
-  }
-
+  if (latestMovement.status === "cancelled") return "text-danger";
   return "text-foreground-dark light:text-slate-900";
 }
 
@@ -102,6 +72,7 @@ export function UnitCard({
   unit,
   latestMovement,
   latestEvent,
+  eventActions,
   plants,
   movementTypes,
 }: UnitCardProps) {
@@ -120,13 +91,30 @@ export function UnitCard({
     latestMovement?.movementTypeId ?? null,
     "Movimiento",
   );
-  const currentStatusLabel = getStatusLabel(latestMovement, latestEvent);
-  const standaloneActive = isStandaloneActiveEvent(latestEvent);
+
+  const standaloneActive = isStandaloneActiveUnitEvent(
+    latestEvent,
+    eventActions,
+  );
+
+  const currentStatusLabel = standaloneActive && latestEvent
+    ? getUnitEventLabel(eventActions, latestEvent.eventType)
+    : !latestMovement
+      ? "Disponible"
+      : latestMovement.status !== "open"
+        ? UNIT_MOVEMENT_STATUS_LABELS[latestMovement.status]
+        : latestEvent
+          ? getUnitEventLabel(eventActions, latestEvent.eventType)
+          : "En movimiento";
+
+  const colorKey = getUnitEventColorKey(
+    eventActions,
+    latestEvent?.eventType,
+  );
   const isHighlighted =
     standaloneActive ||
-    (latestMovement?.status === "open" &&
-      (latestEvent?.eventType === "meal" ||
-        latestEvent?.eventType === "waiting_dock"));
+    colorKey === "amber" ||
+    colorKey === "danger";
 
   return (
     <article
@@ -143,6 +131,7 @@ export function UnitCard({
       <div className="min-w-0">
         <h3
           className={`truncate text-lg font-semibold ${getStatusTextClassName(
+            eventActions,
             latestMovement,
             latestEvent,
           )}`}
