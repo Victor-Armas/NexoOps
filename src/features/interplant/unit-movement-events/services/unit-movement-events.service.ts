@@ -7,7 +7,7 @@ import type {
 } from "../types/unit-movement-event.types";
 
 const UNIT_EVENT_COLUMNS =
-  "id, unit_id, shift_id, unit_movement_id, event_type, notes, event_at, created_by, created_at, updated_at";
+  "id, unit_id, shift_id, unit_movement_id, event_type_id, event_type, notes, event_at, created_by, created_at, updated_at";
 
 function mapUnitMovementEvent(row: UnitMovementEventRow): UnitMovementEvent {
   return {
@@ -15,6 +15,7 @@ function mapUnitMovementEvent(row: UnitMovementEventRow): UnitMovementEvent {
     unitId: row.unit_id,
     shiftId: row.shift_id,
     unitMovementId: row.unit_movement_id,
+    eventTypeId: row.event_type_id,
     eventType: row.event_type,
     notes: row.notes,
     eventAt: row.event_at,
@@ -113,6 +114,7 @@ export async function createUnitMovementEvent(
       unit_id: unitId,
       shift_id: shiftId,
       unit_movement_id: payload.unitMovementId ?? null,
+      event_type_id: payload.eventTypeId ?? undefined,
       event_type: payload.eventType,
       notes: payload.notes?.trim() || null,
     })
