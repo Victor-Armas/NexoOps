@@ -14,7 +14,9 @@ export type UnitMovementEventType =
 
 export type UnitMovementEvent = {
   id: string;
-  unitMovementId: string;
+  unitId: string;
+  shiftId: string;
+  unitMovementId: string | null;
   eventType: UnitMovementEventType;
   notes: string | null;
   eventAt: string;
@@ -25,7 +27,9 @@ export type UnitMovementEvent = {
 
 export type UnitMovementEventRow = {
   id: string;
-  unit_movement_id: string;
+  unit_id: string;
+  shift_id: string;
+  unit_movement_id: string | null;
   event_type: UnitMovementEventType;
   notes: string | null;
   event_at: string;
@@ -35,23 +39,24 @@ export type UnitMovementEventRow = {
 };
 
 export type CreateUnitMovementEventPayload = {
-  unitMovementId: string;
+  unitMovementId?: string;
+  unitId?: string;
+  shiftId?: string;
   eventType: UnitMovementEventType;
   notes?: string;
 };
 
-export const UNIT_MOVEMENT_EVENT_LABELS: Record<UnitMovementEventType, string> =
-  {
-    departure_requested: "Salida indicada",
-    in_transit: "En camino",
-    waiting_dock: "Esperando rampa",
-    positioned: "En rampa",
-    loading: "Cargando",
-    unloading: "Descargando",
-    released: "Saliendo de planta",
-    meal: "Comida",
-    meal_finished: "Comida finalizada",
-    driver_change: "Cambio operador",
-    completed: "Completado",
-    cancelled: "Cancelado",
-  };
+export const UNIT_MOVEMENT_EVENT_LABELS: Record<UnitMovementEventType, string> = {
+  departure_requested: "Salida indicada",
+  in_transit: "En camino",
+  waiting_dock: "Esperando rampa",
+  positioned: "En rampa",
+  loading: "Cargando",
+  unloading: "Descargando",
+  released: "Saliendo de planta",
+  meal: "Comida",
+  meal_finished: "Comida finalizada",
+  driver_change: "Cambio operador",
+  completed: "Completado",
+  cancelled: "Cancelado",
+};
