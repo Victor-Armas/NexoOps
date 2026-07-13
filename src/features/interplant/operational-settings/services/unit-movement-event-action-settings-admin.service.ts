@@ -6,7 +6,7 @@ import type {
 } from "../types/unit-movement-event-action-settings-admin.types";
 
 const UNIT_MOVEMENT_EVENT_ACTION_COLUMNS =
-  "id, project_id, event_type, label, sort_order, is_active, updated_by, created_at, updated_at";
+  "id, project_id, event_type, label, sort_order, requires_movement, show_as_action, behavior, icon_key, color_key, is_system, is_active, updated_by, created_at, updated_at";
 
 function mapUnitMovementEventActionSetting(
   row: UnitMovementEventActionSettingRow,
@@ -17,6 +17,12 @@ function mapUnitMovementEventActionSetting(
     eventType: row.event_type,
     label: row.label,
     sortOrder: row.sort_order,
+    requiresMovement: row.requires_movement,
+    showAsAction: row.show_as_action,
+    behavior: row.behavior,
+    iconKey: row.icon_key,
+    colorKey: row.color_key,
+    isSystem: row.is_system,
     isActive: row.is_active,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
@@ -52,6 +58,12 @@ export async function saveUnitMovementEventActionSetting(
         event_type: payload.eventType,
         label: payload.label,
         sort_order: payload.sortOrder,
+        requires_movement: payload.requiresMovement,
+        show_as_action: payload.showAsAction,
+        behavior: "status",
+        icon_key: payload.iconKey,
+        color_key: payload.colorKey,
+        is_system: false,
         is_active: payload.isActive,
         updated_by: payload.updatedBy,
         updated_at: new Date().toISOString(),
