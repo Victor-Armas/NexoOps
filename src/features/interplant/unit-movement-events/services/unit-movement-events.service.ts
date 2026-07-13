@@ -34,10 +34,7 @@ export async function getUnitMovementEvents(
     .order("event_at", { ascending: false })
     .returns<UnitMovementEventRow[]>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data.map(mapUnitMovementEvent);
 }
 
@@ -53,33 +50,23 @@ export async function getUnitEvents(params: {
     .order("event_at", { ascending: false })
     .returns<UnitMovementEventRow[]>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data.map(mapUnitMovementEvent);
 }
 
-export async function getUnitEventsByUnitIds(params: {
-  unitIds: string[];
-  shiftId: string;
-}): Promise<UnitMovementEvent[]> {
-  if (params.unitIds.length === 0) {
-    return [];
-  }
+export async function getUnitEventsByUnitIds(
+  unitIds: string[],
+): Promise<UnitMovementEvent[]> {
+  if (unitIds.length === 0) return [];
 
   const { data, error } = await supabase
     .from("unit_events")
     .select(UNIT_EVENT_COLUMNS)
-    .in("unit_id", params.unitIds)
-    .eq("shift_id", params.shiftId)
+    .in("unit_id", unitIds)
     .order("event_at", { ascending: false })
     .returns<UnitMovementEventRow[]>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data.map(mapUnitMovementEvent);
 }
 
@@ -96,9 +83,7 @@ export async function createUnitMovementEvent(
       .eq("id", payload.unitMovementId)
       .single<{ unit_id: string; shift_id: string }>();
 
-    if (movementError) {
-      throw movementError;
-    }
+    if (movementError) throw movementError;
 
     unitId = movement.unit_id;
     shiftId = movement.shift_id;
@@ -113,13 +98,8 @@ export async function createUnitMovementEvent(
     error: userError,
   } = await supabase.auth.getUser();
 
-  if (userError) {
-    throw userError;
-  }
-
-  if (!user) {
-    throw new Error("No hay una sesión activa.");
-  }
+  if (userError) throw userError;
+  if (!user) throw new Error("No hay una sesión activa.");
 
   const { data, error } = await supabase
     .from("unit_events")
@@ -134,19 +114,13 @@ export async function createUnitMovementEvent(
     .select(UNIT_EVENT_COLUMNS)
     .single<UnitMovementEventRow>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return mapUnitMovementEvent(data);
 }
 
 export async function deleteUnitMovementEvent(eventId: string): Promise<void> {
   const { error } = await supabase.from("unit_events").delete().eq("id", eventId);
-
-  if (error) {
-    throw error;
-  }
+  if (error) throw error;
 }
 
 export function subscribeToUnitMovementEventsChanges(
@@ -173,9 +147,7 @@ export function subscribeToUnitEventsChanges(unitId: string, onChange: () => voi
 export async function getUnitMovementEventsByMovementIds(
   unitMovementIds: string[],
 ): Promise<UnitMovementEvent[]> {
-  if (unitMovementIds.length === 0) {
-    return [];
-  }
+  if (unitMovementIds.length === 0) return [];
 
   const { data, error } = await supabase
     .from("unit_events")
@@ -184,10 +156,7 @@ export async function getUnitMovementEventsByMovementIds(
     .order("event_at", { ascending: false })
     .returns<UnitMovementEventRow[]>();
 
-  if (error) {
-    throw error;
-  }
-
+  if (error) throw error;
   return data.map(mapUnitMovementEvent);
 }
 
