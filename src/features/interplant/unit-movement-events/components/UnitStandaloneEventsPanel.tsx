@@ -1,17 +1,20 @@
-import { Repeat2, Utensils } from "lucide-react";
+import { Circle, RefreshCw, ShieldCheck, Utensils } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
 import type {
   UnitMovementEvent,
   UnitMovementEventType,
 } from "../types/unit-movement-event.types";
+import { getStandaloneStatusActions } from "../utils/unit-event-actions";
 import { UnitMovementTimeline } from "./UnitMovementTimeline";
 
 type UnitStandaloneEventsPanelProps = {
   unitName: string;
   hasOpenMovement: boolean;
   standaloneEvents: UnitMovementEvent[];
+  eventActions: UnitMovementEventAction[];
   isMealActive: boolean;
   isLoading: boolean;
   errorMessage: string | null;
@@ -21,10 +24,17 @@ type UnitStandaloneEventsPanelProps = {
   }) => Promise<unknown>;
 };
 
+function StandaloneActionIcon({ iconKey }: { iconKey: string }) {
+  if (iconKey === "shield") return <ShieldCheck size={18} />;
+  if (iconKey === "refresh") return <RefreshCw size={18} />;
+  return <Circle size={18} />;
+}
+
 export function UnitStandaloneEventsPanel({
   unitName,
   hasOpenMovement,
   standaloneEvents,
+  eventActions,
   isMealActive,
   isLoading,
   errorMessage,
@@ -33,6 +43,8 @@ export function UnitStandaloneEventsPanel({
   const { can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const canCreateEvent = can("units.event.create");
+  const standaloneActions = getStandaloneStatusActions(eventActions);
+  const latestStandaloneEvent = standaloneEvents[0] ?? null;
 
   const handleMeal = async () => {
     try {
@@ -53,16 +65,16 @@ export function UnitStandaloneEventsPanel({
     }
   };
 
-  const handleDriverChange = async () => {
+  const handleStandaloneStatus = async (action: UnitMovementEventAction) => {
     try {
       setIsSubmitting(true);
       await onAddEvent({
-        eventType: "driver_change",
-        notes: "Cambio de operador registrado.",
+        eventType: action.eventType,
+        notes: `${action.label} registrado.`,
       });
-      toast.success("Cambio de operador registrado.");
+      toast.success(`${action.label} registrado.`);
     } catch {
-      toast.error("No se pudo registrar el cambio de operador.");
+      toast.error(`No se pudo registrar ${action.label.toLowerCase()}.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -74,7 +86,7 @@ export function UnitStandaloneEventsPanel({
         <div>
           <p className="section-label">Eventos de unidad</p>
           <p className="sub mt-2">
-            Comida y cambio de operador no requieren un movimiento activo.
+            Comida y estatus independientes no requieren un movimiento activo.
           </p>
         </div>
         <span className="mincard shrink-0 text-xs">{unitName}</span>
@@ -82,8 +94,7 @@ export function UnitStandaloneEventsPanel({
 
       {hasOpenMovement && (
         <p className="mt-4 rounded-sm border border-line bg-surface-dark px-4 py-3 text-sm text-muted">
-          La unidad tiene un movimiento abierto. Usa sus controles para registrar
-          comida o cambio de operador dentro de ese movimiento.
+          La unidad tiene un movimiento abierto. Registra sus estatus desde los controles del movimiento.
         </p>
       )}
 
@@ -103,15 +114,27 @@ export function UnitStandaloneEventsPanel({
             {isMealActive ? "Finalizar comida" : "Iniciar comida"}
           </button>
 
-          <button
-            type="button"
-            disabled={isSubmitting || isMealActive}
-            onClick={() => void handleDriverChange()}
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border border-line-strong px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] text-muted disabled:opacity-50"
-          >
-            <Repeat2 size={18} />
-            Cambio operador
-          </button>
+          {standaloneActions.map((action) => {
+            const isActive =
+              !isMealActive && latestStandaloneEvent?.eventType === action.eventType;
+
+            return (
+              <button
+                key={action.id}
+                type="button"
+                disabled={isSubmitting || isMealActive}
+                onClick={() => void handleStandaloneStatus(action)}
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
+                  isActive
+                    ? "border-principal bg-principal text-slate-950"
+                    : "border-line-strong text-muted"
+                }`}
+              >
+                <StandaloneActionIcon iconKey={action.iconKey} />
+                {action.label}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -123,6 +146,7 @@ export function UnitStandaloneEventsPanel({
 
       <UnitMovementTimeline
         events={standaloneEvents}
+        eventActions={eventActions}
         isLoading={isLoading}
         errorMessage={errorMessage}
       />
