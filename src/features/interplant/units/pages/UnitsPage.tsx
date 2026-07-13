@@ -9,19 +9,36 @@ import { usePlants } from "../../plants/hooks/usePlants";
 import { useShift } from "../../shifts/hooks/useShift";
 import { useLatestUnitMovementsByShift } from "../../unit-movements/hooks/useLatestUnitMovementsByShift";
 import { useMovementTypes } from "../../unit-movements/hooks/useMovementTypes";
+import type { UnitMovement } from "../../unit-movements/types/unit-movement.types";
 import { UnitCard } from "../components/UnitCard";
 import { useUnits } from "../hooks/useUnits";
 
-function getLatestEvent(
-  first: UnitMovementEvent | null,
-  second: UnitMovementEvent | null,
-) {
-  if (!first) return second;
-  if (!second) return first;
+function resolveLatestEvent(params: {
+  movement: UnitMovement | null;
+  movementEvent: UnitMovementEvent | null;
+  unitEvent: UnitMovementEvent | null;
+}) {
+  const { movement, movementEvent, unitEvent } = params;
 
-  return new Date(first.eventAt).getTime() >= new Date(second.eventAt).getTime()
-    ? first
-    : second;
+  if (!unitEvent || unitEvent.eventType === "meal_finished") {
+    return movementEvent ?? unitEvent;
+  }
+
+  if (
+    movement?.status === "open" &&
+    new Date(movement.startedAt).getTime() > new Date(unitEvent.eventAt).getTime()
+  ) {
+    return movementEvent;
+  }
+
+  if (!movementEvent) {
+    return unitEvent;
+  }
+
+  return new Date(unitEvent.eventAt).getTime() >=
+    new Date(movementEvent.eventAt).getTime()
+    ? unitEvent
+    : movementEvent;
 }
 
 export function UnitsPage() {
@@ -136,7 +153,11 @@ export function UnitsPage() {
             ? latestByMovementId[latestMovement.id] ?? null
             : null;
           const unitEvent = latestEventByUnitId[unit.id] ?? null;
-          const latestEvent = getLatestEvent(movementEvent, unitEvent);
+          const latestEvent = resolveLatestEvent({
+            movement: latestMovement,
+            movementEvent,
+            unitEvent,
+          });
 
           return (
             <button
