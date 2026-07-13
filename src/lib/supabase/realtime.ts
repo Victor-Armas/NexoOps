@@ -11,6 +11,14 @@ type SubscribeToTableChangesParams = {
   onChange: () => void;
 };
 
+let channelSequence = 0;
+
+function createUniqueChannelName(baseName: string) {
+  channelSequence += 1;
+
+  return `${baseName}:${Date.now()}:${channelSequence}`;
+}
+
 export function subscribeToTableChanges({
   channelName,
   table,
@@ -18,8 +26,10 @@ export function subscribeToTableChanges({
   filter,
   onChange,
 }: SubscribeToTableChangesParams): RealtimeChannel {
+  const uniqueChannelName = createUniqueChannelName(channelName);
+
   return supabase
-    .channel(channelName)
+    .channel(uniqueChannelName)
     .on(
       "postgres_changes",
       {
