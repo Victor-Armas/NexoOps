@@ -89,6 +89,52 @@ begin
 end;
 $$;
 
+create or replace function public.is_unit_standalone_meal_active(
+  target_unit_id uuid
+)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select coalesce(
+    (
+      select ue.event_type = 'meal'
+      from public.unit_events ue
+      where ue.unit_id = target_unit_id
+        and ue.unit_movement_id is null
+        and ue.event_type in ('meal', 'meal_finished')
+      order by ue.event_at desc, ue.created_at desc
+      limit 1
+    ),
+    false
+  );
+$$;
+
+revoke all on function public.is_unit_standalone_meal_active(uuid) from public;
+grant execute on function public.is_unit_standalone_meal_active(uuid)
+  to authenticated;
+
+create or replace function public.get_latest_unit_events(
+  target_unit_ids uuid[]
+)
+returns setof public.unit_events
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select distinct on (ue.unit_id) ue.*
+  from public.unit_events ue
+  where ue.unit_id = any(target_unit_ids)
+  order by ue.unit_id, ue.event_at desc, ue.created_at desc;
+$$;
+
+revoke all on function public.get_latest_unit_events(uuid[]) from public;
+grant execute on function public.get_latest_unit_events(uuid[])
+  to authenticated;
+
 drop policy if exists "unit_events_select_by_project" on public.unit_events;
 create policy "unit_events_select_by_project"
 on public.unit_events
@@ -114,13 +160,26 @@ with check (
   and (
     (
       unit_movement_id is null
-      and event_type in ('meal', 'meal_finished', 'driver_change')
       and exists (
         select 1
         from public.shifts s
         where s.id = unit_events.shift_id
           and s.status = 'open'
           and public.can_access_project(s.project_id)
+      )
+      and (
+        (
+          event_type = 'meal'
+          and not public.is_unit_standalone_meal_active(unit_id)
+        )
+        or (
+          event_type = 'meal_finished'
+          and public.is_unit_standalone_meal_active(unit_id)
+        )
+        or (
+          event_type = 'driver_change'
+          and not public.is_unit_standalone_meal_active(unit_id)
+        )
       )
     )
     or exists (
@@ -159,6 +218,27 @@ using (
     from public.shifts s
     where s.id = unit_events.shift_id
       and public.can_access_project(s.project_id)
+  )
+);
+
+-- Movement creation remains permission-driven, but an active standalone meal
+-- is a structural block that cannot be bypassed from the client.
+drop policy if exists "unit_movements_insert" on public.unit_movements;
+drop policy if exists "unit_movements_insert_by_permission" on public.unit_movements;
+create policy "unit_movements_insert_by_permission"
+on public.unit_movements
+for insert
+to authenticated
+with check (
+  created_by = auth.uid()
+  and not public.is_unit_standalone_meal_active(unit_id)
+  and exists (
+    select 1
+    from public.shifts s
+    where s.id = unit_movements.shift_id
+      and s.status = 'open'
+      and public.can_access_project(s.project_id)
+      and public.has_permission('units.movement.create')
   )
 );
 
