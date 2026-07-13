@@ -76,15 +76,12 @@ export async function getUnitEventsByUnitIds(
 ): Promise<UnitMovementEvent[]> {
   if (unitIds.length === 0) return [];
 
-  const { data, error } = await supabase
-    .from("unit_events")
-    .select(UNIT_EVENT_COLUMNS)
-    .in("unit_id", unitIds)
-    .order("event_at", { ascending: false })
-    .returns<UnitMovementEventRow[]>();
+  const { data, error } = await supabase.rpc("get_latest_unit_events", {
+    target_unit_ids: unitIds,
+  });
 
   if (error) throw error;
-  return data.map(mapUnitMovementEvent);
+  return ((data ?? []) as UnitMovementEventRow[]).map(mapUnitMovementEvent);
 }
 
 export async function createUnitMovementEvent(
@@ -110,14 +107,6 @@ export async function createUnitMovementEvent(
     throw new Error("El evento requiere una unidad y un turno.");
   }
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
-
-  if (userError) throw userError;
-  if (!user) throw new Error("No hay una sesión activa.");
-
   const { data, error } = await supabase
     .from("unit_events")
     .insert({
@@ -126,7 +115,6 @@ export async function createUnitMovementEvent(
       unit_movement_id: payload.unitMovementId ?? null,
       event_type: payload.eventType,
       notes: payload.notes?.trim() || null,
-      created_by: user.id,
     })
     .select(UNIT_EVENT_COLUMNS)
     .single<UnitMovementEventRow>();
