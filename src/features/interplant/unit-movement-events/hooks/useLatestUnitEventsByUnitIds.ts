@@ -36,10 +36,7 @@ export function useLatestUnitEventsByUnitIds(
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const events = await getUnitEventsByUnitIds({
-        unitIds: unitIdsKey.split(","),
-        shiftId,
-      });
+      const events = await getUnitEventsByUnitIds(unitIdsKey.split(","));
       setLatestByUnitId(mapLatestEventsByUnitId(events));
     } catch {
       setErrorMessage("No se pudo cargar el estado actual de las unidades.");
