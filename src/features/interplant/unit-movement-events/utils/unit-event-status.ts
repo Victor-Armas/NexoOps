@@ -1,12 +1,29 @@
 import type { UnitMovement } from "../../unit-movements/types/unit-movement.types";
+import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
 import type { UnitMovementEvent } from "../types/unit-movement-event.types";
+import { findUnitEventAction } from "./unit-event-actions";
 
 export function isStandaloneActiveUnitEvent(
   event: UnitMovementEvent | null | undefined,
+  eventActions: UnitMovementEventAction[] = [],
 ) {
-  return (
-    event?.unitMovementId === null &&
-    (event.eventType === "meal" || event.eventType === "driver_change")
+  if (!event || event.unitMovementId !== null) return false;
+
+  const behavior = findUnitEventAction(
+    eventActions,
+    event.eventType,
+  )?.behavior;
+
+  if (behavior) {
+    return ![
+      "meal_end",
+      "movement_complete",
+      "movement_cancel",
+    ].includes(behavior);
+  }
+
+  return !["meal_finished", "completed", "cancelled"].includes(
+    event.eventType,
   );
 }
 
@@ -14,8 +31,14 @@ export function resolveCurrentUnitEvent(params: {
   movement: UnitMovement | null;
   movementEvent: UnitMovementEvent | null;
   latestUnitEvent: UnitMovementEvent | null;
+  eventActions?: UnitMovementEventAction[];
 }) {
-  const { movement, movementEvent, latestUnitEvent } = params;
+  const {
+    movement,
+    movementEvent,
+    latestUnitEvent,
+    eventActions = [],
+  } = params;
 
   if (!latestUnitEvent) {
     return movementEvent;
@@ -23,7 +46,7 @@ export function resolveCurrentUnitEvent(params: {
 
   if (
     latestUnitEvent.unitMovementId === null &&
-    latestUnitEvent.eventType === "meal_finished"
+    !isStandaloneActiveUnitEvent(latestUnitEvent, eventActions)
   ) {
     return movementEvent;
   }
