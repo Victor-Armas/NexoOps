@@ -45,10 +45,21 @@ function findNameById<T extends { id: string; name: string }>(
   return items?.find((item) => item.id === id)?.name ?? fallback;
 }
 
+function isStandaloneActiveEvent(event?: UnitMovementEvent | null) {
+  return (
+    event?.unitMovementId === null &&
+    (event.eventType === "meal" || event.eventType === "driver_change")
+  );
+}
+
 function getStatusLabel(
   latestMovement?: UnitMovement | null,
   latestEvent?: UnitMovementEvent | null,
 ) {
+  if (isStandaloneActiveEvent(latestEvent)) {
+    return UNIT_MOVEMENT_EVENT_LABELS[latestEvent!.eventType];
+  }
+
   if (!latestMovement) {
     return "Disponible";
   }
@@ -68,19 +79,20 @@ function getStatusTextClassName(
   latestMovement?: UnitMovement | null,
   latestEvent?: UnitMovementEvent | null,
 ) {
+  if (
+    latestEvent?.eventType === "meal" ||
+    latestEvent?.eventType === "waiting_dock" ||
+    latestEvent?.eventType === "driver_change"
+  ) {
+    return "text-principal";
+  }
+
   if (!latestMovement || latestMovement.status === "completed") {
     return "text-success";
   }
 
   if (latestMovement.status === "cancelled") {
     return "text-danger";
-  }
-
-  if (
-    latestEvent?.eventType === "meal" ||
-    latestEvent?.eventType === "waiting_dock"
-  ) {
-    return "text-principal";
   }
 
   return "text-foreground-dark light:text-slate-900";
@@ -109,10 +121,12 @@ export function UnitCard({
     "Movimiento",
   );
   const currentStatusLabel = getStatusLabel(latestMovement, latestEvent);
+  const standaloneActive = isStandaloneActiveEvent(latestEvent);
   const isHighlighted =
-    latestMovement?.status === "open" &&
-    (latestEvent?.eventType === "meal" ||
-      latestEvent?.eventType === "waiting_dock");
+    standaloneActive ||
+    (latestMovement?.status === "open" &&
+      (latestEvent?.eventType === "meal" ||
+        latestEvent?.eventType === "waiting_dock"));
 
   return (
     <article
@@ -136,11 +150,15 @@ export function UnitCard({
           {currentStatusLabel}
         </h3>
 
-        {latestMovement ? (
+        {standaloneActive && latestEvent ? (
+          <p className="sub truncate">
+            Sin movimiento activo · {formatElapsedTime(latestEvent.eventAt)}
+          </p>
+        ) : latestMovement ? (
           <>
             <p className="sub truncate">
               {originName} → {destinationName} ·{" "}
-              {formatElapsedTime(latestMovement.startedAt)}
+              {formatElapsedTime(latestEvent?.eventAt ?? latestMovement.startedAt)}
             </p>
             <p className="mt-1 truncate font-ibm-plex-mono text-[11px] text-faint">
               {movementTypeName} · {latestMovement.quantity}
