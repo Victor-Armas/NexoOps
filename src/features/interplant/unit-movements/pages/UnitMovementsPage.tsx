@@ -217,6 +217,7 @@ export function UnitMovementsPage() {
           unitName={`U${unit?.code ?? "--"}`}
           hasOpenMovement={hasOpenMovement}
           standaloneEvents={standaloneEvents}
+          eventActions={eventActions}
           isMealActive={isStandaloneMealActive}
           isLoading={isLoadingUnitEvents}
           errorMessage={unitEventsErrorMessage}
