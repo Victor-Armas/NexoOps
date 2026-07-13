@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { PlayCircle } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "../../../../components/ui/Button";
@@ -38,8 +37,6 @@ export function OpenShiftPanel({
 
     return (
         <section className="rounded-4xl border border-white/10 bg-white/10 p-6 text-center shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
-
-
             <h2 className="mt-4 text-xl tittle uppercase ">No hay turno abierto</h2>
 
             {!canManage && (
