@@ -1,19 +1,19 @@
 import { useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
+import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
 import { usePlants } from "../../plants/hooks/usePlants";
 import { useShift } from "../../shifts/hooks/useShift";
+import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
 import { useUnits } from "../../units/hooks/useUnits";
 import { UnitMovementForm } from "../components/UnitMovementForm";
 import { UnitMovementList } from "../components/UnitMovementList";
 import { useMovementTypes } from "../hooks/useMovementTypes";
 import { useUnitMovements } from "../hooks/useUnitMovements";
 import type { UnitMovementFormValues } from "../schemas/unit-movement.schemas";
-import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
-import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
 
 export function UnitMovementsPage() {
   const { projectId, unitId } = useParams<{
@@ -155,34 +155,57 @@ export function UnitMovementsPage() {
 
   return (
     <>
-      <section className="mb-5">
+      <section className="mb-6">
         <Link
           to={`/app/projects/${projectId}/units`}
-          className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-cyan-300 light:text-cyan-700"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.14em] text-faint transition hover:text-principal"
         >
-          <ArrowLeft size={16} />
+          <ChevronLeft size={17} />
           Volver a unidades
         </Link>
 
-        <h2 className="text-2xl font-bold">
-          {unit ? unit.name : "Unidad"}
-        </h2>
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <div className="mincard w-fit border-principal text-principal light:text-cyan-700">
+              U{unit?.code ?? "--"}
+            </div>
+            <h2 className="mt-4 text-4xl font-bold tittle">
+              {unit?.name ?? "Unidad"}
+            </h2>
+          </div>
 
-        <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-          Movimientos registrados durante el turno actual.
-        </p>
+          <p className="sub shrink-0">Movimiento</p>
+        </div>
       </section>
 
       {!shift && (
-        <section className="mb-5 rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
+        <section className="mb-5 rounded-sm border border-yellow-400/20 bg-yellow-400/10 p-4 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
           No hay turno abierto. Abre un turno para registrar movimientos.
         </section>
       )}
 
       {errorMessage && (
-        <section className="mb-5 rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
+        <section className="mb-5 rounded-sm border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
           {errorMessage}
         </section>
+      )}
+
+      {shift && (
+        <div className="mb-7">
+          <UnitMovementList
+            unitMovements={unitMovements}
+            units={units}
+            plants={plants}
+            movementTypes={movementTypes}
+            mealTargetMinutes={operationalSettings?.mealTargetMinutes ?? 60}
+            eventActions={eventActions}
+            mealDelayLimitMinutes={
+              operationalSettings?.mealDelayLimitMinutes ?? 75
+            }
+            onComplete={handleComplete}
+            onCancel={handleCancel}
+          />
+        </div>
       )}
 
       {shift && canRegisterMovement && (
@@ -197,25 +220,9 @@ export function UnitMovementsPage() {
       )}
 
       {shift && !canRegisterMovement && (
-        <section className="mb-5 rounded-4xl border border-white/10 bg-white/10 p-5 text-sm text-slate-400 light:border-slate-200 light:bg-white light:text-slate-500">
+        <section className="mb-5 rounded-sm border border-line bg-panel p-5 text-sm text-muted light:border-slate-200 light:bg-white light:text-slate-500">
           Tu rol solo permite consultar movimientos.
         </section>
-      )}
-
-      {shift && (
-        <UnitMovementList
-          unitMovements={unitMovements}
-          units={units}
-          plants={plants}
-          movementTypes={movementTypes}
-          mealTargetMinutes={operationalSettings?.mealTargetMinutes ?? 60}
-          eventActions={eventActions}
-          mealDelayLimitMinutes={
-            operationalSettings?.mealDelayLimitMinutes ?? 75
-          }
-          onComplete={handleComplete}
-          onCancel={handleCancel}
-        />
       )}
     </>
   );
