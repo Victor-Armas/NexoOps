@@ -1,37 +1,187 @@
-import { useMemo, useState } from "react";
-import { UserRound } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock3,
+  Factory,
+  Truck,
+  UserRound,
+} from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { useIncidents } from "../../incidents/hooks/useIncidents";
-import { getIncidentMetrics } from "../../incidents/utils/incident-metrics";
+import {
+  INCIDENT_SEVERITY_LABELS,
+  type IncidentSeverity,
+} from "../../incidents/types/incident.types";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
+import {
+  UNIT_MOVEMENT_EVENT_LABELS,
+  type UnitMovementEventType,
+} from "../../unit-movement-events/types/unit-movement-event.types";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
+import {
+  PLANT_RISK_LABELS,
+  type PlantRiskLevel,
+} from "../../plant-checks/types/plant-check.types";
 import { usePlants } from "../../plants/hooks/usePlants";
 import { OpenShiftPanel } from "../../shifts/components/OpenShiftPanel";
-import { ShiftStatusBanner } from "../../shifts/components/ShiftStatusBanner";
 import type { OpenShiftFormValues } from "../../shifts/schemas/shift.schemas";
 import { useShift } from "../../shifts/hooks/useShift";
 import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
 import { useShiftUnitMovements } from "../../unit-movements/hooks/useShiftUnitMovements";
+import type { UnitMovement } from "../../unit-movements/types/unit-movement.types";
 import { useUnits } from "../../units/hooks/useUnits";
-import { IncidentKpiGrid } from "../components/IncidentKpiGrid";
-import { ShiftKpiGrid } from "../components/ShiftKpiGrid";
-import { UnitMovementKpiGrid } from "../components/UnitMovementKpiGrid";
+import { AnimatedUnitStatusIcon } from "../components/AnimatedUnitStatusIcon";
 
-function getPercentage(value: number, total: number) {
-  if (total === 0) {
-    return 0;
+const INCIDENT_SEVERITY_WEIGHT: Record<IncidentSeverity, number> = {
+  high: 3,
+  medium: 2,
+  low: 1,
+};
+
+function formatTime(value: string) {
+  return new Intl.DateTimeFormat("es-MX", {
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatShiftElapsed(openedAt: string, now: Date) {
+  const elapsedSeconds = Math.max(
+    0,
+    Math.floor((now.getTime() - new Date(openedAt).getTime()) / 1_000),
+  );
+  const hours = Math.floor(elapsedSeconds / 3_600);
+  const minutes = Math.floor((elapsedSeconds % 3_600) / 60);
+  const seconds = elapsedSeconds % 60;
+
+  return [hours, minutes, seconds]
+    .map((value) => value.toString().padStart(2, "0"))
+    .join(":");
+}
+
+function formatElapsedLabel(startedAt: string, now: Date) {
+  const elapsedMinutes = Math.max(
+    0,
+    Math.floor((now.getTime() - new Date(startedAt).getTime()) / 60_000),
+  );
+
+  if (elapsedMinutes < 60) {
+    return `${elapsedMinutes} min`;
   }
 
-  return Math.min(100, Math.round((value / total) * 100));
+  const hours = Math.floor(elapsedMinutes / 60);
+  const minutes = elapsedMinutes % 60;
+
+  return `${hours} h ${minutes.toString().padStart(2, "0")} min`;
+}
+
+function getPlantRiskClasses(riskLevel?: PlantRiskLevel) {
+  if (riskLevel === "high") {
+    return {
+      border: "border-l-danger",
+      icon: "border-danger/50 bg-danger/10 text-danger",
+      text: "text-danger",
+    };
+  }
+
+  if (riskLevel === "medium") {
+    return {
+      border: "border-l-principal",
+      icon: "border-principal/50 bg-principal/10 text-principal",
+      text: "text-principal",
+    };
+  }
+
+  if (riskLevel === "low") {
+    return {
+      border: "border-l-success",
+      icon: "border-success/50 bg-success/10 text-success",
+      text: "text-success",
+    };
+  }
+
+  return {
+    border: "border-l-principal",
+    icon: "border-principal/50 bg-principal/10 text-principal",
+    text: "text-muted",
+  };
+}
+
+function getIncidentClasses(severity: IncidentSeverity) {
+  if (severity === "high") {
+    return {
+      border: "border-l-danger",
+      icon: "border-danger/50 bg-danger/10 text-danger",
+      badge: "border-danger text-danger",
+    };
+  }
+
+  if (severity === "medium") {
+    return {
+      border: "border-l-principal",
+      icon: "border-principal/50 bg-principal/10 text-principal",
+      badge: "border-principal text-principal",
+    };
+  }
+
+  return {
+    border: "border-l-success",
+    icon: "border-success/50 bg-success/10 text-success",
+    badge: "border-success text-success",
+  };
+}
+
+function getUnitStatusLabel(
+  movement: UnitMovement | null,
+  eventType?: UnitMovementEventType | null,
+) {
+  if (!movement || movement.status !== "open") {
+    return "Disponible";
+  }
+
+  if (!eventType || eventType === "meal_finished") {
+    return "En movimiento";
+  }
+
+  return UNIT_MOVEMENT_EVENT_LABELS[eventType];
+}
+
+function getUnitAccentClass(
+  movement: UnitMovement | null,
+  eventType?: UnitMovementEventType | null,
+) {
+  if (!movement || movement.status !== "open") {
+    return "text-foreground-dark light:text-slate-900";
+  }
+
+  if (
+    eventType === "waiting_dock" ||
+    eventType === "meal" ||
+    eventType === "positioned"
+  ) {
+    return "text-principal";
+  }
+
+  if (eventType === "cancelled") {
+    return "text-danger";
+  }
+
+  if (eventType === "loading" || eventType === "unloading") {
+    return "text-blue-300 light:text-blue-700";
+  }
+
+  return "text-foreground-dark light:text-slate-900";
 }
 
 export function InterplantDashboardPage() {
   const { profile, can } = useAuth();
   const { projectId } = useParams<{ projectId: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [now, setNow] = useState(() => new Date());
 
   const {
     shift,
@@ -56,6 +206,7 @@ export function InterplantDashboardPage() {
 
   const {
     latestByPlantId,
+    reviewCountByPlantId,
     isLoading: isLoadingLatestChecks,
     errorMessage: latestChecksErrorMessage,
   } = useLatestPlantChecksByShift(shift?.id);
@@ -78,101 +229,66 @@ export function InterplantDashboardPage() {
     errorMessage: incidentsErrorMessage,
   } = useIncidents(shift?.id);
 
+  useEffect(() => {
+    if (!shift) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setNow(new Date());
+    }, 1_000);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [shift]);
+
   const canOpenShift = can("shifts.open");
 
-  const plantMetrics = useMemo(() => {
-    const latestChecks = Object.values(latestByPlantId);
+  const openIncidents = useMemo(
+    () =>
+      incidents
+        .filter((incident) => incident.status === "open")
+        .sort((firstIncident, secondIncident) => {
+          const severityDifference =
+            INCIDENT_SEVERITY_WEIGHT[secondIncident.severity] -
+            INCIDENT_SEVERITY_WEIGHT[firstIncident.severity];
 
-    return {
-      checkedPlants: latestChecks.length,
-      totalPlants: plants.length,
-      fullCount: latestChecks.reduce(
-        (total, plantCheck) => total + plantCheck.fullCount,
-        0,
-      ),
-      emptyCount: latestChecks.reduce(
-        (total, plantCheck) => total + plantCheck.emptyCount,
-        0,
-      ),
-      highRiskPlants: latestChecks.filter(
-        (plantCheck) => plantCheck.riskLevel === "high",
-      ).length,
-    };
-  }, [latestByPlantId, plants.length]);
+          if (severityDifference !== 0) {
+            return severityDifference;
+          }
 
-  const unitMetrics = useMemo(() => {
-    const openMovements = unitMovements.filter(
-      (movement) => movement.status === "open",
-    );
-
-    const completedMovements = unitMovements.filter(
-      (movement) => movement.status === "completed",
-    );
-
-    const activeUnitIds = new Set(
-      openMovements.map((movement) => movement.unitId),
-    );
-
-    const waitingDockUnits = openMovements.filter((movement) => {
-      const latestEvent = latestByMovementId[movement.id];
-
-      return latestEvent?.eventType === "waiting_dock";
-    }).length;
-
-    const loadingOrUnloadingUnits = openMovements.filter((movement) => {
-      const latestEvent = latestByMovementId[movement.id];
-
-      return (
-        latestEvent?.eventType === "loading" ||
-        latestEvent?.eventType === "unloading"
-      );
-    }).length;
-
-    const mealUnits = openMovements.filter((movement) => {
-      const latestEvent = latestByMovementId[movement.id];
-
-      return latestEvent?.eventType === "meal";
-    }).length;
-
-    return {
-      activeUnits: activeUnitIds.size,
-      totalUnits: units.length,
-      openMovements: openMovements.length,
-      completedMovements: completedMovements.length,
-      mealUnits,
-      waitingDockUnits,
-      loadingOrUnloadingUnits,
-      totalQuantity: unitMovements.reduce(
-        (total, movement) => total + movement.quantity,
-        0,
-      ),
-    };
-  }, [latestByMovementId, unitMovements, units.length]);
-
-  const incidentMetrics = useMemo(
-    () => getIncidentMetrics(incidents),
+          return (
+            new Date(secondIncident.occurredAt).getTime() -
+            new Date(firstIncident.occurredAt).getTime()
+          );
+        }),
     [incidents],
   );
 
-  const plantProgress = getPercentage(
-    plantMetrics.checkedPlants,
-    plantMetrics.totalPlants,
-  );
-  const movementProgress = getPercentage(
-    unitMetrics.completedMovements,
-    unitMetrics.openMovements + unitMetrics.completedMovements,
-  );
+  const latestMovementByUnitId = useMemo(() => {
+    return unitMovements.reduce<Record<string, UnitMovement>>(
+      (latestMovements, movement) => {
+        if (!latestMovements[movement.unitId]) {
+          latestMovements[movement.unitId] = movement;
+        }
+
+        return latestMovements;
+      },
+      {},
+    );
+  }, [unitMovements]);
 
   const isLoading =
     isLoadingShift ||
     Boolean(
       shift &&
-      (isLoadingPlants ||
-        isLoadingUnits ||
-        isLoadingLatestChecks ||
-        isLoadingUnitMovements ||
-        isLoadingLatestEvents ||
-        isLoadingIncidents),
+        (isLoadingPlants ||
+          isLoadingUnits ||
+          isLoadingLatestChecks ||
+          isLoadingUnitMovements ||
+          isLoadingLatestEvents ||
+          isLoadingIncidents),
     );
 
   const errorMessage =
@@ -202,110 +318,259 @@ export function InterplantDashboardPage() {
 
   return (
     <>
-      <section>
-        <h2 className="text-2xl font-bold tittle">
-          {shift ? SHIFT_TYPE_LABELS[shift.shiftType] : "Sin turno activo"}
-        </h2>
-
-        <div className="flex justify-between gap-2 pt-1 text-sm infield light:text-slate-500">
-          <p>{profile?.fullName}</p>
-
-          <div className="flex items-center gap-1">
-            <UserRound size={16} />
-            <p>{profile?.role.name}</p>
-          </div>
-        </div>
-      </section>
-
       {errorMessage && (
-        <div className="mt-5 rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
+        <div className="mb-5 rounded-sm border border-danger/40 bg-danger/10 p-4 text-sm text-red-300 light:text-red-700">
           {errorMessage}
         </div>
       )}
 
       {!shift && (
-        <div className="mt-5">
-          <OpenShiftPanel
-            canManage={canOpenShift}
-            isSubmitting={isSubmitting}
-            onSubmit={handleOpenShift}
-          />
-        </div>
+        <OpenShiftPanel
+          canManage={canOpenShift}
+          isSubmitting={isSubmitting}
+          onSubmit={handleOpenShift}
+        />
       )}
 
       {shift && (
-        <>
-          <div className="mt-5">
-            <ShiftStatusBanner shift={shift} />
-          </div>
-
-          <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 light:border-slate-200 light:bg-white">
-            <h2 className="font-bold">Resumen visual del turno</h2>
-            <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-              Incluye movimientos abiertos heredados de turnos anteriores.
-            </p>
-
-            <div className="mt-4 space-y-4">
+        <div className="space-y-7">
+          <section>
+            <div className="flex items-center justify-between gap-4">
               <div>
-                <div className="mb-2 flex items-center justify-between text-xs text-slate-400 light:text-slate-500">
-                  <span>Plantas revisadas</span>
-                  <span>{plantProgress}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-900/60 light:bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-cyan-400"
-                    style={{ width: `${plantProgress}%` }}
-                  />
-                </div>
+                <p className="section-label text-success">
+                  <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-success" />
+                  Abierto
+                </p>
+                <p className="sub mt-2">{SHIFT_TYPE_LABELS[shift.shiftType]}</p>
               </div>
 
-              <div>
-                <div className="mb-2 flex items-center justify-between text-xs text-slate-400 light:text-slate-500">
-                  <span>Movimientos completados</span>
-                  <span>{movementProgress}%</span>
-                </div>
-                <div className="h-2 rounded-full bg-slate-900/60 light:bg-slate-100">
-                  <div
-                    className="h-2 rounded-full bg-emerald-400"
-                    style={{ width: `${movementProgress}%` }}
-                  />
-                </div>
+              <div className="flex items-center gap-2 font-ibm-plex-mono text-xl font-semibold text-foreground-dark light:text-slate-900">
+                <Clock3 size={20} className="text-muted" />
+                {formatShiftElapsed(shift.openedAt, now)}
               </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <UserRound size={20} className="shrink-0 text-muted" />
+                <p className="truncate text-base text-foreground-dark light:text-slate-900">
+                  {profile?.fullName}
+                </p>
+              </div>
+
+              <span className="mincard shrink-0 text-xs uppercase light:text-slate-900">
+                {profile?.role.name}
+              </span>
             </div>
           </section>
 
-          <div className="mt-5">
-            <ShiftKpiGrid
-              checkedPlants={plantMetrics.checkedPlants}
-              totalPlants={plantMetrics.totalPlants}
-              fullCount={plantMetrics.fullCount}
-              emptyCount={plantMetrics.emptyCount}
-              highRiskPlants={plantMetrics.highRiskPlants}
-            />
-          </div>
+          <section>
+            <div className="section-label">
+              <AlertTriangle
+                size={16}
+                className={openIncidents.length > 0 ? "text-danger" : "text-muted"}
+              />
+              <span>
+                {openIncidents.length > 0 ? "Prioridad · Incidencias" : "Incidencias"}
+              </span>
+              <span className="h-px flex-1 bg-line" />
+              {openIncidents.length > 0 && (
+                <span className="mincard min-h-8 px-2 text-sm text-danger">
+                  {openIncidents.length}
+                </span>
+              )}
+            </div>
 
-          <div className="mt-5">
-            <UnitMovementKpiGrid
-              activeUnits={unitMetrics.activeUnits}
-              totalUnits={unitMetrics.totalUnits}
-              openMovements={unitMetrics.openMovements}
-              completedMovements={unitMetrics.completedMovements}
-              mealUnits={unitMetrics.mealUnits}
-              waitingDockUnits={unitMetrics.waitingDockUnits}
-              loadingOrUnloadingUnits={unitMetrics.loadingOrUnloadingUnits}
-              totalQuantity={unitMetrics.totalQuantity}
-            />
-          </div>
+            <div className="mt-4 space-y-3">
+              {openIncidents.slice(0, 3).map((incident) => {
+                const classes = getIncidentClasses(incident.severity);
+                const plant = plants.find((item) => item.id === incident.plantId);
+                const unit = units.find((item) => item.id === incident.unitId);
+                const metadata = [
+                  plant?.code,
+                  unit ? `U${unit.code}` : null,
+                  formatTime(incident.occurredAt),
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
 
-          <div className="mt-5">
-            <IncidentKpiGrid
-              totalIncidents={incidentMetrics.totalIncidents}
-              openIncidents={incidentMetrics.openIncidents}
-              resolvedIncidents={incidentMetrics.resolvedIncidents}
-              highSeverityIncidents={incidentMetrics.highSeverityIncidents}
-            />
-          </div>
-        </>
+                return (
+                  <Link
+                    key={incident.id}
+                    to={`/app/projects/${projectId}/incidents`}
+                    className={`flex items-center gap-4 rounded-sm border border-line border-l-4 bg-panel p-4 transition active:scale-[0.99] ${classes.border}`}
+                  >
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border ${classes.icon}`}
+                    >
+                      <AlertTriangle size={23} />
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground-dark light:text-slate-900">
+                        {incident.title}
+                      </p>
+                      <p className="sub mt-1 truncate">{metadata}</p>
+                    </div>
+
+                    <span
+                      className={`mincard min-h-9 shrink-0 border px-3 text-sm ${classes.badge}`}
+                    >
+                      {INCIDENT_SEVERITY_LABELS[incident.severity]}
+                    </span>
+                  </Link>
+                );
+              })}
+
+              {openIncidents.length === 0 && (
+                <Link
+                  to={`/app/projects/${projectId}/incidents`}
+                  className="flex items-center gap-4 rounded-sm border border-line bg-panel p-4"
+                >
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-success/50 bg-success/10 text-success">
+                    <CheckCircle2 size={24} />
+                  </span>
+                  <div>
+                    <p className="font-medium text-success">Sin incidencias abiertas</p>
+                    <p className="sub mt-1">Turno sin pendientes críticos</p>
+                  </div>
+                </Link>
+              )}
+            </div>
+          </section>
+
+          <section>
+            <div className="section-label">
+              <Factory size={16} />
+              <span>Plantas · Revisiones</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {plants.map((plant) => {
+                const latestCheck = latestByPlantId[plant.id] ?? null;
+                const reviewCount = reviewCountByPlantId[plant.id] ?? 0;
+                const classes = getPlantRiskClasses(latestCheck?.riskLevel);
+
+                return (
+                  <Link
+                    key={plant.id}
+                    to={`/app/projects/${projectId}/plants/${plant.id}`}
+                    className={`flex items-center gap-4 rounded-sm border border-line border-l-4 bg-panel p-4 transition active:scale-[0.99] ${classes.border}`}
+                  >
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border ${classes.icon}`}
+                    >
+                      {latestCheck ? (
+                        <Factory
+                          size={23}
+                          className={
+                            latestCheck.riskLevel === "high" ? "animate-pulse" : undefined
+                          }
+                        />
+                      ) : (
+                        <AlertTriangle size={22} />
+                      )}
+                    </span>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-foreground-dark light:text-slate-900">
+                        {plant.name}
+                      </p>
+                      <p className="sub mt-1 truncate">
+                        {latestCheck
+                          ? `Última ${formatTime(latestCheck.checkedAt)} · riesgo ${PLANT_RISK_LABELS[
+                              latestCheck.riskLevel
+                            ].toLowerCase()}`
+                          : "Sin revisar este turno"}
+                      </p>
+                    </div>
+
+                    <div className="shrink-0 text-right">
+                      <p
+                        className={`font-ibm-plex-mono text-2xl font-semibold ${
+                          reviewCount === 0 ? "text-faint" : "text-foreground-dark light:text-slate-900"
+                        }`}
+                      >
+                        {reviewCount}
+                      </p>
+                      <p className="font-barlow-condensed text-xs uppercase tracking-[0.08em] text-faint">
+                        revis.
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+
+          <section>
+            <div className="section-label">
+              <Truck size={16} />
+              <span>Unidades · Estatus</span>
+              <span className="h-px flex-1 bg-line" />
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {units.map((unit) => {
+                const movement = latestMovementByUnitId[unit.id] ?? null;
+                const latestEvent = movement
+                  ? latestByMovementId[movement.id] ?? null
+                  : null;
+                const isAvailable = !movement || movement.status !== "open";
+                const rawEventType = latestEvent?.eventType ?? null;
+                const visualEventType =
+                  rawEventType === "meal_finished"
+                    ? "in_transit"
+                    : rawEventType ?? (isAvailable ? null : "in_transit");
+                const statusLabel = getUnitStatusLabel(movement, rawEventType);
+                const statusStartedAt = latestEvent?.eventAt ?? movement?.startedAt ?? null;
+                const locationPlantId =
+                  movement?.destinationPlantId ?? movement?.originPlantId ?? null;
+                const location = plants.find((plant) => plant.id === locationPlantId);
+
+                return (
+                  <Link
+                    key={unit.id}
+                    to={`/app/projects/${projectId}/units/${unit.id}`}
+                    className={`flex items-center gap-4 rounded-sm border border-line bg-panel p-4 transition active:scale-[0.99] ${
+                      !isAvailable &&
+                      (rawEventType === "waiting_dock" || rawEventType === "meal")
+                        ? "border-l-4 border-l-principal"
+                        : ""
+                    }`}
+                  >
+                    <AnimatedUnitStatusIcon
+                      eventType={visualEventType}
+                      isAvailable={isAvailable}
+                    />
+
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={`font-medium ${getUnitAccentClass(
+                          movement,
+                          rawEventType,
+                        )}`}
+                      >
+                        {statusLabel}
+                      </p>
+                      <p className="sub mt-1 truncate">
+                        U{unit.code}
+                        {statusStartedAt && !isAvailable
+                          ? ` · ${formatElapsedLabel(statusStartedAt, now)}`
+                          : " · Sin movimiento activo"}
+                      </p>
+                    </div>
+
+                    <span className="mincard min-h-10 shrink-0 light:text-slate-900">
+                      {location?.code ?? "—"}
+                    </span>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        </div>
       )}
     </>
   );
