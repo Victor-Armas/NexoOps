@@ -144,51 +144,54 @@ export function PlantCheckForm({
   };
 
   return (
-    <section className="min-w-0 overflow-hidden">
+    <section className="w-full min-w-0 max-w-full">
       <form
         onSubmit={handleSubmit(handleValidSubmit)}
-        className="min-w-0 space-y-6"
+        className="w-full min-w-0 max-w-full space-y-6"
       >
-        <section className="min-w-0">
-          <p className="section-label before:h-px before:flex-1 before:bg-line">
+        <section className="w-full min-w-0 max-w-full">
+          <p className="section-label before:h-px before:min-w-0 before:flex-1 before:bg-line">
             Registrar estatus
           </p>
 
-          <div className="mt-4 grid min-w-0 grid-cols-2 gap-3">
+          <div className="mt-4 grid w-full min-w-0 max-w-full grid-cols-2 gap-3">
             {fields.map((field) => {
               const value = normalizedCheckValues[field.key] ?? 0;
 
               return (
                 <label
                   key={field.key}
-                  className="min-w-0 rounded-sm border border-line bg-panel p-3"
+                  className="w-full min-w-0 max-w-full overflow-hidden rounded-sm border border-line bg-panel p-3"
                 >
-                  <span className="block min-h-10 text-sm text-muted">
+                  <span className="block min-h-10 min-w-0 text-sm text-muted">
                     {field.label}
                   </span>
 
-                  <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+                  <div className="mt-2 grid w-full min-w-0 max-w-full grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center gap-2">
                     <button
                       type="button"
                       onClick={() => handleStep(field.key, -1)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line-strong text-muted transition hover:border-principal hover:text-principal"
+                      className="flex h-10 w-10 items-center justify-center rounded-sm border border-line-strong text-muted transition hover:border-principal hover:text-principal"
                       aria-label={`Restar a ${field.label}`}
                     >
                       <Minus size={18} />
                     </button>
 
                     <input
-                      type="number"
-                      min={0}
+                      type="text"
                       inputMode="numeric"
-                      className="h-10 min-w-0 flex-1 bg-transparent text-center font-ibm-plex-mono text-xl font-semibold text-foreground-dark outline-none light:text-slate-900"
+                      pattern="[0-9]*"
+                      size={1}
+                      autoComplete="off"
+                      aria-label={field.label}
+                      className="h-10 w-full min-w-0 max-w-full appearance-none bg-transparent text-center font-ibm-plex-mono text-xl font-semibold text-foreground-dark outline-none light:text-slate-900"
                       {...register(`checkValues.${field.key}`)}
                     />
 
                     <button
                       type="button"
                       onClick={() => handleStep(field.key, 1)}
-                      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line-strong text-muted transition hover:border-principal hover:text-principal"
+                      className="flex h-10 w-10 items-center justify-center rounded-sm border border-line-strong text-muted transition hover:border-principal hover:text-principal"
                       aria-label={`Sumar a ${field.label}`}
                     >
                       <Plus size={18} />
@@ -208,19 +211,24 @@ export function PlantCheckForm({
           )}
         </section>
 
-        <section className="min-w-0 overflow-hidden">
-          <p className="section-label before:h-px before:flex-1 before:bg-line">
+        <section className="w-full min-w-0 max-w-full">
+          <p className="section-label before:h-px before:min-w-0 before:flex-1 before:bg-line">
             Condición operativa
           </p>
 
-          <div className="mt-4 flex w-full max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-2 pr-1 touch-pan-x">
-            {OPERATIONAL_CONDITIONS.map((condition) => {
+          <div className="mt-4 grid w-full min-w-0 max-w-full grid-cols-2 gap-2">
+            {OPERATIONAL_CONDITIONS.map((condition, index) => {
               const isSelected = watchedOperationalCondition === condition;
+              const isLastOddItem =
+                index === OPERATIONAL_CONDITIONS.length - 1 &&
+                OPERATIONAL_CONDITIONS.length % 2 !== 0;
 
               return (
                 <label
                   key={condition}
-                  className={`flex min-h-11 shrink-0 cursor-pointer items-center justify-center rounded-sm border px-4 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.06em] transition ${
+                  className={`flex min-h-11 min-w-0 cursor-pointer items-center justify-center whitespace-normal rounded-sm border px-2 text-center font-barlow-condensed text-sm font-semibold uppercase leading-tight tracking-[0.04em] transition ${
+                    isLastOddItem ? "col-span-2" : ""
+                  } ${
                     isSelected
                       ? "border-principal bg-principal text-slate-950"
                       : "border-line-strong bg-transparent text-muted"
@@ -239,9 +247,9 @@ export function PlantCheckForm({
           </div>
         </section>
 
-        <section className="min-w-0">
-          <div className="flex min-w-0 items-center justify-between gap-3">
-            <p className="section-label min-w-0 flex-1 before:h-px before:flex-1 before:bg-line">
+        <section className="w-full min-w-0 max-w-full">
+          <div className="flex w-full min-w-0 max-w-full items-center justify-between gap-3">
+            <p className="section-label min-w-0 flex-1 before:h-px before:min-w-0 before:flex-1 before:bg-line">
               Riesgo operativo
             </p>
 
@@ -254,7 +262,7 @@ export function PlantCheckForm({
             </button>
           </div>
 
-          <div className="mt-4 grid min-w-0 grid-cols-3 gap-2">
+          <div className="mt-4 grid w-full min-w-0 max-w-full grid-cols-3 gap-2">
             {RISK_LEVELS.map((riskLevel) => {
               const isSelected = watchedRiskLevel === riskLevel;
               const selectedClass =
@@ -291,15 +299,15 @@ export function PlantCheckForm({
           </p>
         </section>
 
-        <label className="block min-w-0 space-y-2">
-          <span className="section-label before:h-px before:flex-1 before:bg-line">
+        <label className="block w-full min-w-0 max-w-full space-y-2">
+          <span className="section-label before:h-px before:min-w-0 before:flex-1 before:bg-line">
             Comentarios
           </span>
 
           <textarea
             rows={3}
             placeholder="Ej. Sin espacio para descarga, sin rampa disponible, prioridad para P6..."
-            className="w-full min-w-0 rounded-sm border border-line bg-panel px-4 py-3 text-base text-foreground-dark outline-none placeholder:text-faint focus:border-principal light:border-slate-200 light:bg-white light:text-slate-900"
+            className="w-full min-w-0 max-w-full resize-y rounded-sm border border-line bg-panel px-4 py-3 text-base text-foreground-dark outline-none placeholder:text-faint focus:border-principal light:border-slate-200 light:bg-white light:text-slate-900"
             {...register("notes")}
           />
 
@@ -310,7 +318,7 @@ export function PlantCheckForm({
           )}
         </label>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
+        <Button type="submit" className="w-full max-w-full" disabled={isSubmitting}>
           {isSubmitting ? "Guardando..." : "Guardar estatus"}
         </Button>
       </form>
