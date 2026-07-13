@@ -136,8 +136,8 @@ export function PlantChecksPage() {
   };
 
   return (
-    <>
-      <section className="mb-5">
+    <div className="w-full min-w-0 max-w-full overflow-hidden">
+      <section className="mb-5 min-w-0">
         <Link
           to={`/app/projects/${projectId}/plants`}
           className="mb-5 inline-flex min-h-11 items-center gap-2 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.14em] text-faint transition hover:text-principal"
@@ -167,14 +167,14 @@ export function PlantChecksPage() {
       )}
 
       {shift && latestPlantCheck && (
-        <section className="mb-6 rounded-sm border border-[#cfc4af] bg-[#e9e0cf] p-5 text-[#302b22] shadow-lg">
+        <section className="mb-6 min-w-0 rounded-sm border border-[#cfc4af] bg-[#e9e0cf] p-5 text-[#302b22] shadow-lg">
           <p className="font-barlow-condensed text-xs font-semibold uppercase tracking-[0.18em] text-[#7c7466]">
             Última revisión · {formatElapsedTime(latestPlantCheck.checkedAt)}
           </p>
 
-          <div className="mt-4 grid grid-cols-2 gap-x-6 gap-y-5">
+          <div className="mt-4 grid min-w-0 grid-cols-2 gap-x-6 gap-y-5">
             {plantCheckFields.map((field) => (
-              <div key={field.key} className="border-b border-[#bdb19d] pb-3 last:border-b-0">
+              <div key={field.key} className="min-w-0 border-b border-[#bdb19d] pb-3 last:border-b-0">
                 <p className="font-ibm-plex-mono text-3xl font-semibold">
                   {latestPlantCheck.checkValues[field.key] ?? 0}
                 </p>
@@ -186,7 +186,7 @@ export function PlantChecksPage() {
       )}
 
       {shift && canRegisterStatus && (
-        <div className="mb-6">
+        <div className="mb-6 min-w-0 max-w-full">
           <PlantCheckForm
             fields={plantCheckFields}
             riskThresholds={{
@@ -210,6 +210,6 @@ export function PlantChecksPage() {
       {shift && (
         <PlantCheckHistory fields={plantCheckFields} plantChecks={plantChecks} />
       )}
-    </>
+    </div>
   );
 }
