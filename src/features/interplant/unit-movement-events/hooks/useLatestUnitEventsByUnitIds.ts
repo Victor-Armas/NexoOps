@@ -30,8 +30,6 @@ export function useLatestUnitEventsByUnitIds(
 
   const refetch = useCallback(async () => {
     if (!shiftId || !unitIdsKey) {
-      setLatestByUnitId({});
-      setIsLoading(false);
       return;
     }
 
@@ -55,7 +53,7 @@ export function useLatestUnitEventsByUnitIds(
       return;
     }
 
-    void refetch();
+    void Promise.resolve().then(refetch);
 
     const channel = subscribeToUnitMovementEventsTableChanges(() => {
       void refetch();
