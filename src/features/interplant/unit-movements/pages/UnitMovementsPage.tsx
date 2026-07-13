@@ -7,6 +7,7 @@ import { useAuth } from "../../../auth/hooks/useAuth";
 import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
 import { usePlants } from "../../plants/hooks/usePlants";
 import { useShift } from "../../shifts/hooks/useShift";
+import { UnitStandaloneEventsPanel } from "../../unit-movement-events/components/UnitStandaloneEventsPanel";
 import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
 import { useUnits } from "../../units/hooks/useUnits";
 import { UnitMovementForm } from "../components/UnitMovementForm";
@@ -71,6 +72,11 @@ export function UnitMovementsPage() {
   const unit = useMemo(
     () => units.find((item) => item.id === unitId) ?? null,
     [units, unitId],
+  );
+
+  const hasOpenMovement = useMemo(
+    () => unitMovements.some((movement) => movement.status === "open"),
+    [unitMovements],
   );
 
   const canRegisterMovement = can("units.movement.create");
@@ -190,6 +196,15 @@ export function UnitMovementsPage() {
         </section>
       )}
 
+      {shift && unitId && (
+        <UnitStandaloneEventsPanel
+          unitId={unitId}
+          shiftId={shift.id}
+          unitName={`U${unit?.code ?? "--"}`}
+          hasOpenMovement={hasOpenMovement}
+        />
+      )}
+
       {shift && (
         <div className="mb-7">
           <UnitMovementList
@@ -208,7 +223,7 @@ export function UnitMovementsPage() {
         </div>
       )}
 
-      {shift && canRegisterMovement && (
+      {shift && canRegisterMovement && !hasOpenMovement && (
         <div className="mb-5">
           <UnitMovementForm
             plants={plants}
@@ -217,6 +232,12 @@ export function UnitMovementsPage() {
             onSubmit={handleSubmit}
           />
         </div>
+      )}
+
+      {shift && canRegisterMovement && hasOpenMovement && (
+        <section className="mb-5 rounded-sm border border-line bg-panel p-5 text-sm text-muted">
+          Completa o cancela el movimiento abierto antes de registrar uno nuevo.
+        </section>
       )}
 
       {shift && !canRegisterMovement && (
