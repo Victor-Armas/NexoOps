@@ -8,6 +8,13 @@ import type {
   SaveProjectUnitSettingPayload,
 } from "../types/project-unit-settings-admin.types";
 
+function compareByName(first: ProjectUnitSetting, second: ProjectUnitSetting) {
+  return first.name.localeCompare(second.name, "es-MX", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
   const [unitSettings, setUnitSettings] = useState<ProjectUnitSetting[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(projectId));
@@ -68,7 +75,7 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
                 ? savedUnitSetting
                 : unitSetting,
             )
-            .sort((first, second) => first.sortOrder - second.sortOrder),
+            .sort(compareByName),
         );
 
         return savedUnitSetting;
@@ -80,7 +87,6 @@ export function useProjectUnitSettingsAdmin(projectId: string | undefined) {
 
         setErrorMessage(message);
         throw error;
-        2;
       } finally {
         setIsSaving(false);
       }
