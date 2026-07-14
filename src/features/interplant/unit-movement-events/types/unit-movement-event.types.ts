@@ -1,3 +1,11 @@
+export const DIESEL_REFUELING_STARTED_EVENT = "diesel_refueling";
+export const DIESEL_REFUELING_FINISHED_EVENT = "diesel_refueling_finished";
+
+export const DIESEL_REFUELING_EVENT_TYPES = [
+  DIESEL_REFUELING_STARTED_EVENT,
+  DIESEL_REFUELING_FINISHED_EVENT,
+] as const;
+
 export type UnitMovementEventType = string;
 
 export type UnitMovementEvent = {
@@ -48,13 +56,11 @@ const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
   meal: "Comida",
   meal_finished: "Comida finalizada",
   driver_change: "Cambio operador",
+  diesel_refueling: "Carga de diésel",
+  diesel_refueling_finished: "Carga de diésel finalizada",
   completed: "Completado",
   cancelled: "Cancelado",
   guard: "Resguardo",
-  carga_diesel: "Carga de diésel",
-  carga_diesel_finalizada: "Carga de diésel finalizada",
-  recarga_diesel: "Carga de diésel",
-  recarga_diesel_finalizada: "Carga de diésel finalizada",
 };
 
 function humanizeEventType(eventType: string) {
