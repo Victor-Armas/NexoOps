@@ -27,6 +27,7 @@ const ICON_OPTIONS = [
   ["map_pin", "Ubicación"],
   ["refresh", "Cambio"],
   ["check", "Correcto"],
+  ["fuel", "Combustible"],
 ] as const;
 
 const COLOR_OPTIONS = [

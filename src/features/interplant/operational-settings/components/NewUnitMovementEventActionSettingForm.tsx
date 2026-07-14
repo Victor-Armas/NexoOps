@@ -126,6 +126,7 @@ export function NewUnitMovementEventActionSettingForm({
           <option value="map_pin">Ubicación</option>
           <option value="refresh">Cambio</option>
           <option value="check">Correcto</option>
+          <option value="fuel">Combustible</option>
         </select>
 
         <select
