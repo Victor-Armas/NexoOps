@@ -3,15 +3,18 @@ import {
   CircleCheckBig,
   CircleDot,
   Clock3,
+  Fuel,
   MapPin,
   RefreshCw,
   ShieldCheck,
   Truck,
   Utensils,
   X,
-  Fuel,
 } from "lucide-react";
-import type { UnitMovementEventType } from "../../unit-movement-events/types/unit-movement-event.types";
+import {
+  DIESEL_REFUELING_STARTED_EVENT,
+  type UnitMovementEventType,
+} from "../../unit-movement-events/types/unit-movement-event.types";
 
 type AnimatedUnitStatusIconProps = {
   eventType?: UnitMovementEventType | null;
@@ -187,7 +190,7 @@ export function AnimatedUnitStatusIcon({
     );
   }
 
-  if (iconKey === "fuel" || eventType === "carga_diesel") {
+  if (iconKey === "fuel" || eventType === DIESEL_REFUELING_STARTED_EVENT) {
     return (
       <span className={`dashboard-status-icon ${classes}`}>
         <Fuel size={24} className="animate-dashboard-fuel" />
