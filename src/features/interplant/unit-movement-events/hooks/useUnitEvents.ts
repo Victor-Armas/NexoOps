@@ -11,6 +11,12 @@ import type {
   UnitMovementEvent,
 } from "../types/unit-movement-event.types";
 
+const DIESEL_START_EVENTS = ["carga_diesel", "recarga_diesel"];
+const DIESEL_END_EVENTS = [
+  "carga_diesel_finalizada",
+  "recarga_diesel_finalizada",
+];
+
 export function useUnitEvents(
   unitId: string | undefined,
   shiftId: string | undefined,
@@ -74,6 +80,19 @@ export function useUnitEvents(
           new Date(latestMealFinished.eventAt).getTime()),
   );
 
+  const latestDieselStart = standaloneEvents.find((event) =>
+    DIESEL_START_EVENTS.includes(event.eventType),
+  );
+  const latestDieselFinished = standaloneEvents.find((event) =>
+    DIESEL_END_EVENTS.includes(event.eventType),
+  );
+  const isFuelingActive = Boolean(
+    latestDieselStart &&
+      (!latestDieselFinished ||
+        new Date(latestDieselStart.eventAt).getTime() >
+          new Date(latestDieselFinished.eventAt).getTime()),
+  );
+
   const addEvent = useCallback(
     async (
       payload: Omit<CreateUnitMovementEventPayload, "unitId" | "shiftId">,
@@ -114,6 +133,7 @@ export function useUnitEvents(
     latestStandaloneEvent,
     latestMealStart: latestMealStart ?? null,
     isMealActive,
+    isFuelingActive,
     isLoading,
     errorMessage,
     addEvent,
