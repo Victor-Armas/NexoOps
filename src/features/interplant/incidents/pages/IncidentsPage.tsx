@@ -7,6 +7,7 @@ import { useShift } from "../../shifts/hooks/useShift";
 import { useUnits } from "../../units/hooks/useUnits";
 import { IncidentForm } from "../components/IncidentForm";
 import { IncidentList } from "../components/IncidentList";
+import { useIncidentCategories } from "../hooks/useIncidentCategories";
 import { useIncidents } from "../hooks/useIncidents";
 import type {
   CreateIncidentPayload,
@@ -36,6 +37,12 @@ export function IncidentsPage() {
   } = useUnits(projectId);
 
   const {
+    categories,
+    isLoading: isLoadingCategories,
+    errorMessage: categoriesErrorMessage,
+  } = useIncidentCategories(projectId);
+
+  const {
     incidents,
     isLoading: isLoadingIncidents,
     isSaving,
@@ -48,12 +55,14 @@ export function IncidentsPage() {
     isLoadingShift ||
     isLoadingPlants ||
     isLoadingUnits ||
+    isLoadingCategories ||
     Boolean(shift && isLoadingIncidents);
 
   const errorMessage =
     shiftErrorMessage ||
     plantsErrorMessage ||
     unitsErrorMessage ||
+    categoriesErrorMessage ||
     incidentsErrorMessage;
 
   const handleCreateIncident = async (payload: CreateIncidentPayload) => {
@@ -95,19 +104,20 @@ export function IncidentsPage() {
     <>
       <section className="mb-5">
         <h2 className="text-2xl font-bold">Incidencias</h2>
-        <p className="mt-2 text-sm text-slate-400 light:text-slate-500">
-          Registra y da seguimiento a eventos operativos del turno.
+        <p className="mt-2 text-sm text-muted">
+          Registra causas operativas de planta o unidad y da seguimiento al
+          turno.
         </p>
       </section>
 
       {errorMessage && (
-        <section className="mb-5 rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
+        <section className="mb-5 rounded-sm border border-danger/30 bg-danger/10 p-5 text-sm text-danger">
           {errorMessage}
         </section>
       )}
 
       {!projectId || !profile ? (
-        <section className="rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
+        <section className="rounded-sm border border-danger/30 bg-danger/10 p-5 text-sm text-danger">
           No se pudo obtener el proyecto o el usuario activo.
         </section>
       ) : (
@@ -118,6 +128,7 @@ export function IncidentsPage() {
             profileId={profile.id}
             plants={plants}
             units={units}
+            categories={categories}
             isSaving={isSaving}
             onCreateIncident={handleCreateIncident}
           />
@@ -126,6 +137,7 @@ export function IncidentsPage() {
             incidents={incidents}
             plants={plants}
             units={units}
+            categories={categories}
             isSaving={isSaving}
             onUpdateStatus={handleUpdateIncidentStatus}
           />
