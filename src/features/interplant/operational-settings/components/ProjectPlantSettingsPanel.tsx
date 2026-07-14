@@ -41,8 +41,7 @@ export function ProjectPlantSettingsPanel({
                     <h3 className="text-lg font-bold">Plantas del proyecto</h3>
 
                     <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-                        Configura qué plantas aparecen en la operación y el orden en que se
-                        muestran.
+                        Configura qué plantas aparecen en la operación.
                     </p>
                 </div>
             </div>
@@ -66,7 +65,7 @@ export function ProjectPlantSettingsPanel({
                 <div className="space-y-3">
                     {plantSettings.map((plantSetting) => (
                         <ProjectPlantSettingForm
-                            key={`${plantSetting.plantId}-${plantSetting.sortOrder}-${plantSetting.isActive}`}
+                            key={`${plantSetting.plantId}-${plantSetting.isActive}`}
                             plantSetting={plantSetting}
                             isSaving={isSaving}
                             onSave={handleSave}
