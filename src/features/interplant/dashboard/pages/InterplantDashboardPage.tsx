@@ -265,13 +265,13 @@ export function InterplantDashboardPage() {
     isLoadingShift ||
     Boolean(
       shift &&
-        (isLoadingPlants ||
-          isLoadingUnits ||
-          isLoadingLatestChecks ||
-          isLoadingUnitMovements ||
-          isLoadingLatestMovementEvents ||
-          isLoadingLatestUnitEvents ||
-          isLoadingIncidents),
+      (isLoadingPlants ||
+        isLoadingUnits ||
+        isLoadingLatestChecks ||
+        isLoadingUnitMovements ||
+        isLoadingLatestMovementEvents ||
+        isLoadingLatestUnitEvents ||
+        isLoadingIncidents),
     );
 
   const errorMessage =
@@ -465,18 +465,17 @@ export function InterplantDashboardPage() {
                       <p className="sub mt-1 truncate">
                         {latestCheck
                           ? `Última ${formatTime(latestCheck.checkedAt)} · riesgo ${PLANT_RISK_LABELS[
-                              latestCheck.riskLevel
-                            ].toLowerCase()}`
+                            latestCheck.riskLevel
+                          ].toLowerCase()}`
                           : "Sin revisar este turno"}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p
-                        className={`font-ibm-plex-mono text-2xl font-semibold ${
-                          reviewCount === 0
+                        className={`font-ibm-plex-mono text-2xl font-semibold ${reviewCount === 0
                             ? "text-faint"
                             : "text-foreground-dark light:text-slate-900"
-                        }`}
+                          }`}
                       >
                         {reviewCount}
                       </p>
@@ -542,36 +541,37 @@ export function InterplantDashboardPage() {
                   <Link
                     key={unit.id}
                     to={`/app/projects/${projectId}/units/${unit.id}`}
-                    className={`flex items-center gap-4 rounded-sm border border-line bg-panel p-4 transition active:scale-[0.99] ${
-                      standaloneActive || colorKey === "amber" || colorKey === "danger"
+                    className={`flex items-center gap-4 rounded-sm border border-line bg-panel p-4 transition active:scale-[0.99] ${standaloneActive || colorKey === "amber" || colorKey === "danger"
                         ? "border-l-4 border-l-principal"
                         : ""
-                    }`}
+                      }`}
                   >
                     <AnimatedUnitStatusIcon
                       eventType={event?.eventType ?? null}
-                      iconKey={iconKey}
+                      iconKey={
+                        movement?.status === "open" && !event
+                          ? "truck"
+                          : iconKey
+                      }
                       colorKey={colorKey}
                       isAvailable={isAvailable}
                     />
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`font-medium ${
-                          isAvailable
+                        className={`font-medium ${isAvailable
                             ? "text-success"
                             : getUnitAccentClass(colorKey)
-                        }`}
+                          }`}
                       >
                         {statusLabel}
                       </p>
                       <p className="sub mt-1 truncate">
                         {isAvailable
                           ? "Unidad libre para movimiento"
-                          : `U${unit.code}${
-                              statusStartedAt
-                                ? ` · ${formatElapsedLabel(statusStartedAt, now)}`
-                                : ""
-                            }`}
+                          : `U${unit.code}${statusStartedAt
+                            ? ` · ${formatElapsedLabel(statusStartedAt, now)}`
+                            : ""
+                          }`}
                       </p>
                     </div>
                     <span className="mincard min-h-10 shrink-0 light:text-slate-900">
