@@ -2,27 +2,48 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   createUnitMovementEvent,
   deleteUnitMovementEvent,
-  getStandaloneMealEvents,
+  getStandaloneBlockingEvents,
   getUnitEvents,
   subscribeToUnitEventsChanges,
 } from "../services/unit-movement-events.service";
-import type {
-  CreateUnitMovementEventPayload,
-  UnitMovementEvent,
+import {
+  DIESEL_REFUELING_FINISHED_EVENT,
+  DIESEL_REFUELING_STARTED_EVENT,
+  type CreateUnitMovementEventPayload,
+  type UnitMovementEvent,
 } from "../types/unit-movement-event.types";
 
-const DIESEL_START_EVENTS = ["carga_diesel", "recarga_diesel"];
-const DIESEL_END_EVENTS = [
-  "carga_diesel_finalizada",
-  "recarga_diesel_finalizada",
-];
+const BLOCKING_EVENT_TYPES = new Set([
+  "meal",
+  "meal_finished",
+  DIESEL_REFUELING_STARTED_EVENT,
+  DIESEL_REFUELING_FINISHED_EVENT,
+]);
+
+function isStandaloneProcessActive(
+  events: UnitMovementEvent[],
+  startEventType: string,
+  endEventType: string,
+) {
+  const latestStart = events.find(
+    (event) => event.eventType === startEventType,
+  );
+  const latestEnd = events.find((event) => event.eventType === endEventType);
+
+  return Boolean(
+    latestStart &&
+      (!latestEnd ||
+        new Date(latestStart.eventAt).getTime() >
+          new Date(latestEnd.eventAt).getTime()),
+  );
+}
 
 export function useUnitEvents(
   unitId: string | undefined,
   shiftId: string | undefined,
 ) {
   const [events, setEvents] = useState<UnitMovementEvent[]>([]);
-  const [mealEvents, setMealEvents] = useState<UnitMovementEvent[]>([]);
+  const [blockingEvents, setBlockingEvents] = useState<UnitMovementEvent[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(unitId && shiftId));
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -34,12 +55,12 @@ export function useUnitEvents(
     try {
       setIsLoading(true);
       setErrorMessage(null);
-      const [currentShiftEvents, standaloneMealEvents] = await Promise.all([
+      const [currentShiftEvents, currentBlockingEvents] = await Promise.all([
         getUnitEvents({ unitId, shiftId }),
-        getStandaloneMealEvents(unitId),
+        getStandaloneBlockingEvents(unitId),
       ]);
       setEvents(currentShiftEvents);
-      setMealEvents(standaloneMealEvents);
+      setBlockingEvents(currentBlockingEvents);
     } catch {
       setErrorMessage("No se pudieron cargar los eventos de la unidad.");
     } finally {
@@ -69,28 +90,18 @@ export function useUnitEvents(
   );
 
   const latestStandaloneEvent = standaloneEvents[0] ?? null;
-  const latestMealStart = mealEvents.find((event) => event.eventType === "meal");
-  const latestMealFinished = mealEvents.find(
-    (event) => event.eventType === "meal_finished",
+  const latestMealStart = blockingEvents.find(
+    (event) => event.eventType === "meal",
   );
-  const isMealActive = Boolean(
-    latestMealStart &&
-      (!latestMealFinished ||
-        new Date(latestMealStart.eventAt).getTime() >
-          new Date(latestMealFinished.eventAt).getTime()),
+  const isMealActive = isStandaloneProcessActive(
+    blockingEvents,
+    "meal",
+    "meal_finished",
   );
-
-  const latestDieselStart = standaloneEvents.find((event) =>
-    DIESEL_START_EVENTS.includes(event.eventType),
-  );
-  const latestDieselFinished = standaloneEvents.find((event) =>
-    DIESEL_END_EVENTS.includes(event.eventType),
-  );
-  const isFuelingActive = Boolean(
-    latestDieselStart &&
-      (!latestDieselFinished ||
-        new Date(latestDieselStart.eventAt).getTime() >
-          new Date(latestDieselFinished.eventAt).getTime()),
+  const isFuelingActive = isStandaloneProcessActive(
+    blockingEvents,
+    DIESEL_REFUELING_STARTED_EVENT,
+    DIESEL_REFUELING_FINISHED_EVENT,
   );
 
   const addEvent = useCallback(
@@ -111,9 +122,9 @@ export function useUnitEvents(
 
       if (
         created.unitMovementId === null &&
-        (created.eventType === "meal" || created.eventType === "meal_finished")
+        BLOCKING_EVENT_TYPES.has(created.eventType)
       ) {
-        setMealEvents((current) => [created, ...current]);
+        setBlockingEvents((current) => [created, ...current]);
       }
 
       return created;
@@ -124,7 +135,9 @@ export function useUnitEvents(
   const removeEvent = useCallback(async (eventId: string) => {
     await deleteUnitMovementEvent(eventId);
     setEvents((current) => current.filter((event) => event.id !== eventId));
-    setMealEvents((current) => current.filter((event) => event.id !== eventId));
+    setBlockingEvents((current) =>
+      current.filter((event) => event.id !== eventId),
+    );
   }, []);
 
   return {
