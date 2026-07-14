@@ -46,16 +46,22 @@ export function App() {
               <Route path="units/:unitId" element={<UnitMovementsPage />} />
               <Route path="incidents" element={<IncidentsPage />} />
               <Route path="closing" element={<ClosingPage />} />
-              <Route path="history" element={<ShiftClosingHistoryPage />} />
               <Route path="plants/:plantId" element={<PlantChecksPage />} />
             </Route>
-          </Route>
 
-          <Route
-            path="/app/projects/:projectId/admin"
-            element={<ProjectShell showBottomNavigation={false} />}
-          >
-            <Route index element={<AdminPage />} />
+            <Route
+              path="/app/projects/:projectId/history"
+              element={<ProjectShell showBottomNavigation={false} />}
+            >
+              <Route index element={<ShiftClosingHistoryPage />} />
+            </Route>
+
+            <Route
+              path="/app/projects/:projectId/admin"
+              element={<ProjectShell showBottomNavigation={false} />}
+            >
+              <Route index element={<AdminPage />} />
+            </Route>
           </Route>
 
           <Route path="/" element={<Navigate to="/app" replace />} />
