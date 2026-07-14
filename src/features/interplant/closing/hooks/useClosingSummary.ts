@@ -46,6 +46,7 @@ export function useClosingSummary({
 
   const {
     latestByPlantId,
+    reviewCountByPlantId,
     isLoading: isLoadingPlantChecks,
     errorMessage: plantChecksErrorMessage,
   } = useLatestPlantChecksByShift(shift?.id);
@@ -123,6 +124,9 @@ export function useClosingSummary({
     shift,
     plants,
     units,
+    unitMovements,
+    incidents,
+    reviewCountByPlantId,
     latestByMovementId,
     plantMetrics,
     movementMetrics,
