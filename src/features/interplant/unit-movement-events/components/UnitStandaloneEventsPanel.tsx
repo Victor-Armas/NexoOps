@@ -9,19 +9,14 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
-import type {
-  UnitMovementEvent,
-  UnitMovementEventType,
+import {
+  DIESEL_REFUELING_FINISHED_EVENT,
+  DIESEL_REFUELING_STARTED_EVENT,
+  type UnitMovementEvent,
+  type UnitMovementEventType,
 } from "../types/unit-movement-event.types";
 import { getStandaloneStatusActions } from "../utils/unit-event-actions";
 import { UnitMovementTimeline } from "./UnitMovementTimeline";
-
-const SYSTEM_DIESEL_EVENTS = new Set([
-  "carga_diesel",
-  "carga_diesel_finalizada",
-  "recarga_diesel",
-  "recarga_diesel_finalizada",
-]);
 
 type UnitStandaloneEventsPanelProps = {
   unitName: string;
@@ -45,6 +40,19 @@ function StandaloneActionIcon({ iconKey }: { iconKey: string }) {
   return <Circle size={18} />;
 }
 
+function getActionErrorMessage(error: unknown, fallback: string) {
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
 export function UnitStandaloneEventsPanel({
   unitName,
   hasOpenMovement,
@@ -59,9 +67,7 @@ export function UnitStandaloneEventsPanel({
   const { can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const canCreateEvent = can("units.event.create");
-  const standaloneActions = getStandaloneStatusActions(eventActions).filter(
-    (action) => !SYSTEM_DIESEL_EVENTS.has(action.eventType),
-  );
+  const standaloneActions = getStandaloneStatusActions(eventActions);
   const latestStandaloneEvent = standaloneEvents[0] ?? null;
 
   const handleMeal = async () => {
@@ -76,31 +82,43 @@ export function UnitStandaloneEventsPanel({
       toast.success(
         isMealActive ? "Hora de comida finalizada." : "Hora de comida iniciada.",
       );
-    } catch {
-      toast.error("No se pudo actualizar la hora de comida.");
+    } catch (error) {
+      toast.error(
+        getActionErrorMessage(
+          error,
+          "No se pudo actualizar la hora de comida.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleFueling = async () => {
+    const isFinishing = isFuelingActive;
+
     try {
       setIsSubmitting(true);
       await onAddEvent({
-        eventType: isFuelingActive
-          ? "carga_diesel_finalizada"
-          : "carga_diesel",
-        notes: isFuelingActive
+        eventType: isFinishing
+          ? DIESEL_REFUELING_FINISHED_EVENT
+          : DIESEL_REFUELING_STARTED_EVENT,
+        notes: isFinishing
           ? "Carga de diésel finalizada."
           : "Inicio de carga de diésel.",
       });
       toast.success(
-        isFuelingActive
+        isFinishing
           ? "Carga de diésel finalizada. Unidad disponible."
           : "Carga de diésel iniciada.",
       );
-    } catch {
-      toast.error("No se pudo actualizar la carga de diésel.");
+    } catch (error) {
+      toast.error(
+        getActionErrorMessage(
+          error,
+          "No se pudo actualizar la carga de diésel.",
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -114,8 +132,13 @@ export function UnitStandaloneEventsPanel({
         notes: `${action.label} registrado.`,
       });
       toast.success(`${action.label} registrado.`);
-    } catch {
-      toast.error(`No se pudo registrar ${action.label.toLowerCase()}.`);
+    } catch (error) {
+      toast.error(
+        getActionErrorMessage(
+          error,
+          `No se pudo registrar ${action.label.toLowerCase()}.`,
+        ),
+      );
     } finally {
       setIsSubmitting(false);
     }
