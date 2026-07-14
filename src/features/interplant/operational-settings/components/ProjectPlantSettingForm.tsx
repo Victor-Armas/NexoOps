@@ -1,90 +1,93 @@
-import { Save } from "lucide-react";
-import { useState } from "react";
-import { Button } from "../../../../components/ui/Button";
+import type { ReactNode } from "react";
+import { ChevronDown, Factory } from "lucide-react";
+import { Switch } from "../../../../components/ui/Switch";
+import { cn } from "../../../../lib/utils/cn";
 import type {
-    ProjectPlantSetting,
-    SaveProjectPlantSettingPayload,
+  ProjectPlantSetting,
+  SaveProjectPlantSettingPayload,
 } from "../types/project-plant-settings-admin.types";
 
 type ProjectPlantSettingFormProps = {
-    plantSetting: ProjectPlantSetting;
-    isSaving: boolean;
-    onSave: (values: SaveProjectPlantSettingPayload) => Promise<void>;
+  plantSetting: ProjectPlantSetting;
+  fieldCount: number;
+  isOpen: boolean;
+  isSaving: boolean;
+  children: ReactNode;
+  onToggleOpen: () => void;
+  onSave: (values: SaveProjectPlantSettingPayload) => Promise<void>;
 };
 
 export function ProjectPlantSettingForm({
-    plantSetting,
-    isSaving,
-    onSave,
+  plantSetting,
+  fieldCount,
+  isOpen,
+  isSaving,
+  children,
+  onToggleOpen,
+  onSave,
 }: ProjectPlantSettingFormProps) {
-    const [isActive, setIsActive] = useState(plantSetting.isActive);
+  const handleActiveChange = async (isActive: boolean) => {
+    await onSave({
+      projectId: plantSetting.projectId,
+      plantId: plantSetting.plantId,
+      isActive,
+    });
+  };
 
-    const handleSave = async () => {
-        await onSave({
-            projectId: plantSetting.projectId,
-            plantId: plantSetting.plantId,
-            isActive,
-        });
-    };
+  return (
+    <article
+      className={cn(
+        "overflow-hidden rounded-sm border border-line bg-panel",
+        !plantSetting.isActive && "opacity-70",
+      )}
+    >
+      <div className="flex min-h-16 items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={onToggleOpen}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-principal/30 bg-principal/10 text-principal">
+            <Factory size={17} />
+          </span>
 
-    return (
-        <article className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 light:border-slate-200 light:bg-slate-50">
-            <div className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                    <p className="text-xs text-slate-400 light:text-slate-500">Planta</p>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">
+              {plantSetting.code} · {plantSetting.name}
+            </span>
+            <span className="block text-xs text-muted">
+              {fieldCount} {fieldCount === 1 ? "campo" : "campos"} de revisión
+            </span>
+          </span>
 
-                    <h4 className="text-lg font-bold">{plantSetting.code}</h4>
-
-                    <p className="text-sm text-slate-400 light:text-slate-500">
-                        {plantSetting.name}
-                    </p>
-                </div>
-
-                <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${plantSetting.plantIsActive
-                            ? "bg-emerald-400/10 text-emerald-300 light:bg-emerald-50 light:text-emerald-700"
-                            : "bg-red-500/10 text-red-300 light:bg-red-50 light:text-red-600"
-                        }`}
-                >
-                    {plantSetting.plantIsActive ? "Planta activa" : "Planta desactivada"}
-                </span>
-            </div>
-
-            {plantSetting.description && (
-                <p className="mb-3 text-sm text-slate-400 light:text-slate-500">
-                    {plantSetting.description}
-                </p>
+          <ChevronDown
+            size={16}
+            className={cn(
+              "shrink-0 text-muted transition-transform",
+              isOpen && "rotate-180",
             )}
+          />
+        </button>
 
-            <div className="space-y-3">
-                <label className="inline-flex items-center gap-2 text-sm text-slate-300 light:text-slate-700">
-                    <input
-                        type="checkbox"
-                        checked={isActive}
-                        onChange={(event) => setIsActive(event.target.checked)}
-                        className="h-4 w-4"
-                        disabled={!plantSetting.plantIsActive}
-                    />
-                    Activa en este proyecto
-                </label>
+        <Switch
+          checked={plantSetting.isActive}
+          disabled={isSaving || !plantSetting.plantIsActive}
+          onChange={(event) => void handleActiveChange(event.target.checked)}
+          aria-label={`${plantSetting.isActive ? "Desactivar" : "Activar"} ${plantSetting.name}`}
+        />
+      </div>
 
-                {!plantSetting.plantIsActive && (
-                    <p className="text-xs text-yellow-200 light:text-yellow-700">
-                        Esta planta está desactivada globalmente. Aunque la actives aquí, no
-                        aparecerá en operación.
-                    </p>
-                )}
+      {isOpen && (
+        <div className="border-t border-line bg-surface-dark/50 p-3">
+          {!plantSetting.plantIsActive && (
+            <p className="mb-3 rounded-sm border border-yellow-400/30 bg-yellow-400/10 px-3 py-2 text-xs text-yellow-100 light:text-yellow-700">
+              Esta planta está desactivada globalmente y no aparecerá en operación.
+            </p>
+          )}
 
-                <Button
-                    type="button"
-                    disabled={isSaving}
-                    onClick={() => void handleSave()}
-                    className="h-11 w-full gap-2 rounded-2xl"
-                >
-                    <Save size={16} />
-                    Guardar planta
-                </Button>
-            </div>
-        </article>
-    );
+          {children}
+        </div>
+      )}
+    </article>
+  );
 }
