@@ -6,7 +6,6 @@ export type UnitMovementEventActionSetting = {
   projectId: string;
   eventType: UnitMovementEventType;
   label: string;
-  sortOrder: number;
   requiresMovement: boolean;
   showAsAction: boolean;
   behavior: UnitMovementEventBehavior;
@@ -24,7 +23,6 @@ export type UnitMovementEventActionSettingRow = {
   project_id: string;
   event_type: UnitMovementEventType;
   label: string;
-  sort_order: number;
   requires_movement: boolean;
   show_as_action: boolean;
   behavior: UnitMovementEventBehavior;
@@ -42,7 +40,6 @@ export type SaveUnitMovementEventActionSettingPayload = {
   projectId: string;
   eventType: UnitMovementEventType;
   label: string;
-  sortOrder: number;
   requiresMovement: boolean;
   showAsAction: boolean;
   behavior?: UnitMovementEventBehavior;
