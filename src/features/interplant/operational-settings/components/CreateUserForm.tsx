@@ -157,7 +157,7 @@ export function CreateUserForm({
           />
         </div>
 
-        <label className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-surface-dark px-3">
+        <div className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-surface-dark px-3">
           <span className="text-sm font-semibold">Usuario activo</span>
           <Switch
             checked={isActive}
@@ -165,7 +165,7 @@ export function CreateUserForm({
             onChange={(event) => setIsActive(event.target.checked)}
             aria-label="Usuario activo"
           />
-        </label>
+        </div>
 
         <Button
           type="submit"
