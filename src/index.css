@@ -35,6 +35,11 @@ html {
     font-size: 16px;
   }
 
+  label:has(> input[type="date"]) {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   input[type="date"] {
     display: block;
     inline-size: 100%;
