@@ -8,6 +8,7 @@ import { Button } from "../../../../components/ui/Button";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { AdminTabs } from "../components/AdminTabs";
 import type { AdminTab } from "../components/AdminTabs";
+import { IncidentCategorySettingsPanel } from "../components/IncidentCategorySettingsPanel";
 import { MovementTypeSettingsPanel } from "../components/MovementTypeSettingsPanel";
 import { ProjectPlantSettingsPanel } from "../components/ProjectPlantSettingsPanel";
 import { ProjectUnitSettingsPanel } from "../components/ProjectUnitSettingsPanel";
@@ -22,6 +23,7 @@ const ADMIN_TAB_VALUES: AdminTab[] = [
   "plantas",
   "unidades",
   "movimientos",
+  "incidencias",
   "usuarios",
   "permisos",
 ];
@@ -149,7 +151,9 @@ function OperationalSettingsForm({
                 step={1}
                 inputMode="numeric"
                 value={mealDelayLimitMinutes}
-                onChange={(event) => setMealDelayLimitMinutes(event.target.value)}
+                onChange={(event) =>
+                  setMealDelayLimitMinutes(event.target.value)
+                }
                 className="w-16 bg-transparent text-right font-ibm-plex-mono text-sm font-semibold outline-none"
               />
               <span className="font-ibm-plex-mono text-xs text-muted">min</span>
@@ -221,24 +225,23 @@ export function AdminPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile, can } = useAuth();
 
-  const {
-    settings,
-    isLoading,
-    isSaving,
-    errorMessage,
-    saveSettings,
-  } = useOperationalSettings(projectId);
+  const { settings, isLoading, isSaving, errorMessage, saveSettings } =
+    useOperationalSettings(projectId);
 
   const canManageAdmin = can("admin.manage_catalogs");
   const canManagePermissions = can("admin.manage_permissions");
+  const canManageIncidentCategories = can("incidents.manage_categories");
   const requestedTab = searchParams.get("tab");
 
-  const activeTab: AdminTab =
+  const requestedTabIsAllowed =
     isAdminTab(requestedTab) &&
-    (canManagePermissions ||
-      (requestedTab !== "usuarios" && requestedTab !== "permisos"))
-      ? requestedTab
-      : "operacion";
+    (requestedTab !== "usuarios" || canManagePermissions) &&
+    (requestedTab !== "permisos" || canManagePermissions) &&
+    (requestedTab !== "incidencias" || canManageIncidentCategories);
+
+  const activeTab: AdminTab = requestedTabIsAllowed
+    ? requestedTab
+    : "operacion";
 
   const handleTabChange = (tab: AdminTab) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -307,6 +310,7 @@ export function AdminPage() {
           <AdminTabs
             activeTab={activeTab}
             canManagePermissions={canManagePermissions}
+            canManageIncidentCategories={canManageIncidentCategories}
             onChange={handleTabChange}
           />
         </div>
@@ -349,6 +353,13 @@ export function AdminPage() {
               profileId={profile.id}
             />
           </div>
+        )}
+
+        {activeTab === "incidencias" && canManageIncidentCategories && (
+          <IncidentCategorySettingsPanel
+            projectId={projectId}
+            profileId={profile.id}
+          />
         )}
 
         {activeTab === "usuarios" && canManagePermissions && (
