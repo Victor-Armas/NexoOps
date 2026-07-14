@@ -1,3 +1,5 @@
+import type { IncidentSubjectType } from "./incident-category.types";
+
 export type IncidentSeverity = "low" | "medium" | "high";
 export type IncidentStatus = "open" | "resolved";
 
@@ -7,6 +9,8 @@ export type Incident = {
   shiftId: string;
   unitId: string | null;
   plantId: string | null;
+  categoryId: string | null;
+  subjectType: IncidentSubjectType | null;
   title: string;
   description: string | null;
   severity: IncidentSeverity;
@@ -24,6 +28,8 @@ export type IncidentRow = {
   shift_id: string;
   unit_id: string | null;
   plant_id: string | null;
+  category_id: string | null;
+  subject_type: IncidentSubjectType | null;
   title: string;
   description: string | null;
   severity: IncidentSeverity;
@@ -40,6 +46,8 @@ export type CreateIncidentPayload = {
   shiftId: string;
   unitId: string | null;
   plantId: string | null;
+  categoryId: string;
+  subjectType: IncidentSubjectType;
   title: string;
   description?: string;
   severity: IncidentSeverity;
