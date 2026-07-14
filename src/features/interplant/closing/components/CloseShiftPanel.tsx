@@ -2,71 +2,74 @@ import { LockKeyhole } from "lucide-react";
 import { Button } from "../../../../components/ui/Button";
 
 type CloseShiftPanelProps = {
-    canCloseShift: boolean;
-    hasOpenMovements: boolean;
-    canSubmitClose: boolean;
-    isClosing: boolean;
-    closingNotes: string;
-    onClosingNotesChange: (notes: string) => void;
-    onCloseShift: () => void;
+  canCloseShift: boolean;
+  hasOpenMovements: boolean;
+  canSubmitClose: boolean;
+  isClosing: boolean;
+  closingNotes: string;
+  onClosingNotesChange: (notes: string) => void;
+  onCloseShift: () => void;
 };
 
 export function CloseShiftPanel({
-    canCloseShift,
-    hasOpenMovements,
-    canSubmitClose,
-    isClosing,
-    closingNotes,
-    onClosingNotesChange,
-    onCloseShift,
+  canCloseShift,
+  hasOpenMovements,
+  canSubmitClose,
+  isClosing,
+  closingNotes,
+  onClosingNotesChange,
+  onCloseShift,
 }: CloseShiftPanelProps) {
-    return (
-        <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
-            <div className="mb-4 flex items-center gap-3">
-                <LockKeyhole size={22} className="text-cyan-300" />
+  return (
+    <section className="rounded-sm border border-line bg-panel p-4">
+      <div className="mb-4 flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-principal/40 bg-principal/10 text-principal">
+          <LockKeyhole size={20} />
+        </span>
+        <div>
+          <p className="font-barlow-condensed text-lg font-bold">
+            Confirmar cierre de turno
+          </p>
+          <p className="mt-1 text-xs leading-5 text-muted">
+            Se guardará la evidencia operativa y el turno dejará de aceptar nuevos registros.
+          </p>
+        </div>
+      </div>
 
-                <div>
-                    <h3 className="font-bold">Cerrar turno</h3>
-                    <p className="text-sm text-slate-400 light:text-slate-500">
-                        El cierre requiere confirmación y guardará la evidencia del turno.
-                    </p>
-                </div>
-            </div>
+      {!canCloseShift && (
+        <p className="mb-4 rounded-sm border border-danger/30 bg-danger/10 px-3 py-3 text-xs leading-5 text-danger">
+          Tu rol no tiene permiso para cerrar turno.
+        </p>
+      )}
 
-            {!canCloseShift && (
-                <p className="mb-4 rounded-3xl bg-red-500/10 px-4 py-3 text-sm text-red-300 light:text-red-600">
-                    Tu rol no tiene permiso para cerrar turno.
-                </p>
-            )}
+      {hasOpenMovements && (
+        <p className="mb-4 rounded-sm border border-principal/30 bg-principal/10 px-3 py-3 text-xs leading-5 text-principal">
+          Los movimientos abiertos quedarán registrados como pendientes y podrán continuar en el siguiente turno.
+        </p>
+      )}
 
-            {hasOpenMovements && (
-                <p className="mb-4 rounded-3xl bg-yellow-400/10 px-4 py-3 text-sm text-yellow-200 light:bg-yellow-50 light:text-yellow-700">
-                    Hay movimientos abiertos. Podrás cerrar, pero quedarán registrados como pendientes en la evidencia.
-                </p>
-            )}
+      <label className="mb-4 block">
+        <span className="mb-2 block font-ibm-plex-mono text-[9px] uppercase tracking-[0.12em] text-muted">
+          Observaciones del cierre
+        </span>
+        <textarea
+          rows={4}
+          value={closingNotes}
+          onChange={(event) => onClosingNotesChange(event.target.value)}
+          placeholder="Registra pendientes, incidencias importantes o cualquier novedad del turno."
+          className="min-h-28 w-full resize-y rounded-sm border border-line-strong bg-surface-dark px-3 py-3 text-sm text-foreground-dark outline-none placeholder:text-faint focus:border-principal light:bg-white light:text-slate-900"
+        />
+      </label>
 
-            <label className="mb-4 block space-y-2">
-                <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-                    Observaciones del cierre
-                </span>
-
-                <textarea
-                    rows={4}
-                    value={closingNotes}
-                    onChange={(event) => onClosingNotesChange(event.target.value)}
-                    placeholder="Ej. Unidades pendientes, incidencias, observaciones de patio..."
-                    className="w-full rounded-3xl bg-slate-950/40 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 light:border light:border-slate-200 light:bg-white light:text-slate-900"
-                />
-            </label>
-
-            <Button
-                type="button"
-                className="w-full"
-                disabled={!canSubmitClose || isClosing}
-                onClick={onCloseShift}
-            >
-                {isClosing ? "Cerrando..." : "Cerrar turno"}
-            </Button>
-        </section>
-    );
+      <Button
+        type="button"
+        className="h-12 w-full gap-2 rounded-sm bg-principal font-barlow-condensed text-sm font-semibold uppercase tracking-[0.08em] text-black hover:bg-principal/90"
+        disabled={!canSubmitClose || isClosing}
+        onClick={onCloseShift}
+      >
+        <LockKeyhole size={16} />
+        {isClosing ? "Cerrando turno..." : "Cerrar turno"}
+      </Button>
+    </section>
+  );
 }
