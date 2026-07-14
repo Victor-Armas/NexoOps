@@ -7,7 +7,7 @@ import type {
 } from "../types/incident.types";
 
 const INCIDENT_COLUMNS =
-  "id, project_id, shift_id, unit_id, plant_id, title, description, severity, status, occurred_at, created_by, resolved_at, created_at, updated_at";
+  "id, project_id, shift_id, unit_id, plant_id, category_id, subject_type, title, description, severity, status, occurred_at, created_by, resolved_at, created_at, updated_at";
 
 function mapIncident(row: IncidentRow): Incident {
   return {
@@ -16,6 +16,8 @@ function mapIncident(row: IncidentRow): Incident {
     shiftId: row.shift_id,
     unitId: row.unit_id,
     plantId: row.plant_id,
+    categoryId: row.category_id,
+    subjectType: row.subject_type,
     title: row.title,
     description: row.description,
     severity: row.severity,
@@ -55,6 +57,8 @@ export async function createIncident(
       shift_id: payload.shiftId,
       unit_id: payload.unitId,
       plant_id: payload.plantId,
+      category_id: payload.categoryId,
+      subject_type: payload.subjectType,
       title: payload.title.trim(),
       description: payload.description?.trim() || null,
       severity: payload.severity,
