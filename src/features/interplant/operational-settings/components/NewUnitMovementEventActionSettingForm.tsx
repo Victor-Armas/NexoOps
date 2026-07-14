@@ -142,7 +142,7 @@ export function NewUnitMovementEventActionSettingForm({
         </select>
       </div>
 
-      <label className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
+      <div className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
         <span className="text-sm font-semibold">Requiere movimiento</span>
         <Switch
           checked={requiresMovement}
@@ -150,7 +150,7 @@ export function NewUnitMovementEventActionSettingForm({
           onChange={(event) => setRequiresMovement(event.target.checked)}
           aria-label="Requiere movimiento"
         />
-      </label>
+      </div>
 
       <Button
         type="button"
