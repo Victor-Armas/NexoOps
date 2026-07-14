@@ -1,3 +1,4 @@
+import { Activity } from "lucide-react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -5,12 +6,8 @@ import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
 import { useAuth } from "../../../auth/hooks/useAuth";
 import { CloseShiftConfirmationModal } from "../components/CloseShiftConfirmationModal";
 import { CloseShiftPanel } from "../components/CloseShiftPanel";
-import { ClosingIncidentSummary } from "../components/ClosingIncidentSummary";
 import { ClosingOpenMovementsList } from "../components/ClosingOpenMovementsList";
-import { ClosingPlantSummary } from "../components/ClosingPlantSummary";
-import { ClosingShiftSummary } from "../components/ClosingShiftSummary";
-import { ClosingUnitSummary } from "../components/ClosingUnitSummary";
-import { ClosingValidationSummary } from "../components/ClosingValidationSummary";
+import { ClosingOperationalReport } from "../components/ClosingOperationalReport";
 import { useClosingSummary } from "../hooks/useClosingSummary";
 import { upsertShiftClosing } from "../services/shift-closings.service";
 
@@ -93,43 +90,46 @@ export function ClosingPage() {
   };
 
   return (
-    <>
-      <section className="mb-5">
-        <h2 className="text-2xl font-bold">Cierre de turno</h2>
-
-        <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-          Revisa plantas, movimientos, incidencias y pendientes antes de cerrar.
-        </p>
+    <div className="space-y-5">
+      <section className="flex items-start gap-3">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-principal/40 bg-principal/10 text-principal">
+          <Activity size={23} />
+        </span>
+        <div>
+          <p className="font-ibm-plex-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+            Revisión y confirmación
+          </p>
+          <h2 className="mt-1 text-2xl font-bold">Cierre de turno</h2>
+          <p className="mt-1 text-sm leading-5 text-muted">
+            Analiza el resultado operativo y confirma los pendientes del turno.
+          </p>
+        </div>
       </section>
 
       {!closingSummary.shift && (
-        <section className="rounded-4xl border border-yellow-400/20 bg-yellow-400/10 p-5 text-sm text-yellow-200 light:border-yellow-200 light:bg-yellow-50 light:text-yellow-700">
+        <section className="rounded-sm border border-principal/40 bg-principal/10 p-4 text-sm text-principal">
           No hay turno abierto para cerrar.
         </section>
       )}
 
       {closingSummary.errorMessage && (
-        <section className="mb-5 rounded-4xl border border-red-500/30 bg-red-500/10 p-5 text-sm text-red-300 light:text-red-600">
+        <section className="rounded-sm border border-danger/30 bg-danger/10 p-4 text-sm text-danger">
           {closingSummary.errorMessage}
         </section>
       )}
 
       {closingSummary.shift && (
         <>
-          <ClosingShiftSummary shift={closingSummary.shift} />
-
-          <ClosingValidationSummary
+          <ClosingOperationalReport
+            shift={closingSummary.shift}
             plantMetrics={closingSummary.plantMetrics}
             movementMetrics={closingSummary.movementMetrics}
             incidentMetrics={closingSummary.incidentMetrics}
-          />
-
-          <ClosingPlantSummary plantMetrics={closingSummary.plantMetrics} />
-
-          <ClosingUnitSummary movementMetrics={closingSummary.movementMetrics} />
-
-          <ClosingIncidentSummary
-            incidentMetrics={closingSummary.incidentMetrics}
+            reviewCountByPlantId={closingSummary.reviewCountByPlantId}
+            plants={closingSummary.plants}
+            units={closingSummary.units}
+            unitMovements={closingSummary.unitMovements}
+            incidents={closingSummary.incidents}
           />
 
           <ClosingOpenMovementsList
@@ -164,6 +164,6 @@ export function ClosingPage() {
           )}
         </>
       )}
-    </>
+    </div>
   );
 }
