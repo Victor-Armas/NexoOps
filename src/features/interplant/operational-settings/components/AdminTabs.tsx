@@ -5,13 +5,14 @@ export type AdminTab =
   | "plantas"
   | "unidades"
   | "movimientos"
+  | "incidencias"
   | "usuarios"
   | "permisos";
 
 type AdminTabItem = {
   value: AdminTab;
   label: string;
-  requiresPermissions?: boolean;
+  permission?: "permissions" | "incidentCategories";
 };
 
 const ADMIN_TABS: AdminTabItem[] = [
@@ -19,24 +20,39 @@ const ADMIN_TABS: AdminTabItem[] = [
   { value: "plantas", label: "Plantas" },
   { value: "unidades", label: "Unidades" },
   { value: "movimientos", label: "Movimientos" },
-  { value: "usuarios", label: "Usuarios", requiresPermissions: true },
-  { value: "permisos", label: "Permisos", requiresPermissions: true },
+  {
+    value: "incidencias",
+    label: "Incidencias",
+    permission: "incidentCategories",
+  },
+  { value: "usuarios", label: "Usuarios", permission: "permissions" },
+  { value: "permisos", label: "Permisos", permission: "permissions" },
 ];
 
 type AdminTabsProps = {
   activeTab: AdminTab;
   canManagePermissions: boolean;
+  canManageIncidentCategories: boolean;
   onChange: (tab: AdminTab) => void;
 };
 
 export function AdminTabs({
   activeTab,
   canManagePermissions,
+  canManageIncidentCategories,
   onChange,
 }: AdminTabsProps) {
-  const visibleTabs = ADMIN_TABS.filter(
-    (tab) => !tab.requiresPermissions || canManagePermissions,
-  );
+  const visibleTabs = ADMIN_TABS.filter((tab) => {
+    if (tab.permission === "permissions") {
+      return canManagePermissions;
+    }
+
+    if (tab.permission === "incidentCategories") {
+      return canManageIncidentCategories;
+    }
+
+    return true;
+  });
 
   return (
     <nav className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
