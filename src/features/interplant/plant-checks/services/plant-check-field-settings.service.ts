@@ -6,7 +6,6 @@ type PlantCheckFieldSettingRow = {
   field_key: string;
   label: string;
   field_group: "full" | "empty";
-  sort_order: number;
 };
 
 function mapPlantCheckField(row: PlantCheckFieldSettingRow): PlantCheckField {
@@ -23,11 +22,12 @@ export async function getPlantCheckFieldSettings(params: {
 }): Promise<PlantCheckField[]> {
   const { data, error } = await supabase
     .from("plant_check_field_settings")
-    .select("id, field_key, label, field_group, sort_order")
+    .select("id, field_key, label, field_group")
     .eq("project_id", params.projectId)
     .eq("plant_id", params.plantId)
     .eq("is_active", true)
-    .order("sort_order", { ascending: true })
+    .order("field_group", { ascending: true })
+    .order("label", { ascending: true })
     .returns<PlantCheckFieldSettingRow[]>();
 
   if (error) {
