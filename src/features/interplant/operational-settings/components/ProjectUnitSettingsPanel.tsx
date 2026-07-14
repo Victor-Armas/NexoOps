@@ -5,74 +5,78 @@ import { useProjectUnitSettingsAdmin } from "../hooks/useProjectUnitSettingsAdmi
 import type { SaveProjectUnitSettingPayload } from "../types/project-unit-settings-admin.types";
 
 type ProjectUnitSettingsPanelProps = {
-    projectId: string;
+  projectId: string;
 };
 
 export function ProjectUnitSettingsPanel({
-    projectId,
+  projectId,
 }: ProjectUnitSettingsPanelProps) {
-    const {
-        unitSettings,
-        isLoading,
-        isSaving,
-        errorMessage,
-        saveUnitSetting,
-    } = useProjectUnitSettingsAdmin(projectId);
+  const {
+    unitSettings,
+    isLoading,
+    isSaving,
+    errorMessage,
+    saveUnitSetting,
+  } = useProjectUnitSettingsAdmin(projectId);
 
-    const handleSave = async (values: SaveProjectUnitSettingPayload) => {
-        try {
-            await saveUnitSetting(values);
-            toast.success("Unidad guardada.");
-        } catch (error) {
-            toast.error(
-                error instanceof Error ? error.message : "No se pudo guardar la unidad.",
-            );
-        }
-    };
+  const handleSave = async (values: SaveProjectUnitSettingPayload) => {
+    try {
+      await saveUnitSetting(values);
+      toast.success(values.isActive ? "Unidad activada." : "Unidad desactivada.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo guardar la unidad.",
+      );
+    }
+  };
 
-    return (
-        <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl light:border-slate-200 light:bg-white">
-            <div className="mb-5 flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-                    <Truck size={22} />
-                </div>
+  const activeUnitCount = unitSettings.filter(
+    (unitSetting) => unitSetting.isActive,
+  ).length;
 
-                <div>
-                    <h3 className="text-lg font-bold">Unidades del proyecto</h3>
+  return (
+    <section className="space-y-4">
+      <div>
+        <div className="flex items-center gap-2">
+          <Truck size={14} className="text-principal" />
+          <span className="font-ibm-plex-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+            Unidades
+          </span>
+          <div className="h-px flex-1 bg-line" />
+        </div>
 
-                    <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-                        Configura qué unidades aparecen en la operación.
-                    </p>
-                </div>
-            </div>
+        <p className="mt-2 text-xs leading-5 text-muted">
+          {unitSettings.length} registradas · {activeUnitCount} activas en este
+          proyecto.
+        </p>
+      </div>
 
-            <section className="mb-4 rounded-3xl bg-yellow-400/10 px-4 py-3 text-sm text-yellow-100 light:bg-yellow-50 light:text-yellow-700">
-                Antes de desactivar una unidad, valida que no tenga un movimiento
-                abierto.
-            </section>
-
-            {errorMessage && (
-                <section className="mb-4 rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
-                    {errorMessage}
-                </section>
-            )}
-
-            {isLoading ? (
-                <section className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 text-sm text-slate-400 light:border-slate-200 light:bg-slate-50 light:text-slate-500">
-                    Cargando unidades...
-                </section>
-            ) : (
-                <div className="space-y-3">
-                    {unitSettings.map((unitSetting) => (
-                        <ProjectUnitSettingForm
-                            key={`${unitSetting.unitId}-${unitSetting.isActive}`}
-                            unitSetting={unitSetting}
-                            isSaving={isSaving}
-                            onSave={handleSave}
-                        />
-                    ))}
-                </div>
-            )}
+      {errorMessage && (
+        <section className="rounded-sm border border-danger/30 bg-danger/10 p-4 text-sm text-red-300 light:text-red-600">
+          {errorMessage}
         </section>
-    );
+      )}
+
+      {isLoading ? (
+        <section className="rounded-sm border border-line bg-panel p-4 text-sm text-muted">
+          Cargando unidades...
+        </section>
+      ) : (
+        <div className="space-y-2">
+          {unitSettings.map((unitSetting) => (
+            <ProjectUnitSettingForm
+              key={`${unitSetting.unitId}-${unitSetting.isActive}`}
+              unitSetting={unitSetting}
+              isSaving={isSaving}
+              onSave={handleSave}
+            />
+          ))}
+        </div>
+      )}
+
+      <p className="text-xs leading-5 text-muted">
+        Antes de desactivar una unidad, valida que no tenga un movimiento abierto.
+      </p>
+    </section>
+  );
 }
