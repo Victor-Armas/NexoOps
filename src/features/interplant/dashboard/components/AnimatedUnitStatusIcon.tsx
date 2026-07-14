@@ -1,5 +1,6 @@
 import {
   Check,
+  CircleCheckBig,
   CircleDot,
   Clock3,
   MapPin,
@@ -86,8 +87,9 @@ export function AnimatedUnitStatusIcon({
 }: AnimatedUnitStatusIconProps) {
   if (isAvailable) {
     return (
-      <span className="dashboard-status-icon border-line-strong text-muted">
-        <Check size={24} />
+      <span className="dashboard-status-icon border-success/50 bg-success/10 text-success">
+        <span className="absolute inset-1 animate-dashboard-ring rounded-sm border border-current/30" />
+        <CircleCheckBig size={25} className="relative animate-pulse" />
       </span>
     );
   }
@@ -128,7 +130,7 @@ export function AnimatedUnitStatusIcon({
     return (
       <span className={`dashboard-status-icon ${classes}`}>
         <span className="absolute inset-1 animate-dashboard-ring rounded-sm border border-current/30" />
-        <Clock3 size={24} className="relative" />
+        <Clock3 size={24} className="relative animate-pulse" />
       </span>
     );
   }
@@ -161,7 +163,8 @@ export function AnimatedUnitStatusIcon({
   if (iconKey === "shield") {
     return (
       <span className={`dashboard-status-icon ${classes}`}>
-        <ShieldCheck size={24} />
+        <span className="absolute inset-1 animate-dashboard-ring rounded-sm border border-current/25" />
+        <ShieldCheck size={24} className="relative animate-pulse" />
       </span>
     );
   }
@@ -169,7 +172,7 @@ export function AnimatedUnitStatusIcon({
   if (iconKey === "x" || eventType === "cancelled") {
     return (
       <span className={`dashboard-status-icon ${classes}`}>
-        <X size={24} />
+        <X size={24} className="animate-pulse" />
       </span>
     );
   }
@@ -177,14 +180,16 @@ export function AnimatedUnitStatusIcon({
   if (iconKey === "check" || eventType === "completed") {
     return (
       <span className={`dashboard-status-icon ${classes}`}>
-        <Check size={24} />
+        <span className="absolute inset-1 animate-dashboard-ring rounded-sm border border-current/25" />
+        <Check size={24} className="relative animate-pulse" />
       </span>
     );
   }
 
   return (
     <span className={`dashboard-status-icon ${classes}`}>
-      <CircleDot size={24} />
+      <span className="absolute inset-1 animate-dashboard-ring rounded-sm border border-current/20" />
+      <CircleDot size={24} className="relative animate-pulse" />
     </span>
   );
 }
