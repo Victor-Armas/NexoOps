@@ -1,4 +1,10 @@
-import { Circle, RefreshCw, ShieldCheck, Utensils } from "lucide-react";
+import {
+  Circle,
+  Fuel,
+  RefreshCw,
+  ShieldCheck,
+  Utensils,
+} from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "../../../auth/hooks/useAuth";
@@ -10,12 +16,20 @@ import type {
 import { getStandaloneStatusActions } from "../utils/unit-event-actions";
 import { UnitMovementTimeline } from "./UnitMovementTimeline";
 
+const SYSTEM_DIESEL_EVENTS = new Set([
+  "carga_diesel",
+  "carga_diesel_finalizada",
+  "recarga_diesel",
+  "recarga_diesel_finalizada",
+]);
+
 type UnitStandaloneEventsPanelProps = {
   unitName: string;
   hasOpenMovement: boolean;
   standaloneEvents: UnitMovementEvent[];
   eventActions: UnitMovementEventAction[];
   isMealActive: boolean;
+  isFuelingActive: boolean;
   isLoading: boolean;
   errorMessage: string | null;
   onAddEvent: (payload: {
@@ -27,6 +41,7 @@ type UnitStandaloneEventsPanelProps = {
 function StandaloneActionIcon({ iconKey }: { iconKey: string }) {
   if (iconKey === "shield") return <ShieldCheck size={18} />;
   if (iconKey === "refresh") return <RefreshCw size={18} />;
+  if (iconKey === "fuel") return <Fuel size={18} />;
   return <Circle size={18} />;
 }
 
@@ -36,6 +51,7 @@ export function UnitStandaloneEventsPanel({
   standaloneEvents,
   eventActions,
   isMealActive,
+  isFuelingActive,
   isLoading,
   errorMessage,
   onAddEvent,
@@ -43,7 +59,9 @@ export function UnitStandaloneEventsPanel({
   const { can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const canCreateEvent = can("units.event.create");
-  const standaloneActions = getStandaloneStatusActions(eventActions);
+  const standaloneActions = getStandaloneStatusActions(eventActions).filter(
+    (action) => !SYSTEM_DIESEL_EVENTS.has(action.eventType),
+  );
   const latestStandaloneEvent = standaloneEvents[0] ?? null;
 
   const handleMeal = async () => {
@@ -60,6 +78,29 @@ export function UnitStandaloneEventsPanel({
       );
     } catch {
       toast.error("No se pudo actualizar la hora de comida.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleFueling = async () => {
+    try {
+      setIsSubmitting(true);
+      await onAddEvent({
+        eventType: isFuelingActive
+          ? "carga_diesel_finalizada"
+          : "carga_diesel",
+        notes: isFuelingActive
+          ? "Carga de diésel finalizada."
+          : "Inicio de carga de diésel.",
+      });
+      toast.success(
+        isFuelingActive
+          ? "Carga de diésel finalizada. Unidad disponible."
+          : "Carga de diésel iniciada.",
+      );
+    } catch {
+      toast.error("No se pudo actualizar la carga de diésel.");
     } finally {
       setIsSubmitting(false);
     }
@@ -86,7 +127,8 @@ export function UnitStandaloneEventsPanel({
         <div>
           <p className="section-label">Eventos de unidad</p>
           <p className="sub mt-2">
-            Comida y estatus independientes no requieren un movimiento activo.
+            Comida, carga de diésel y estatus independientes no requieren un
+            movimiento activo.
           </p>
         </div>
         <span className="mincard shrink-0 text-xs">{unitName}</span>
@@ -94,7 +136,8 @@ export function UnitStandaloneEventsPanel({
 
       {hasOpenMovement && (
         <p className="mt-4 rounded-sm border border-line bg-surface-dark px-4 py-3 text-sm text-muted">
-          La unidad tiene un movimiento abierto. Registra sus estatus desde los controles del movimiento.
+          La unidad tiene un movimiento abierto. Registra sus estatus desde los
+          controles del movimiento.
         </p>
       )}
 
@@ -102,31 +145,49 @@ export function UnitStandaloneEventsPanel({
         <div className="mt-4 grid grid-cols-2 gap-3">
           <button
             type="button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isFuelingActive}
             onClick={() => void handleMeal()}
-            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${isMealActive
+            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
+              isMealActive
                 ? "border-principal bg-principal text-slate-950"
                 : "border-principal/50 text-principal"
-              }`}
+            }`}
           >
             <Utensils size={18} />
             {isMealActive ? "Finalizar comida" : "Iniciar comida"}
           </button>
 
+          <button
+            type="button"
+            disabled={isSubmitting || isMealActive}
+            onClick={() => void handleFueling()}
+            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
+              isFuelingActive
+                ? "border-principal bg-principal text-slate-950"
+                : "border-principal/50 text-principal"
+            }`}
+          >
+            <Fuel size={18} />
+            {isFuelingActive ? "Finalizar carga" : "Cargar diésel"}
+          </button>
+
           {standaloneActions.map((action) => {
             const isActive =
-              !isMealActive && latestStandaloneEvent?.eventType === action.eventType;
+              !isMealActive &&
+              !isFuelingActive &&
+              latestStandaloneEvent?.eventType === action.eventType;
 
             return (
               <button
                 key={action.id}
                 type="button"
-                disabled={isSubmitting || isMealActive}
+                disabled={isSubmitting || isMealActive || isFuelingActive}
                 onClick={() => void handleStandaloneStatus(action)}
-                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${isActive
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
+                  isActive
                     ? "border-principal bg-principal text-slate-950"
                     : "border-line-strong text-muted"
-                  }`}
+                }`}
               >
                 <StandaloneActionIcon iconKey={action.iconKey} />
                 {action.label}
