@@ -1,13 +1,22 @@
 import { supabase } from "../../../../lib/supabase/client";
 import { subscribeToTableChanges } from "../../../../lib/supabase/realtime";
-import type {
-  CreateUnitMovementEventPayload,
-  UnitMovementEvent,
-  UnitMovementEventRow,
+import {
+  DIESEL_REFUELING_FINISHED_EVENT,
+  DIESEL_REFUELING_STARTED_EVENT,
+  type CreateUnitMovementEventPayload,
+  type UnitMovementEvent,
+  type UnitMovementEventRow,
 } from "../types/unit-movement-event.types";
 
 const UNIT_EVENT_COLUMNS =
   "id, unit_id, shift_id, unit_movement_id, event_type_id, event_type, notes, event_at, created_by, created_at, updated_at";
+
+const STANDALONE_BLOCKING_EVENT_TYPES = [
+  "meal",
+  "meal_finished",
+  DIESEL_REFUELING_STARTED_EVENT,
+  DIESEL_REFUELING_FINISHED_EVENT,
+];
 
 function mapUnitMovementEvent(row: UnitMovementEventRow): UnitMovementEvent {
   return {
@@ -55,7 +64,7 @@ export async function getUnitEvents(params: {
   return data.map(mapUnitMovementEvent);
 }
 
-export async function getStandaloneMealEvents(
+export async function getStandaloneBlockingEvents(
   unitId: string,
 ): Promise<UnitMovementEvent[]> {
   const { data, error } = await supabase
@@ -63,13 +72,22 @@ export async function getStandaloneMealEvents(
     .select(UNIT_EVENT_COLUMNS)
     .eq("unit_id", unitId)
     .is("unit_movement_id", null)
-    .in("event_type", ["meal", "meal_finished"])
+    .in("event_type", STANDALONE_BLOCKING_EVENT_TYPES)
     .order("event_at", { ascending: false })
-    .limit(20)
+    .limit(40)
     .returns<UnitMovementEventRow[]>();
 
   if (error) throw error;
   return data.map(mapUnitMovementEvent);
+}
+
+export async function getStandaloneMealEvents(
+  unitId: string,
+): Promise<UnitMovementEvent[]> {
+  const events = await getStandaloneBlockingEvents(unitId);
+  return events.filter(
+    (event) => event.eventType === "meal" || event.eventType === "meal_finished",
+  );
 }
 
 export async function getUnitEventsByUnitIds(
