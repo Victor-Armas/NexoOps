@@ -9,6 +9,7 @@ import {
   Truck,
   Utensils,
   X,
+  Fuel,
 } from "lucide-react";
 import type { UnitMovementEventType } from "../../unit-movement-events/types/unit-movement-event.types";
 
@@ -182,6 +183,15 @@ export function AnimatedUnitStatusIcon({
       <span className={`dashboard-status-icon ${classes}`}>
         <span className="absolute inset-1 animate-dashboard-ring rounded-sm border border-current/25" />
         <Check size={24} className="relative animate-pulse" />
+      </span>
+    );
+  }
+
+  if (iconKey === "fuel" || eventType === "carga_diesel") {
+    return (
+      <span className={`dashboard-status-icon ${classes}`}>
+        <Fuel size={24} className="animate-dashboard-fuel" />
+        <span className="absolute bottom-1.5 h-1.5 w-1.5 animate-dashboard-fuel-drop rounded-full bg-current" />
       </span>
     );
   }

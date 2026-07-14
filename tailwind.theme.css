@@ -136,6 +136,33 @@
   }
 }
 
+@keyframes dashboard-fuel {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-2px) rotate(-4deg);
+  }
+}
+
+@keyframes dashboard-fuel-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.7);
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(5px) scale(1);
+  }
+}
+
 @utility tittle {
   margin: 2px 0 0;
   font-family: var(--font-barlow-condensed);
@@ -264,6 +291,16 @@
   animation: dashboard-rotate 3s linear infinite;
 }
 
+@utility animate-dashboard-fuel {
+  animation: dashboard-fuel 1.5s ease-in-out infinite;
+}
+
+@utility animate-dashboard-fuel-drop {
+  animation: dashboard-fuel-drop 1.3s ease-in-out infinite;
+}
+
+
+
 @media (prefers-reduced-motion: reduce) {
   .animate-dashboard-forklift,
   .animate-dashboard-load-in,
@@ -274,7 +311,9 @@
   .animate-dashboard-pin,
   .animate-dashboard-utensils,
   .animate-dashboard-steam,
-  .animate-dashboard-rotate {
+  .animate-dashboard-rotate,
+  .animate-dashboard-fuel,
+  .animate-dashboard-fuel-drop {
     animation: none !important;
   }
 }

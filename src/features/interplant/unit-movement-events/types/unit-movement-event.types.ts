@@ -51,6 +51,7 @@ const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
   completed: "Completado",
   cancelled: "Cancelado",
   guard: "Resguardo",
+  carga_diesel: "Recarga de diésel",
 };
 
 function humanizeEventType(eventType: string) {
@@ -72,7 +73,10 @@ export function registerUnitMovementEventLabels(
 }
 
 export function getDefaultUnitMovementEventLabel(eventType: string) {
-  return BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS[eventType] ?? humanizeEventType(eventType);
+  return (
+    BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS[eventType] ??
+    humanizeEventType(eventType)
+  );
 }
 
 export const UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = new Proxy(
