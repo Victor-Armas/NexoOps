@@ -7,7 +7,7 @@ type ProjectCardProps = {
 
 export function ProjectCard({ project }: ProjectCardProps) {
     return (
-        <article className="rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
+        <article className="rounded-sm border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
             <div className="flex items-center gap-4">
                 <div className="flex h-14 w-14 items-center justify-center rounded-3xl icon-principal light:bg-cyan-100 light:text-cyan-700">
                     <Boxes size={26} />

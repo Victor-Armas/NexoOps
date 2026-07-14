@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Factory } from "lucide-react";
 import { toast } from "sonner";
 import { NewPlantCheckFieldSettingForm } from "./NewPlantCheckFieldSettingForm";
@@ -37,7 +37,9 @@ export function ProjectPlantSettingsPanel({
   projectId,
   profileId,
 }: ProjectPlantSettingsPanelProps) {
-  const [openPlantId, setOpenPlantId] = useState<string | null>(null);
+  const [openPlantId, setOpenPlantId] = useState<
+    string | null | undefined
+  >(undefined);
 
   const {
     plantSettings,
@@ -56,14 +58,9 @@ export function ProjectPlantSettingsPanel({
     removeFieldSetting,
   } = usePlantCheckFieldSettingsAdmin(projectId);
 
-  useEffect(() => {
-    if (!openPlantId && plantSettings.length > 0) {
-      setOpenPlantId(
-        plantSettings.find((plantSetting) => plantSetting.isActive)?.plantId ??
-          plantSettings[0].plantId,
-      );
-    }
-  }, [openPlantId, plantSettings]);
+
+
+
 
   const fieldSettingsByPlantId = useMemo(
     () =>
@@ -82,6 +79,14 @@ export function ProjectPlantSettingsPanel({
       ),
     [fieldSettings],
   );
+
+  const defaultOpenPlantId =
+    plantSettings.find((plantSetting) => plantSetting.isActive)?.plantId ??
+    plantSettings[0]?.plantId ??
+    null;
+
+  const resolvedOpenPlantId =
+    openPlantId === undefined ? defaultOpenPlantId : openPlantId;
 
   const handlePlantSave = async (values: SaveProjectPlantSettingPayload) => {
     try {
@@ -118,6 +123,8 @@ export function ProjectPlantSettingsPanel({
   const activePlantCount = plantSettings.filter(
     (plantSetting) => plantSetting.isActive,
   ).length;
+
+
 
   return (
     <section className="space-y-4">
@@ -157,11 +164,11 @@ export function ProjectPlantSettingsPanel({
                 key={`${plantSetting.plantId}-${plantSetting.isActive}`}
                 plantSetting={plantSetting}
                 fieldCount={plantFields.length}
-                isOpen={openPlantId === plantSetting.plantId}
+                isOpen={resolvedOpenPlantId === plantSetting.plantId}
                 isSaving={isSaving}
                 onToggleOpen={() =>
-                  setOpenPlantId((currentPlantId) =>
-                    currentPlantId === plantSetting.plantId
+                  setOpenPlantId(
+                    resolvedOpenPlantId === plantSetting.plantId
                       ? null
                       : plantSetting.plantId,
                   )
