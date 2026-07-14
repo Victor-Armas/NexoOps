@@ -1,6 +1,8 @@
 import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
 import { getDefaultUnitMovementEventLabel } from "../types/unit-movement-event.types";
 
+const DIESEL_EVENT_TYPES = new Set(["carga_diesel", "recarga_diesel"]);
+
 export function findUnitEventAction(
   actions: UnitMovementEventAction[],
   eventType: string | null | undefined,
@@ -49,12 +51,18 @@ export function getUnitEventColorKey(
   actions: UnitMovementEventAction[],
   eventType: string | null | undefined,
 ) {
-  return findUnitEventAction(actions, eventType)?.colorKey ?? "neutral";
+  const configuredColor = findUnitEventAction(actions, eventType)?.colorKey;
+  if (configuredColor) return configuredColor;
+  if (eventType && DIESEL_EVENT_TYPES.has(eventType)) return "amber";
+  return "neutral";
 }
 
 export function getUnitEventIconKey(
   actions: UnitMovementEventAction[],
   eventType: string | null | undefined,
 ) {
-  return findUnitEventAction(actions, eventType)?.iconKey ?? "circle";
+  const configuredIcon = findUnitEventAction(actions, eventType)?.iconKey;
+  if (configuredIcon) return configuredIcon;
+  if (eventType && DIESEL_EVENT_TYPES.has(eventType)) return "fuel";
+  return "circle";
 }
