@@ -35,6 +35,20 @@ html {
     font-size: 16px;
   }
 
+  input[type="date"] {
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 0;
+    max-inline-size: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input[type="date"]::-webkit-date-and-time-value {
+    min-width: 0;
+    text-align: left;
+  }
+
   .dark body {
     background-color: var(--color-surface-dark);
     color: var(--color-foreground-dark);
