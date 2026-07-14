@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "../../../../components/ui/Switch";
+import { cn } from "../../../../lib/utils/cn";
 import {
   getRolePermissionSettings,
   saveRolePermission,
@@ -11,6 +13,7 @@ import {
 export function RolePermissionsPanel() {
   const [permissions, setPermissions] = useState<AdminPermission[]>([]);
   const [roles, setRoles] = useState<AdminRolePermissionGroup[]>([]);
+  const [activeRoleId, setActiveRoleId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -27,13 +30,20 @@ export function RolePermissionsPanel() {
         if (isMounted) {
           setPermissions(data.permissions);
           setRoles(data.roles);
+          setActiveRoleId((currentRoleId) =>
+            currentRoleId && data.roles.some((role) => role.id === currentRoleId)
+              ? currentRoleId
+              : (data.roles[0]?.id ?? null),
+          );
         }
       } catch {
         if (isMounted) {
           setErrorMessage("No se pudieron cargar los permisos por rol.");
         }
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     });
 
@@ -41,6 +51,11 @@ export function RolePermissionsPanel() {
       isMounted = false;
     };
   }, []);
+
+  const activeRole = useMemo(
+    () => roles.find((role) => role.id === activeRoleId) ?? null,
+    [activeRoleId, roles],
+  );
 
   const handleToggle = async (params: {
     roleId: string;
@@ -55,7 +70,9 @@ export function RolePermissionsPanel() {
 
       setRoles((currentRoles) =>
         currentRoles.map((role) => {
-          if (role.id !== params.roleId) return role;
+          if (role.id !== params.roleId) {
+            return role;
+          }
 
           return {
             ...role,
@@ -67,8 +84,6 @@ export function RolePermissionsPanel() {
           };
         }),
       );
-
-      toast.success("Permiso actualizado.");
     } catch (error) {
       toast.error(
         error instanceof Error
@@ -81,81 +96,100 @@ export function RolePermissionsPanel() {
   };
 
   return (
-    <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl light:border-slate-200 light:bg-white">
-      <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-400/10 text-violet-300 light:bg-violet-100 light:text-violet-700">
-          <ShieldCheck size={22} />
-        </div>
+    <section className="space-y-4">
+      <div>
+        <p className="mb-2 font-ibm-plex-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+          Selecciona un rol
+        </p>
 
-        <div>
-          <h3 className="text-lg font-bold">Permisos por rol</h3>
-          <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-            Define qué acciones puede realizar cada rol dentro de NexoOps.
-          </p>
+        <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max gap-2">
+            {roles.map((role) => (
+              <button
+                key={role.id}
+                type="button"
+                onClick={() => setActiveRoleId(role.id)}
+                className={cn(
+                  "h-9 rounded-sm border px-3 font-ibm-plex-mono text-[10px] font-semibold uppercase tracking-[0.08em] transition",
+                  activeRoleId === role.id
+                    ? "border-principal bg-principal text-black"
+                    : "border-line-strong bg-panel text-muted hover:border-principal/60 hover:text-principal",
+                )}
+              >
+                {role.name}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {errorMessage && (
-        <div className="mb-4 rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
+        <div className="rounded-sm border border-danger/30 bg-danger/10 p-4 text-sm text-red-300 light:text-red-600">
           {errorMessage}
         </div>
       )}
 
       {isLoading ? (
-        <div className="rounded-3xl bg-slate-950/30 p-4 text-sm text-slate-400 light:bg-slate-50 light:text-slate-500">
+        <div className="rounded-sm border border-line bg-panel p-4 text-sm text-muted">
           Cargando permisos...
         </div>
-      ) : (
-        <div className="space-y-4">
-          {roles.map((role) => (
-            <article
-              key={role.id}
-              className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 light:border-slate-200 light:bg-slate-50"
-            >
-              <div className="mb-3">
-                <h4 className="font-bold">{role.name}</h4>
-                <p className="text-xs text-slate-500">{role.key}</p>
-              </div>
-
-              <div className="space-y-2">
-                {permissions.map((permission) => {
-                  const checked = role.permissionIds.includes(permission.id);
-                  const key = `${role.id}-${permission.id}`;
-
-                  return (
-                    <label
-                      key={permission.id}
-                      className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-950/30 px-3 py-3 light:border-slate-200 light:bg-white"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={checked}
-                        disabled={savingKey === key}
-                        onChange={(event) =>
-                          void handleToggle({
-                            roleId: role.id,
-                            permissionId: permission.id,
-                            isEnabled: event.target.checked,
-                          })
-                        }
-                        className="mt-1 h-4 w-4"
-                      />
-
-                      <span>
-                        <span className="block text-sm font-semibold">
-                          {permission.name}
-                        </span>
-                        <span className="block text-xs text-slate-500">
-                          {permission.description || permission.key}
-                        </span>
-                      </span>
-                    </label>
-                  );
-                })}
-              </div>
-            </article>
-          ))}
+      ) : !activeRole ? (
+        <div className="rounded-sm border border-line bg-panel p-4 text-sm text-muted">
+          No hay roles disponibles.
         </div>
+      ) : (
+        <>
+          <article className="flex items-center gap-3 rounded-sm border border-line bg-panel p-3">
+            <span className="flex h-9 w-9 items-center justify-center rounded-sm border border-blue-400/30 bg-blue-400/10 text-blue-300">
+              <ShieldCheck size={18} />
+            </span>
+
+            <span>
+              <span className="block text-sm font-bold">{activeRole.name}</span>
+              <span className="block text-xs text-muted">
+                {activeRole.permissionIds.length} de {permissions.length} permisos activos
+              </span>
+            </span>
+          </article>
+
+          <div className="overflow-hidden rounded-sm border border-line bg-panel">
+            {permissions.map((permission, index) => {
+              const checked = activeRole.permissionIds.includes(permission.id);
+              const key = `${activeRole.id}-${permission.id}`;
+
+              return (
+                <label
+                  key={permission.id}
+                  className={`flex min-h-14 items-center justify-between gap-3 px-3 py-2.5 ${
+                    index > 0 ? "border-t border-line" : ""
+                  }`}
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-semibold">
+                      {permission.name}
+                    </span>
+                    <span className="block truncate text-xs text-muted">
+                      {permission.description || permission.key}
+                    </span>
+                  </span>
+
+                  <Switch
+                    checked={checked}
+                    disabled={savingKey === key}
+                    onChange={(event) =>
+                      void handleToggle({
+                        roleId: activeRole.id,
+                        permissionId: permission.id,
+                        isEnabled: event.target.checked,
+                      })
+                    }
+                    aria-label={`${checked ? "Desactivar" : "Activar"} ${permission.name}`}
+                  />
+                </label>
+              );
+            })}
+          </div>
+        </>
       )}
     </section>
   );
