@@ -14,11 +14,32 @@ export type AdminRoleOptionRow = {
   is_active: boolean;
 };
 
+export type AdminProjectOption = {
+  id: string;
+  code: string;
+  name: string;
+  isActive: boolean;
+};
+
+export type AdminProjectOptionRow = {
+  id: string;
+  code: string;
+  name: string;
+  is_active: boolean;
+};
+
+export type AdminUserProjectRow = {
+  user_id: string;
+  project_id: string;
+  is_active: boolean;
+};
+
 export type AdminUserSetting = {
   id: string;
   fullName: string;
   email: string;
   roleId: string;
+  projectIds: string[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -37,6 +58,7 @@ export type AdminUserSettingRow = {
 export type SaveAdminUserSettingPayload = {
   userId: string;
   roleId: string;
+  projectIds: string[];
   isActive: boolean;
 };
 
@@ -45,5 +67,6 @@ export type CreateAdminUserPayload = {
   email: string;
   password: string;
   roleId: string;
+  projectIds: string[];
   isActive: boolean;
 };
