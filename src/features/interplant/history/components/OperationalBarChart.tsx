@@ -1,3 +1,13 @@
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+
 type OperationalBarChartItem = {
   id: string;
   label: string;
@@ -12,13 +22,33 @@ type OperationalBarChartProps = {
   emptyMessage?: string;
 };
 
+type ChartDatum = {
+  id: string;
+  name: string;
+  value: number;
+  detail: string;
+};
+
+function formatValue(value: number, valueSuffix: string) {
+  return `${value.toLocaleString("es-MX", {
+    maximumFractionDigits: 1,
+  })}${valueSuffix}`;
+}
+
 export function OperationalBarChart({
   title,
   items,
   valueSuffix = "",
   emptyMessage = "No hay información para el rango seleccionado.",
 }: OperationalBarChartProps) {
-  const maxValue = Math.max(...items.map((item) => item.value), 0);
+  const data: ChartDatum[] = items.map((item) => ({
+    id: item.id,
+    name: item.label,
+    value: item.value,
+    detail: item.detail ?? "",
+  }));
+
+  const chartHeight = Math.max(230, data.length * 48 + 48);
 
   return (
     <section className="rounded-sm border border-line bg-panel p-4">
@@ -29,42 +59,81 @@ export function OperationalBarChart({
         <div className="h-px flex-1 bg-line" />
       </div>
 
-      {items.length === 0 ? (
+      {data.length === 0 ? (
         <p className="py-4 text-center text-xs text-muted">{emptyMessage}</p>
       ) : (
-        <div className="space-y-4">
-          {items.map((item) => {
-            const width =
-              maxValue > 0 ? Math.max((item.value / maxValue) * 100, 3) : 0;
+        <div className="w-full" style={{ height: chartHeight }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={data}
+              layout="vertical"
+              margin={{ top: 4, right: 34, bottom: 8, left: 0 }}
+            >
+              <CartesianGrid
+                stroke="var(--color-line)"
+                strokeDasharray="3 3"
+                horizontal={false}
+              />
+              <XAxis
+                type="number"
+                axisLine={false}
+                tickLine={false}
+                allowDecimals={valueSuffix.length > 0}
+                tick={{
+                  fill: "var(--color-muted)",
+                  fontFamily: "var(--font-ibm-plex-mono)",
+                  fontSize: 9,
+                }}
+                tickFormatter={(value) => formatValue(Number(value), valueSuffix)}
+              />
+              <YAxis
+                type="category"
+                dataKey="name"
+                axisLine={false}
+                tickLine={false}
+                width={105}
+                tick={{
+                  fill: "var(--color-muted)",
+                  fontFamily: "var(--font-sans)",
+                  fontSize: 10,
+                }}
+              />
+              <Tooltip
+                cursor={{ fill: "var(--color-line)" }}
+                content={({ active, payload }) => {
+                  if (!active || !payload?.length) {
+                    return null;
+                  }
 
-            return (
-              <div key={item.id}>
-                <div className="mb-1.5 flex items-end justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold">{item.label}</p>
-                    {item.detail && (
-                      <p className="mt-0.5 truncate text-[10px] text-muted">
-                        {item.detail}
+                  const datum = payload[0].payload as ChartDatum;
+
+                  return (
+                    <div className="max-w-56 rounded-sm border border-line-strong bg-panel-strong p-3 shadow-xl">
+                      <p className="text-xs font-bold text-white">
+                        {datum.name}
                       </p>
-                    )}
-                  </div>
-                  <span className="shrink-0 font-ibm-plex-mono text-xs font-semibold text-principal">
-                    {item.value.toLocaleString("es-MX", {
-                      maximumFractionDigits: 1,
-                    })}
-                    {valueSuffix}
-                  </span>
-                </div>
-
-                <div className="h-2 overflow-hidden rounded-full bg-surface-dark">
-                  <div
-                    className="h-full rounded-full bg-principal transition-[width] duration-500"
-                    style={{ width: `${width}%` }}
-                  />
-                </div>
-              </div>
-            );
-          })}
+                      <p className="mt-1 font-ibm-plex-mono text-sm font-semibold text-principal">
+                        {formatValue(datum.value, valueSuffix)}
+                      </p>
+                      {datum.detail && (
+                        <p className="mt-1 text-[10px] leading-4 text-muted">
+                          {datum.detail}
+                        </p>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+              <Bar
+                dataKey="value"
+                name={title}
+                fill="var(--color-principal)"
+                radius={[0, 4, 4, 0]}
+                maxBarSize={22}
+                animationDuration={500}
+              />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
     </section>
