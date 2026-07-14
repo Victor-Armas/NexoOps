@@ -3,7 +3,6 @@ export type Project = {
   code: string;
   name: string;
   description: string | null;
-  sortOrder: number;
 };
 
 export type ProjectRow = {
@@ -11,5 +10,4 @@ export type ProjectRow = {
   code: string;
   name: string;
   description: string | null;
-  sort_order: number;
 };
