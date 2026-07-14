@@ -9,6 +9,10 @@ import type {
 const INCIDENT_COLUMNS =
   "id, project_id, shift_id, unit_id, plant_id, category_id, subject_type, title, description, severity, status, occurred_at, created_by, resolved_at, created_at, updated_at";
 
+type ShiftProjectRow = {
+  project_id: string;
+};
+
 function mapIncident(row: IncidentRow): Incident {
   return {
     id: row.id,
@@ -33,10 +37,21 @@ function mapIncident(row: IncidentRow): Incident {
 export async function getIncidentsByShift(
   shiftId: string,
 ): Promise<Incident[]> {
+  const { data: shift, error: shiftError } = await supabase
+    .from("shifts")
+    .select("project_id")
+    .eq("id", shiftId)
+    .single<ShiftProjectRow>();
+
+  if (shiftError) {
+    throw shiftError;
+  }
+
   const { data, error } = await supabase
     .from("incidents")
     .select(INCIDENT_COLUMNS)
-    .eq("shift_id", shiftId)
+    .eq("project_id", shift.project_id)
+    .or(`shift_id.eq.${shiftId},status.eq.open`)
     .order("occurred_at", { ascending: false })
     .returns<IncidentRow[]>();
 
