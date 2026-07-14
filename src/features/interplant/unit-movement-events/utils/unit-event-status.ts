@@ -3,6 +3,14 @@ import type { UnitMovementEventAction } from "../types/unit-movement-event-actio
 import type { UnitMovementEvent } from "../types/unit-movement-event.types";
 import { findUnitEventAction } from "./unit-event-actions";
 
+const INACTIVE_STANDALONE_EVENT_TYPES = [
+  "meal_finished",
+  "completed",
+  "cancelled",
+  "carga_diesel_finalizada",
+  "recarga_diesel_finalizada",
+];
+
 export function isStandaloneActiveUnitEvent(
   event: UnitMovementEvent | null | undefined,
   eventActions: UnitMovementEventAction[] = [],
@@ -19,12 +27,10 @@ export function isStandaloneActiveUnitEvent(
       "meal_end",
       "movement_complete",
       "movement_cancel",
-    ].includes(behavior);
+    ].includes(behavior) && !INACTIVE_STANDALONE_EVENT_TYPES.includes(event.eventType);
   }
 
-  return !["meal_finished", "completed", "cancelled"].includes(
-    event.eventType,
-  );
+  return !INACTIVE_STANDALONE_EVENT_TYPES.includes(event.eventType);
 }
 
 export function resolveCurrentUnitEvent(params: {
