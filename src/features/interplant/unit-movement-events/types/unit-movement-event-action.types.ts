@@ -4,6 +4,8 @@ export type UnitMovementEventBehavior =
   | "status"
   | "meal_start"
   | "meal_end"
+  | "fuel_start"
+  | "fuel_end"
   | "movement_complete"
   | "movement_cancel";
 
