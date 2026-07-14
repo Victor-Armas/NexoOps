@@ -166,7 +166,7 @@ export function UnitMovementEventActionSettingForm({
             </select>
           </div>
 
-          <label className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
+          <div className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
             <span className="text-sm font-semibold">Mostrar como botón</span>
             <Switch
               checked={showAsAction}
@@ -174,9 +174,9 @@ export function UnitMovementEventActionSettingForm({
               onChange={(event) => setShowAsAction(event.target.checked)}
               aria-label="Mostrar como botón"
             />
-          </label>
+          </div>
 
-          <label className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
+          <div className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
             <span className="text-sm font-semibold">Requiere movimiento</span>
             <Switch
               checked={requiresMovement}
@@ -184,7 +184,7 @@ export function UnitMovementEventActionSettingForm({
               onChange={(event) => setRequiresMovement(event.target.checked)}
               aria-label="Requiere movimiento"
             />
-          </label>
+          </div>
 
           <Button
             type="button"
