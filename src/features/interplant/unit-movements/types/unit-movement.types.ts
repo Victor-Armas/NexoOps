@@ -49,7 +49,6 @@ export type MovementType = {
   code: string;
   name: string;
   description: string | null;
-  sortOrder: number;
 };
 
 export type MovementTypeRow = {
@@ -57,7 +56,6 @@ export type MovementTypeRow = {
   code: string;
   name: string;
   description: string | null;
-  sort_order: number;
 };
 
 export const UNIT_MOVEMENT_STATUS_LABELS: Record<UnitMovementStatus, string> = {
