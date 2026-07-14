@@ -556,19 +556,30 @@ export function InterplantDashboardPage() {
                     />
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`font-medium ${getUnitAccentClass(colorKey)}`}
+                        className={`font-medium ${
+                          isAvailable
+                            ? "text-success"
+                            : getUnitAccentClass(colorKey)
+                        }`}
                       >
                         {statusLabel}
                       </p>
                       <p className="sub mt-1 truncate">
-                        U{unit.code}
-                        {statusStartedAt && !isAvailable
-                          ? ` · ${formatElapsedLabel(statusStartedAt, now)}`
-                          : " · Sin movimiento activo"}
+                        {isAvailable
+                          ? "Unidad libre para movimiento"
+                          : `U${unit.code}${
+                              statusStartedAt
+                                ? ` · ${formatElapsedLabel(statusStartedAt, now)}`
+                                : ""
+                            }`}
                       </p>
                     </div>
                     <span className="mincard min-h-10 shrink-0 light:text-slate-900">
-                      {standaloneActive ? "—" : location?.code ?? "—"}
+                      {isAvailable
+                        ? `U${unit.code}`
+                        : standaloneActive
+                          ? "—"
+                          : location?.code ?? "—"}
                     </span>
                   </Link>
                 );
