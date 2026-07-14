@@ -1,78 +1,209 @@
+import { useEffect, useMemo, useState } from "react";
 import { Factory } from "lucide-react";
 import { toast } from "sonner";
+import { NewPlantCheckFieldSettingForm } from "./NewPlantCheckFieldSettingForm";
+import { PlantCheckFieldSettingForm } from "./PlantCheckFieldSettingForm";
 import { ProjectPlantSettingForm } from "./ProjectPlantSettingForm";
+import { usePlantCheckFieldSettingsAdmin } from "../hooks/usePlantCheckFieldSettingsAdmin";
 import { useProjectPlantSettingsAdmin } from "../hooks/useProjectPlantSettingsAdmin";
+import type {
+  PlantCheckFieldSetting,
+  PlantCheckFieldSettingFormValues,
+} from "../types/plant-check-field-settings-admin.types";
 import type { SaveProjectPlantSettingPayload } from "../types/project-plant-settings-admin.types";
 
 type ProjectPlantSettingsPanelProps = {
-    projectId: string;
+  projectId: string;
+  profileId: string;
 };
 
+function compareFieldSettings(
+  first: PlantCheckFieldSetting,
+  second: PlantCheckFieldSetting,
+) {
+  const groupComparison = first.fieldGroup.localeCompare(second.fieldGroup);
+
+  if (groupComparison !== 0) {
+    return groupComparison;
+  }
+
+  return first.label.localeCompare(second.label, "es-MX", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 export function ProjectPlantSettingsPanel({
-    projectId,
+  projectId,
+  profileId,
 }: ProjectPlantSettingsPanelProps) {
-    const {
-        plantSettings,
-        isLoading,
-        isSaving,
-        errorMessage,
-        savePlantSetting,
-    } = useProjectPlantSettingsAdmin(projectId);
+  const [openPlantId, setOpenPlantId] = useState<string | null>(null);
 
-    const handleSave = async (values: SaveProjectPlantSettingPayload) => {
-        try {
-            await savePlantSetting(values);
-            toast.success("Planta guardada.");
-        } catch (error) {
-            toast.error(
-                error instanceof Error ? error.message : "No se pudo guardar la planta.",
-            );
-        }
-    };
+  const {
+    plantSettings,
+    isLoading: isLoadingPlants,
+    isSaving: isSavingPlant,
+    errorMessage: plantErrorMessage,
+    savePlantSetting,
+  } = useProjectPlantSettingsAdmin(projectId);
 
-    return (
-        <section className="mt-5 rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl light:border-slate-200 light:bg-white">
-            <div className="mb-5 flex items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-                    <Factory size={22} />
-                </div>
+  const {
+    fieldSettings,
+    isLoading: isLoadingFields,
+    isSaving: isSavingField,
+    errorMessage: fieldErrorMessage,
+    saveFieldSetting,
+    removeFieldSetting,
+  } = usePlantCheckFieldSettingsAdmin(projectId);
 
-                <div>
-                    <h3 className="text-lg font-bold">Plantas del proyecto</h3>
+  useEffect(() => {
+    if (!openPlantId && plantSettings.length > 0) {
+      setOpenPlantId(
+        plantSettings.find((plantSetting) => plantSetting.isActive)?.plantId ??
+          plantSettings[0].plantId,
+      );
+    }
+  }, [openPlantId, plantSettings]);
 
-                    <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-                        Configura qué plantas aparecen en la operación.
-                    </p>
-                </div>
-            </div>
+  const fieldSettingsByPlantId = useMemo(
+    () =>
+      fieldSettings.reduce<Record<string, PlantCheckFieldSetting[]>>(
+        (groups, fieldSetting) => {
+          const currentGroup = groups[fieldSetting.plantId] ?? [];
 
-            <section className="mb-4 rounded-3xl bg-yellow-400/10 px-4 py-3 text-sm text-yellow-100 light:bg-yellow-50 light:text-yellow-700">
-                Antes de desactivar una planta, valida que no sea origen o destino de un
-                movimiento abierto.
-            </section>
+          return {
+            ...groups,
+            [fieldSetting.plantId]: [...currentGroup, fieldSetting].sort(
+              compareFieldSettings,
+            ),
+          };
+        },
+        {},
+      ),
+    [fieldSettings],
+  );
 
-            {errorMessage && (
-                <section className="mb-4 rounded-3xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300 light:text-red-600">
-                    {errorMessage}
-                </section>
-            )}
+  const handlePlantSave = async (values: SaveProjectPlantSettingPayload) => {
+    try {
+      await savePlantSetting(values);
+      toast.success(values.isActive ? "Planta activada." : "Planta desactivada.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "No se pudo guardar la planta.",
+      );
+    }
+  };
 
-            {isLoading ? (
-                <section className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 text-sm text-slate-400 light:border-slate-200 light:bg-slate-50 light:text-slate-500">
-                    Cargando plantas...
-                </section>
-            ) : (
-                <div className="space-y-3">
-                    {plantSettings.map((plantSetting) => (
-                        <ProjectPlantSettingForm
-                            key={`${plantSetting.plantId}-${plantSetting.isActive}`}
-                            plantSetting={plantSetting}
-                            isSaving={isSaving}
-                            onSave={handleSave}
-                        />
-                    ))}
-                </div>
-            )}
+  const handleFieldSave = async (values: PlantCheckFieldSettingFormValues) => {
+    try {
+      await saveFieldSetting(values);
+      toast.success(values.id ? "Campo actualizado." : "Campo creado.");
+    } catch {
+      toast.error("No se pudo guardar el campo de revisión.");
+    }
+  };
+
+  const handleFieldDelete = async (id: string) => {
+    try {
+      await removeFieldSetting(id);
+      toast.success("Campo eliminado.");
+    } catch {
+      toast.error("No se pudo eliminar el campo de revisión.");
+    }
+  };
+
+  const errorMessage = plantErrorMessage || fieldErrorMessage;
+  const isLoading = isLoadingPlants || isLoadingFields;
+  const isSaving = isSavingPlant || isSavingField;
+  const activePlantCount = plantSettings.filter(
+    (plantSetting) => plantSetting.isActive,
+  ).length;
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <div className="flex items-center gap-2">
+          <Factory size={14} className="text-principal" />
+          <span className="font-ibm-plex-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+            Plantas
+          </span>
+          <div className="h-px flex-1 bg-line" />
+        </div>
+
+        <p className="mt-2 text-xs leading-5 text-muted">
+          {plantSettings.length} registradas · {activePlantCount} activas. Define
+          sus campos de revisión desde cada acordeón.
+        </p>
+      </div>
+
+      {errorMessage && (
+        <section className="rounded-sm border border-danger/30 bg-danger/10 p-4 text-sm text-red-300 light:text-red-600">
+          {errorMessage}
         </section>
-    );
+      )}
+
+      {isLoading ? (
+        <section className="rounded-sm border border-line bg-panel p-4 text-sm text-muted">
+          Cargando plantas...
+        </section>
+      ) : (
+        <div className="space-y-2">
+          {plantSettings.map((plantSetting) => {
+            const plantFields =
+              fieldSettingsByPlantId[plantSetting.plantId] ?? [];
+
+            return (
+              <ProjectPlantSettingForm
+                key={`${plantSetting.plantId}-${plantSetting.isActive}`}
+                plantSetting={plantSetting}
+                fieldCount={plantFields.length}
+                isOpen={openPlantId === plantSetting.plantId}
+                isSaving={isSaving}
+                onToggleOpen={() =>
+                  setOpenPlantId((currentPlantId) =>
+                    currentPlantId === plantSetting.plantId
+                      ? null
+                      : plantSetting.plantId,
+                  )
+                }
+                onSave={handlePlantSave}
+              >
+                <div>
+                  {plantFields.length === 0 ? (
+                    <p className="py-3 text-center text-xs text-muted">
+                      Esta planta todavía no tiene campos de revisión.
+                    </p>
+                  ) : (
+                    plantFields.map((fieldSetting) => (
+                      <PlantCheckFieldSettingForm
+                        key={`${fieldSetting.id}-${fieldSetting.updatedAt}`}
+                        fieldSetting={fieldSetting}
+                        profileId={profileId}
+                        isSaving={isSaving}
+                        onSave={handleFieldSave}
+                        onDelete={handleFieldDelete}
+                      />
+                    ))
+                  )}
+
+                  <NewPlantCheckFieldSettingForm
+                    projectId={projectId}
+                    plantId={plantSetting.plantId}
+                    profileId={profileId}
+                    isSaving={isSaving}
+                    onSave={handleFieldSave}
+                  />
+                </div>
+              </ProjectPlantSettingForm>
+            );
+          })}
+        </div>
+      )}
+
+      <p className="text-xs leading-5 text-muted">
+        Antes de desactivar una planta, valida que no sea origen o destino de un
+        movimiento abierto.
+      </p>
+    </section>
+  );
 }
