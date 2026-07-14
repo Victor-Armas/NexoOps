@@ -4,6 +4,10 @@ import type {
   UnitMovementEventActionSettingRow,
   UnitMovementEventBehavior,
 } from "../types/unit-movement-event-action.types";
+import {
+  DIESEL_REFUELING_FINISHED_EVENT,
+  DIESEL_REFUELING_STARTED_EVENT,
+} from "../types/unit-movement-event.types";
 
 function createDefaultAction(params: {
   eventType: string;
@@ -92,6 +96,24 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
     showAsAction: true,
     iconKey: "refresh",
     colorKey: "amber",
+  }),
+  createDefaultAction({
+    eventType: DIESEL_REFUELING_STARTED_EVENT,
+    label: "Carga de diésel",
+    requiresMovement: false,
+    showAsAction: false,
+    behavior: "fuel_start",
+    iconKey: "fuel",
+    colorKey: "amber",
+  }),
+  createDefaultAction({
+    eventType: DIESEL_REFUELING_FINISHED_EVENT,
+    label: "Carga de diésel finalizada",
+    requiresMovement: false,
+    showAsAction: false,
+    behavior: "fuel_end",
+    iconKey: "fuel",
+    colorKey: "success",
   }),
   createDefaultAction({
     eventType: "meal",
