@@ -1,7 +1,9 @@
-import { Save } from "lucide-react";
 import { useState } from "react";
+import { ChevronDown, CircleDot, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../../../components/ui/Button";
+import { Switch } from "../../../../components/ui/Switch";
+import { cn } from "../../../../lib/utils/cn";
 import type {
   SaveUnitMovementEventActionSettingPayload,
   UnitMovementEventActionSetting,
@@ -41,6 +43,7 @@ export function UnitMovementEventActionSettingForm({
   isSaving,
   onSave,
 }: UnitMovementEventActionSettingFormProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [label, setLabel] = useState(actionSetting.label);
   const [requiresMovement, setRequiresMovement] = useState(
     actionSetting.requiresMovement,
@@ -52,8 +55,8 @@ export function UnitMovementEventActionSettingForm({
   const [colorKey, setColorKey] = useState(actionSetting.colorKey);
   const [isActive, setIsActive] = useState(actionSetting.isActive);
 
-  const handleSave = async () => {
-    if (label.trim().length === 0) {
+  const saveValues = async (nextIsActive = isActive) => {
+    if (!label.trim()) {
       toast.error("El nombre del estatus es requerido.");
       return;
     }
@@ -69,42 +72,78 @@ export function UnitMovementEventActionSettingForm({
       iconKey,
       colorKey,
       isSystem: actionSetting.isSystem,
-      isActive,
+      isActive: nextIsActive,
       updatedBy: profileId,
     });
   };
 
+  const handleActiveChange = (nextIsActive: boolean) => {
+    setIsActive(nextIsActive);
+    void saveValues(nextIsActive);
+  };
+
   return (
-    <article className="rounded-sm border border-line bg-surface-dark p-4 light:bg-slate-50">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs text-faint">Código</p>
-          <p className="font-ibm-plex-mono text-sm text-principal">
-            {actionSetting.eventType}
-          </p>
-        </div>
-        <span className="mincard min-h-8 px-2 text-[11px]">
-          {actionSetting.isSystem ? "Sistema" : "Personalizado"}
-        </span>
+    <article
+      className={cn(
+        "overflow-hidden rounded-sm border border-line bg-panel",
+        !isActive && "opacity-70",
+      )}
+    >
+      <div className="flex min-h-16 items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-principal/30 bg-principal/10 text-principal">
+            <CircleDot size={17} />
+          </span>
+
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">{label}</span>
+            <span className="block truncate text-xs text-muted">
+              {requiresMovement ? "Requiere movimiento" : "Independiente"}
+              {actionSetting.isSystem ? " · Sistema" : " · Personalizado"}
+            </span>
+          </span>
+
+          <ChevronDown
+            size={15}
+            className={cn(
+              "shrink-0 text-muted transition-transform",
+              isExpanded && "rotate-180",
+            )}
+          />
+        </button>
+
+        <Switch
+          checked={isActive}
+          disabled={isSaving}
+          onChange={(event) => handleActiveChange(event.target.checked)}
+          aria-label={`${isActive ? "Desactivar" : "Activar"} ${actionSetting.label}`}
+        />
       </div>
 
-      <div className="space-y-3">
-        <label className="block">
-          <span className="text-xs font-semibold text-muted">Nombre visible</span>
-          <input
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            className="mt-2 h-11 w-full rounded-sm border border-line-strong bg-panel px-3 text-base outline-none focus:border-principal"
-          />
-        </label>
+      {isExpanded && (
+        <div className="space-y-3 border-t border-line bg-surface-dark/50 p-3">
+          <div>
+            <p className="mb-1 font-ibm-plex-mono text-[10px] uppercase tracking-[0.08em] text-muted">
+              {actionSetting.eventType}
+            </p>
+            <input
+              value={label}
+              onChange={(event) => setLabel(event.target.value)}
+              placeholder="Nombre visible"
+              className="h-10 w-full rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-principal"
+            />
+          </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-xs font-semibold text-muted">Icono</span>
+          <div className="grid grid-cols-2 gap-2">
             <select
               value={iconKey}
               onChange={(event) => setIconKey(event.target.value)}
-              className="mt-2 h-11 w-full rounded-sm border border-line-strong bg-panel px-3 text-base outline-none focus:border-principal"
+              className="h-10 rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-principal"
+              aria-label="Icono"
             >
               {ICON_OPTIONS.map(([value, text]) => (
                 <option key={value} value={value}>
@@ -112,14 +151,12 @@ export function UnitMovementEventActionSettingForm({
                 </option>
               ))}
             </select>
-          </label>
 
-          <label className="block">
-            <span className="text-xs font-semibold text-muted">Color</span>
             <select
               value={colorKey}
               onChange={(event) => setColorKey(event.target.value)}
-              className="mt-2 h-11 w-full rounded-sm border border-line-strong bg-panel px-3 text-base outline-none focus:border-principal"
+              className="h-10 rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-principal"
+              aria-label="Color"
             >
               {COLOR_OPTIONS.map(([value, text]) => (
                 <option key={value} value={value}>
@@ -127,52 +164,39 @@ export function UnitMovementEventActionSettingForm({
                 </option>
               ))}
             </select>
-          </label>
-        </div>
+          </div>
 
-        <div className="grid gap-2 text-sm text-muted sm:grid-cols-3">
-          <label className="inline-flex min-h-10 items-center gap-2">
-            <input
-              type="checkbox"
+          <label className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
+            <span className="text-sm font-semibold">Mostrar como botón</span>
+            <Switch
               checked={showAsAction}
+              disabled={isSaving}
               onChange={(event) => setShowAsAction(event.target.checked)}
-              className="h-4 w-4"
+              aria-label="Mostrar como botón"
             />
-            Mostrar botón
           </label>
 
-          <label className="inline-flex min-h-10 items-center gap-2">
-            <input
-              type="checkbox"
+          <label className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
+            <span className="text-sm font-semibold">Requiere movimiento</span>
+            <Switch
               checked={requiresMovement}
-              disabled={actionSetting.isSystem}
+              disabled={isSaving || actionSetting.isSystem}
               onChange={(event) => setRequiresMovement(event.target.checked)}
-              className="h-4 w-4 disabled:opacity-50"
+              aria-label="Requiere movimiento"
             />
-            Requiere movimiento
           </label>
 
-          <label className="inline-flex min-h-10 items-center gap-2">
-            <input
-              type="checkbox"
-              checked={isActive}
-              onChange={(event) => setIsActive(event.target.checked)}
-              className="h-4 w-4"
-            />
-            Activo
-          </label>
+          <Button
+            type="button"
+            disabled={isSaving}
+            onClick={() => void saveValues()}
+            className="h-10 w-full gap-2 rounded-sm"
+          >
+            <Save size={15} />
+            Guardar estatus
+          </Button>
         </div>
-
-        <Button
-          type="button"
-          disabled={isSaving}
-          onClick={() => void handleSave()}
-          className="h-11 w-full gap-2 rounded-sm"
-        >
-          <Save size={16} />
-          Guardar estatus
-        </Button>
-      </div>
+      )}
     </article>
   );
 }
