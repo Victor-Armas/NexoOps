@@ -158,7 +158,7 @@ export function RolePermissionsPanel() {
               const key = `${activeRole.id}-${permission.id}`;
 
               return (
-                <label
+                <div
                   key={permission.id}
                   className={`flex min-h-14 items-center justify-between gap-3 px-3 py-2.5 ${
                     index > 0 ? "border-t border-line" : ""
@@ -185,7 +185,7 @@ export function RolePermissionsPanel() {
                     }
                     aria-label={`${checked ? "Desactivar" : "Activar"} ${permission.name}`}
                   />
-                </label>
+                </div>
               );
             })}
           </div>
