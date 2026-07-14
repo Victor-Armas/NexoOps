@@ -3,7 +3,6 @@ export type Unit = {
   code: string;
   name: string;
   description: string | null;
-  sortOrder: number;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -14,7 +13,6 @@ export type UnitRow = {
   code: string;
   name: string;
   description: string | null;
-  sort_order: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -22,5 +20,4 @@ export type UnitRow = {
 
 export type ProjectUnitRow = {
   unit_id: string;
-  sort_order: number;
 };
