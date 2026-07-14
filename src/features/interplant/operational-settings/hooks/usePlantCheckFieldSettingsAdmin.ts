@@ -9,6 +9,22 @@ import type {
   SavePlantCheckFieldSettingPayload,
 } from "../types/plant-check-field-settings-admin.types";
 
+function compareFieldSettings(
+  first: PlantCheckFieldSetting,
+  second: PlantCheckFieldSetting,
+) {
+  const groupComparison = first.fieldGroup.localeCompare(second.fieldGroup);
+
+  if (groupComparison !== 0) {
+    return groupComparison;
+  }
+
+  return first.label.localeCompare(second.label, "es-MX", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 export function usePlantCheckFieldSettingsAdmin(projectId: string | undefined) {
   const [fieldSettings, setFieldSettings] = useState<PlantCheckFieldSetting[]>(
     [],
@@ -69,7 +85,7 @@ export function usePlantCheckFieldSettingsAdmin(projectId: string | undefined) {
 
           if (!exists) {
             return [...currentFieldSettings, savedFieldSetting].sort(
-              (first, second) => first.sortOrder - second.sortOrder,
+              compareFieldSettings,
             );
           }
 
@@ -79,7 +95,7 @@ export function usePlantCheckFieldSettingsAdmin(projectId: string | undefined) {
                 ? savedFieldSetting
                 : fieldSetting,
             )
-            .sort((first, second) => first.sortOrder - second.sortOrder);
+            .sort(compareFieldSettings);
         });
 
         return savedFieldSetting;
