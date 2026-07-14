@@ -51,7 +51,10 @@ const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
   completed: "Completado",
   cancelled: "Cancelado",
   guard: "Resguardo",
-  carga_diesel: "Recarga de diésel",
+  carga_diesel: "Carga de diésel",
+  carga_diesel_finalizada: "Carga de diésel finalizada",
+  recarga_diesel: "Carga de diésel",
+  recarga_diesel_finalizada: "Carga de diésel finalizada",
 };
 
 function humanizeEventType(eventType: string) {
