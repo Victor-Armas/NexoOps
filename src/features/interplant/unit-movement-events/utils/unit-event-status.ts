@@ -1,15 +1,27 @@
 import type { UnitMovement } from "../../unit-movements/types/unit-movement.types";
-import type { UnitMovementEventAction } from "../types/unit-movement-event-action.types";
-import type { UnitMovementEvent } from "../types/unit-movement-event.types";
+import type {
+  UnitMovementEventAction,
+  UnitMovementEventBehavior,
+} from "../types/unit-movement-event-action.types";
+import {
+  DIESEL_REFUELING_FINISHED_EVENT,
+  type UnitMovementEvent,
+} from "../types/unit-movement-event.types";
 import { findUnitEventAction } from "./unit-event-actions";
 
-const INACTIVE_STANDALONE_EVENT_TYPES = [
+const INACTIVE_STANDALONE_BEHAVIORS = new Set<UnitMovementEventBehavior>([
+  "meal_end",
+  "fuel_end",
+  "movement_complete",
+  "movement_cancel",
+]);
+
+const INACTIVE_FALLBACK_EVENT_TYPES = new Set([
   "meal_finished",
   "completed",
   "cancelled",
-  "carga_diesel_finalizada",
-  "recarga_diesel_finalizada",
-];
+  DIESEL_REFUELING_FINISHED_EVENT,
+]);
 
 export function isStandaloneActiveUnitEvent(
   event: UnitMovementEvent | null | undefined,
@@ -23,14 +35,10 @@ export function isStandaloneActiveUnitEvent(
   )?.behavior;
 
   if (behavior) {
-    return ![
-      "meal_end",
-      "movement_complete",
-      "movement_cancel",
-    ].includes(behavior) && !INACTIVE_STANDALONE_EVENT_TYPES.includes(event.eventType);
+    return !INACTIVE_STANDALONE_BEHAVIORS.has(behavior);
   }
 
-  return !INACTIVE_STANDALONE_EVENT_TYPES.includes(event.eventType);
+  return !INACTIVE_FALLBACK_EVENT_TYPES.has(event.eventType);
 }
 
 export function resolveCurrentUnitEvent(params: {
