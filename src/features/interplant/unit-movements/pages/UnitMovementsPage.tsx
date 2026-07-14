@@ -73,6 +73,7 @@ export function UnitMovementsPage() {
   const {
     standaloneEvents,
     isMealActive: isStandaloneMealActive,
+    isFuelingActive,
     isLoading: isLoadingUnitEvents,
     errorMessage: unitEventsErrorMessage,
     addEvent: addStandaloneEvent,
@@ -91,7 +92,8 @@ export function UnitMovementsPage() {
   const canRegisterMovement = can("units.movement.create");
   const canCompleteMovement = can("units.movement.complete");
   const canCancelMovement = can("units.movement.cancel");
-  const canCreateMovementNow = !hasOpenMovement && !isStandaloneMealActive;
+  const canCreateMovementNow =
+    !hasOpenMovement && !isStandaloneMealActive && !isFuelingActive;
 
   const isLoading =
     isLoadingShift ||
@@ -123,6 +125,11 @@ export function UnitMovementsPage() {
 
     if (isStandaloneMealActive) {
       toast.error("Finaliza la comida antes de iniciar un movimiento.");
+      return;
+    }
+
+    if (isFuelingActive) {
+      toast.error("Finaliza la carga de diésel antes de iniciar un movimiento.");
       return;
     }
 
@@ -219,6 +226,7 @@ export function UnitMovementsPage() {
           standaloneEvents={standaloneEvents}
           eventActions={eventActions}
           isMealActive={isStandaloneMealActive}
+          isFuelingActive={isFuelingActive}
           isLoading={isLoadingUnitEvents}
           errorMessage={unitEventsErrorMessage}
           onAddEvent={addStandaloneEvent}
@@ -258,7 +266,9 @@ export function UnitMovementsPage() {
         <section className="mb-5 rounded-sm border border-line bg-panel p-5 text-sm text-muted">
           {isStandaloneMealActive
             ? "Finaliza la comida antes de registrar un movimiento nuevo."
-            : "Completa o cancela el movimiento abierto antes de registrar uno nuevo."}
+            : isFuelingActive
+              ? "Finaliza la carga de diésel antes de registrar un movimiento nuevo."
+              : "Completa o cancela el movimiento abierto antes de registrar uno nuevo."}
         </section>
       )}
 
