@@ -104,11 +104,10 @@ export function UnitStandaloneEventsPanel({
             type="button"
             disabled={isSubmitting}
             onClick={() => void handleMeal()}
-            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
-              isMealActive
+            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${isMealActive
                 ? "border-principal bg-principal text-slate-950"
                 : "border-principal/50 text-principal"
-            }`}
+              }`}
           >
             <Utensils size={18} />
             {isMealActive ? "Finalizar comida" : "Iniciar comida"}
@@ -124,11 +123,10 @@ export function UnitStandaloneEventsPanel({
                 type="button"
                 disabled={isSubmitting || isMealActive}
                 onClick={() => void handleStandaloneStatus(action)}
-                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
-                  isActive
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${isActive
                     ? "border-principal bg-principal text-slate-950"
                     : "border-line-strong text-muted"
-                }`}
+                  }`}
               >
                 <StandaloneActionIcon iconKey={action.iconKey} />
                 {action.label}

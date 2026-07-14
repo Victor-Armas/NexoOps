@@ -1,35 +1,62 @@
-import { useState } from "react";
-import { Save, ShieldCheck } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../../../components/ui/Button";
+import { Switch } from "../../../../components/ui/Switch";
+import { cn } from "../../../../lib/utils/cn";
 import type {
+  AdminProjectOption,
   AdminRoleOption,
   AdminUserSetting,
   SaveAdminUserSettingPayload,
 } from "../types/user-settings-admin.types";
+import { UserProjectSelector } from "./UserProjectSelector";
 
 type UserSettingFormProps = {
   user: AdminUserSetting;
   roles: AdminRoleOption[];
+  projects: AdminProjectOption[];
   currentUserId: string;
   isSaving: boolean;
   onSave: (values: SaveAdminUserSettingPayload) => Promise<void>;
 };
 
+function getInitials(fullName: string) {
+  return fullName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+}
+
 export function UserSettingForm({
   user,
   roles,
+  projects,
   currentUserId,
   isSaving,
   onSave,
 }: UserSettingFormProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [roleId, setRoleId] = useState(user.roleId);
+  const [projectIds, setProjectIds] = useState(user.projectIds);
   const [isActive, setIsActive] = useState(user.isActive);
   const isCurrentUser = user.id === currentUserId;
+
+  const selectedRole = useMemo(
+    () => roles.find((role) => role.id === roleId),
+    [roleId, roles],
+  );
 
   const handleSave = async () => {
     if (!roleId) {
       toast.error("Selecciona un rol para el usuario.");
+      return;
+    }
+
+    if (projectIds.length === 0) {
+      toast.error("Asigna por lo menos un proyecto.");
       return;
     }
 
@@ -41,83 +68,126 @@ export function UserSettingForm({
     await onSave({
       userId: user.id,
       roleId,
+      projectIds,
       isActive,
     });
+
+    setIsExpanded(false);
+  };
+
+  const handleActiveChange = async (nextIsActive: boolean) => {
+    if (isCurrentUser && !nextIsActive) {
+      toast.error("No puedes desactivar tu propio usuario.");
+      return;
+    }
+
+    setIsActive(nextIsActive);
+
+    try {
+      await onSave({
+        userId: user.id,
+        roleId,
+        projectIds,
+        isActive: nextIsActive,
+      });
+    } catch {
+      setIsActive(!nextIsActive);
+    }
   };
 
   return (
-    <article className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 light:border-slate-200 light:bg-slate-50">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h4 className="font-bold">{user.fullName}</h4>
-          <p className="text-sm text-slate-400 light:text-slate-500">
-            {user.email}
-          </p>
-        </div>
-
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-            user.isActive
-              ? "bg-emerald-400/10 text-emerald-300 light:bg-emerald-50 light:text-emerald-700"
-              : "bg-red-500/10 text-red-300 light:bg-red-50 light:text-red-600"
-          }`}
-        >
-          {user.isActive ? "Activo" : "Inactivo"}
-        </span>
-      </div>
-
-      {isCurrentUser && (
-        <section className="mb-3 rounded-3xl bg-cyan-400/10 px-4 py-3 text-sm text-cyan-200 light:bg-cyan-50 light:text-cyan-700">
-          Este es tu usuario actual. Puedes cambiar tu rol, pero no puedes
-          desactivarte desde aquí.
-        </section>
+    <article
+      className={cn(
+        "overflow-hidden rounded-sm border border-line bg-panel",
+        !isActive && "opacity-60",
       )}
-
-      <div className="space-y-3">
-        <label className="block">
-          <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-            Rol
+    >
+      <div className="flex min-h-16 items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm border border-line-strong bg-surface-dark font-ibm-plex-mono text-[11px] font-semibold text-muted">
+            {getInitials(user.fullName)}
           </span>
 
-          <select
-            value={roleId}
-            onChange={(event) => setRoleId(event.target.value)}
-            className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-          >
-            {roles.map((role) => (
-              <option key={role.id} value={role.id}>
-                {role.name} ({role.key}){role.isActive ? "" : " - inactivo"}
-              </option>
-            ))}
-          </select>
-        </label>
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">
+              {user.fullName}
+            </span>
+            <span className="block truncate text-xs text-muted">{user.email}</span>
+          </span>
 
-        <label className="inline-flex items-center gap-2 text-sm text-slate-300 light:text-slate-700">
-          <input
-            type="checkbox"
-            checked={isActive}
-            disabled={isCurrentUser}
-            onChange={(event) => setIsActive(event.target.checked)}
-            className="h-4 w-4"
+          <span className="shrink-0 rounded-sm border border-principal/50 px-2 py-1 font-ibm-plex-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-principal">
+            {selectedRole?.name ?? "Sin rol"}
+          </span>
+
+          <ChevronDown
+            size={15}
+            className={cn(
+              "shrink-0 text-muted transition-transform",
+              isExpanded && "rotate-180",
+            )}
           />
-          Usuario activo
-        </label>
+        </button>
 
-        <Button
-          type="button"
-          disabled={isSaving}
-          onClick={() => void handleSave()}
-          className="h-11 w-full gap-2 rounded-2xl"
-        >
-          <Save size={16} />
-          Guardar usuario
-        </Button>
+        <Switch
+          checked={isActive}
+          disabled={isSaving || isCurrentUser}
+          onChange={(event) => void handleActiveChange(event.target.checked)}
+          aria-label={`${isActive ? "Desactivar" : "Activar"} ${user.fullName}`}
+        />
       </div>
 
-      <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
-        <ShieldCheck size={14} />
-        Los permisos efectivos dependen del rol asignado.
-      </div>
+      {isExpanded && (
+        <div className="space-y-3 border-t border-line bg-surface-dark/50 p-3">
+          <label className="block">
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Rol
+            </span>
+            <select
+              value={roleId}
+              onChange={(event) => setRoleId(event.target.value)}
+              className="h-10 w-full rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-principal"
+            >
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
+                  {role.name}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <div>
+            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-muted">
+              Proyectos asignados
+            </span>
+            <UserProjectSelector
+              projects={projects}
+              value={projectIds}
+              disabled={isSaving}
+              onChange={setProjectIds}
+            />
+          </div>
+
+          {isCurrentUser && (
+            <p className="text-xs leading-5 text-muted">
+              Este es tu usuario actual y no puede desactivarse desde aquí.
+            </p>
+          )}
+
+          <Button
+            type="button"
+            disabled={isSaving}
+            onClick={() => void handleSave()}
+            className="h-10 w-full gap-2 rounded-sm"
+          >
+            <Save size={15} />
+            Guardar usuario
+          </Button>
+        </div>
+      )}
     </article>
   );
 }

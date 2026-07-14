@@ -1,5 +1,5 @@
-import { ListChecks } from "lucide-react";
 import { useMemo } from "react";
+import { ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { useUnitMovementEventActionSettingsAdmin } from "../hooks/useUnitMovementEventActionSettingsAdmin";
 import type { SaveUnitMovementEventActionSettingPayload } from "../types/unit-movement-event-action-settings-admin.types";
@@ -48,32 +48,27 @@ export function UnitMovementEventActionSettingsPanel({
   };
 
   return (
-    <section className="mt-5 rounded-sm border border-line bg-panel p-5 shadow-xl light:bg-white">
-      <div className="mb-5 flex items-start gap-3">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm bg-principal/10 text-principal">
-          <ListChecks size={22} />
-        </div>
-
-        <div>
-          <h3 className="text-lg font-bold">Estatus de unidad</h3>
-          <p className="mt-1 text-sm text-muted">
-            Crea estatus operativos y define si requieren un movimiento activo.
-          </p>
-        </div>
+    <section className="space-y-3">
+      <div className="flex items-center gap-2">
+        <ListChecks size={14} className="text-principal" />
+        <span className="font-ibm-plex-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+          Botones de estatus
+        </span>
+        <div className="h-px flex-1 bg-line" />
       </div>
 
       {errorMessage && (
-        <section className="mb-4 rounded-sm border border-danger/30 bg-danger/10 p-4 text-sm text-red-300 light:text-red-600">
+        <section className="rounded-sm border border-danger/30 bg-danger/10 p-4 text-sm text-red-300 light:text-red-600">
           {errorMessage}
         </section>
       )}
 
       {isLoading ? (
-        <section className="rounded-sm border border-line bg-surface-dark p-4 text-sm text-muted">
+        <section className="rounded-sm border border-line bg-panel p-4 text-sm text-muted">
           Cargando estatus de unidad...
         </section>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {visibleStatusSettings.map((actionSetting) => (
             <UnitMovementEventActionSettingForm
               key={`${actionSetting.id}-${actionSetting.updatedAt}`}

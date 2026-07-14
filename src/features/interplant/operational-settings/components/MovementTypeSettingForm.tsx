@@ -1,130 +1,121 @@
 import { useState } from "react";
-import { Save } from "lucide-react";
+import { ChevronDown, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "../../../../components/ui/Button";
+import { Switch } from "../../../../components/ui/Switch";
+import { cn } from "../../../../lib/utils/cn";
 import type {
-    MovementTypeSetting,
-    SaveMovementTypeSettingPayload,
+  MovementTypeSetting,
+  SaveMovementTypeSettingPayload,
 } from "../types/movement-type-settings-admin.types";
 
 type MovementTypeSettingFormProps = {
-    movementType: MovementTypeSetting;
-    isSaving: boolean;
-    onSave: (values: SaveMovementTypeSettingPayload) => Promise<void>;
+  movementType: MovementTypeSetting;
+  isSaving: boolean;
+  onSave: (values: SaveMovementTypeSettingPayload) => Promise<void>;
 };
 
-const CODE_PATTERN = /^[a-z0-9_]+$/;
-
 export function MovementTypeSettingForm({
-    movementType,
-    isSaving,
-    onSave,
+  movementType,
+  isSaving,
+  onSave,
 }: MovementTypeSettingFormProps) {
-    const [name, setName] = useState(movementType.name);
-    const [description, setDescription] = useState(
-        movementType.description ?? "",
-    );
-    const [sortOrder, setSortOrder] = useState(String(movementType.sortOrder));
-    const [isActive, setIsActive] = useState(movementType.isActive);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [name, setName] = useState(movementType.name);
+  const [description, setDescription] = useState(
+    movementType.description ?? "",
+  );
+  const [isActive, setIsActive] = useState(movementType.isActive);
 
-    const handleSave = async () => {
-        const nextSortOrder = Number(sortOrder);
+  const saveValues = async (nextIsActive = isActive) => {
+    if (!name.trim()) {
+      toast.error("El nombre del tipo de movimiento es requerido.");
+      return;
+    }
 
-        if (!CODE_PATTERN.test(movementType.code)) {
-            toast.error("El código solo puede usar minúsculas, números y guion bajo.");
-            return;
-        }
+    await onSave({
+      id: movementType.id,
+      code: movementType.code,
+      name: name.trim(),
+      description: description.trim() || null,
+      sortOrder: movementType.sortOrder,
+      isActive: nextIsActive,
+    });
+  };
 
-        if (name.trim().length === 0) {
-            toast.error("El nombre del tipo de movimiento es requerido.");
-            return;
-        }
+  const handleActiveChange = (nextIsActive: boolean) => {
+    setIsActive(nextIsActive);
+    void saveValues(nextIsActive);
+  };
 
-        if (!Number.isInteger(nextSortOrder) || nextSortOrder < 0) {
-            toast.error("El orden debe ser un número entero mayor o igual a 0.");
-            return;
-        }
+  return (
+    <article
+      className={cn(
+        "overflow-hidden rounded-sm border border-line bg-panel",
+        !isActive && "opacity-70",
+      )}
+    >
+      <div className="flex min-h-16 items-center gap-3 px-3 py-2.5">
+        <button
+          type="button"
+          onClick={() => setIsExpanded((current) => !current)}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span className="shrink-0 rounded-sm border border-line-strong bg-surface-dark px-2 py-1 font-ibm-plex-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-principal">
+            {movementType.code}
+          </span>
 
-        await onSave({
-            id: movementType.id,
-            code: movementType.code,
-            name: name.trim(),
-            description: description.trim() || null,
-            sortOrder: nextSortOrder,
-            isActive,
-        });
-    };
+          <span className="min-w-0 flex-1">
+            <span className="block truncate text-sm font-bold">{name}</span>
+            <span className="block truncate text-xs text-muted">
+              {description || "Sin descripción"}
+            </span>
+          </span>
 
-    return (
-        <article className="rounded-3xl border border-white/10 bg-slate-950/30 p-4 light:border-slate-200 light:bg-slate-50">
-            <div className="mb-3">
-                <p className="text-xs text-slate-400 light:text-slate-500">Código</p>
+          <ChevronDown
+            size={15}
+            className={cn(
+              "shrink-0 text-muted transition-transform",
+              isExpanded && "rotate-180",
+            )}
+          />
+        </button>
 
-                <p className="font-mono text-sm text-cyan-200 light:text-cyan-700">
-                    {movementType.code}
-                </p>
-            </div>
+        <Switch
+          checked={isActive}
+          disabled={isSaving}
+          onChange={(event) => handleActiveChange(event.target.checked)}
+          aria-label={`${isActive ? "Desactivar" : "Activar"} ${movementType.name}`}
+        />
+      </div>
 
-            <div className="space-y-3">
-                <label className="block">
-                    <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                        Nombre visible
-                    </span>
+      {isExpanded && (
+        <div className="space-y-3 border-t border-line bg-surface-dark/50 p-3">
+          <input
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Nombre visible"
+            className="h-10 w-full rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-principal"
+          />
 
-                    <input
-                        value={name}
-                        onChange={(event) => setName(event.target.value)}
-                        className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                    />
-                </label>
+          <input
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Descripción opcional"
+            className="h-10 w-full rounded-sm border border-line-strong bg-panel px-3 text-sm outline-none focus:border-principal"
+          />
 
-                <label className="block">
-                    <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                        Descripción
-                    </span>
-
-                    <input
-                        value={description}
-                        onChange={(event) => setDescription(event.target.value)}
-                        className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                    />
-                </label>
-
-                <label className="block">
-                    <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                        Orden
-                    </span>
-
-                    <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={sortOrder}
-                        onChange={(event) => setSortOrder(event.target.value)}
-                        className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                    />
-                </label>
-
-                <label className="inline-flex items-center gap-2 text-sm text-slate-300 light:text-slate-700">
-                    <input
-                        type="checkbox"
-                        checked={isActive}
-                        onChange={(event) => setIsActive(event.target.checked)}
-                        className="h-4 w-4"
-                    />
-                    Activo
-                </label>
-
-                <Button
-                    type="button"
-                    disabled={isSaving}
-                    onClick={() => void handleSave()}
-                    className="h-11 w-full gap-2 rounded-2xl"
-                >
-                    <Save size={16} />
-                    Guardar tipo
-                </Button>
-            </div>
-        </article>
-    );
+          <Button
+            type="button"
+            disabled={isSaving}
+            onClick={() => void saveValues()}
+            className="h-10 w-full gap-2 rounded-sm"
+          >
+            <Save size={15} />
+            Guardar tipo
+          </Button>
+        </div>
+      )}
+    </article>
+  );
 }
