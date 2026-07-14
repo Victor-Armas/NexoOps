@@ -11,7 +11,6 @@ type NewPlantCheckFieldSettingFormProps = {
     projectId: string;
     plantId: string;
     profileId: string;
-    nextSortOrder: number;
     isSaving: boolean;
     onSave: (values: PlantCheckFieldSettingFormValues) => Promise<void>;
 };
@@ -34,11 +33,6 @@ function validateFieldSetting(values: PlantCheckFieldSettingFormValues) {
         return false;
     }
 
-    if (!Number.isInteger(values.sortOrder) || values.sortOrder < 0) {
-        toast.error("El orden debe ser un número entero mayor o igual a 0.");
-        return false;
-    }
-
     return true;
 }
 
@@ -46,7 +40,6 @@ export function NewPlantCheckFieldSettingForm({
     projectId,
     plantId,
     profileId,
-    nextSortOrder,
     isSaving,
     onSave,
 }: NewPlantCheckFieldSettingFormProps) {
@@ -54,7 +47,6 @@ export function NewPlantCheckFieldSettingForm({
     const [label, setLabel] = useState("");
     const [fieldGroup, setFieldGroup] =
         useState<PlantCheckFieldSettingGroup>("full");
-    const [sortOrder, setSortOrder] = useState(String(nextSortOrder));
 
     const handleSave = async () => {
         const values: PlantCheckFieldSettingFormValues = {
@@ -63,7 +55,6 @@ export function NewPlantCheckFieldSettingForm({
             fieldKey: fieldKey.trim(),
             label: label.trim(),
             fieldGroup,
-            sortOrder: Number(sortOrder),
             isActive: true,
             updatedBy: profileId,
         };
@@ -77,7 +68,6 @@ export function NewPlantCheckFieldSettingForm({
         setFieldKey("");
         setLabel("");
         setFieldGroup("full");
-        setSortOrder(String(nextSortOrder + 10));
     };
 
     return (
@@ -116,42 +106,25 @@ export function NewPlantCheckFieldSettingForm({
                     />
                 </label>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <label className="block">
-                        <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                            Grupo
-                        </span>
+                <label className="block">
+                    <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
+                        Grupo
+                    </span>
 
-                        <select
-                            value={fieldGroup}
-                            onChange={(event) =>
-                                setFieldGroup(event.target.value as PlantCheckFieldSettingGroup)
-                            }
-                            className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                        >
-                            {Object.entries(FIELD_GROUP_LABELS).map(([value, text]) => (
-                                <option key={value} value={value} className="text-slate-950">
-                                    {text}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className="block">
-                        <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                            Orden
-                        </span>
-
-                        <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={sortOrder}
-                            onChange={(event) => setSortOrder(event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                        />
-                    </label>
-                </div>
+                    <select
+                        value={fieldGroup}
+                        onChange={(event) =>
+                            setFieldGroup(event.target.value as PlantCheckFieldSettingGroup)
+                        }
+                        className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
+                    >
+                        {Object.entries(FIELD_GROUP_LABELS).map(([value, text]) => (
+                            <option key={value} value={value} className="text-slate-950">
+                                {text}
+                            </option>
+                        ))}
+                    </select>
+                </label>
 
                 <Button
                     type="button"

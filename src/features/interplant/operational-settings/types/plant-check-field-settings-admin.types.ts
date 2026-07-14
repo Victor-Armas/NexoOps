@@ -7,7 +7,6 @@ export type PlantCheckFieldSetting = {
   fieldKey: string;
   label: string;
   fieldGroup: PlantCheckFieldSettingGroup;
-  sortOrder: number;
   isActive: boolean;
   updatedBy: string | null;
   createdAt: string;
@@ -21,7 +20,6 @@ export type PlantCheckFieldSettingRow = {
   field_key: string;
   label: string;
   field_group: PlantCheckFieldSettingGroup;
-  sort_order: number;
   is_active: boolean;
   updated_by: string | null;
   created_at: string;
@@ -35,7 +33,6 @@ export type SavePlantCheckFieldSettingPayload = {
   fieldKey: string;
   label: string;
   fieldGroup: PlantCheckFieldSettingGroup;
-  sortOrder: number;
   isActive: boolean;
   updatedBy: string;
 };

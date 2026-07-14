@@ -1,6 +1,5 @@
-import { useState } from "react";
 import { Save } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
 import { Button } from "../../../../components/ui/Button";
 import type {
     ProjectPlantSetting,
@@ -18,21 +17,12 @@ export function ProjectPlantSettingForm({
     isSaving,
     onSave,
 }: ProjectPlantSettingFormProps) {
-    const [sortOrder, setSortOrder] = useState(String(plantSetting.sortOrder));
     const [isActive, setIsActive] = useState(plantSetting.isActive);
 
     const handleSave = async () => {
-        const nextSortOrder = Number(sortOrder);
-
-        if (!Number.isInteger(nextSortOrder) || nextSortOrder < 0) {
-            toast.error("El orden debe ser un número entero mayor o igual a 0.");
-            return;
-        }
-
         await onSave({
             projectId: plantSetting.projectId,
             plantId: plantSetting.plantId,
-            sortOrder: nextSortOrder,
             isActive,
         });
     };
@@ -67,21 +57,6 @@ export function ProjectPlantSettingForm({
             )}
 
             <div className="space-y-3">
-                <label className="block">
-                    <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                        Orden en operación
-                    </span>
-
-                    <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={sortOrder}
-                        onChange={(event) => setSortOrder(event.target.value)}
-                        className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                    />
-                </label>
-
                 <label className="inline-flex items-center gap-2 text-sm text-slate-300 light:text-slate-700">
                     <input
                         type="checkbox"

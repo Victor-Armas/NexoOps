@@ -7,16 +7,15 @@ function mapProject(row: ProjectRow): Project {
     code: row.code,
     name: row.name,
     description: row.description,
-    sortOrder: row.sort_order,
   };
 }
 
 export async function getProjects(): Promise<Project[]> {
   const { data, error } = await supabase
     .from("projects")
-    .select("id, code, name, description, sort_order")
+    .select("id, code, name, description")
     .eq("is_active", true)
-    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true })
     .returns<ProjectRow[]>();
 
   if (error) throw error;

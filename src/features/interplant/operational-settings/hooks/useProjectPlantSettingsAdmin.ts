@@ -8,6 +8,13 @@ import type {
   SaveProjectPlantSettingPayload,
 } from "../types/project-plant-settings-admin.types";
 
+function compareByName(first: ProjectPlantSetting, second: ProjectPlantSetting) {
+  return first.name.localeCompare(second.name, "es-MX", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 export function useProjectPlantSettingsAdmin(projectId: string | undefined) {
   const [plantSettings, setPlantSettings] = useState<ProjectPlantSetting[]>([]);
   const [isLoading, setIsLoading] = useState(Boolean(projectId));
@@ -68,7 +75,7 @@ export function useProjectPlantSettingsAdmin(projectId: string | undefined) {
                 ? savedPlantSetting
                 : plantSetting,
             )
-            .sort((first, second) => first.sortOrder - second.sortOrder),
+            .sort(compareByName),
         );
 
         return savedPlantSetting;

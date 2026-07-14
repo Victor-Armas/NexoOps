@@ -6,6 +6,13 @@ import type {
   SaveProjectPlantSettingPayload,
 } from "../types/project-plant-settings-admin.types";
 
+function compareByName(first: ProjectPlantSetting, second: ProjectPlantSetting) {
+  return first.name.localeCompare(second.name, "es-MX", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 function mapProjectPlantSetting(params: {
   projectPlant: ProjectPlantSettingRow;
   plant: PlantSettingRow;
@@ -16,7 +23,6 @@ function mapProjectPlantSetting(params: {
     code: params.plant.code,
     name: params.plant.name,
     description: params.plant.description,
-    sortOrder: params.projectPlant.sort_order,
     isActive: params.projectPlant.is_active,
     plantIsActive: params.plant.is_active,
   };
@@ -48,9 +54,8 @@ export async function getProjectPlantSettings(
 ): Promise<ProjectPlantSetting[]> {
   const { data: projectPlants, error: projectPlantsError } = await supabase
     .from("project_plants")
-    .select("project_id, plant_id, sort_order, is_active")
+    .select("project_id, plant_id, is_active")
     .eq("project_id", projectId)
-    .order("sort_order", { ascending: true })
     .returns<ProjectPlantSettingRow[]>();
 
   if (projectPlantsError) {
@@ -89,7 +94,8 @@ export async function getProjectPlantSettings(
     .filter(
       (projectPlant): projectPlant is ProjectPlantSetting =>
         projectPlant !== null,
-    );
+    )
+    .sort(compareByName);
 }
 
 export async function saveProjectPlantSetting(
@@ -102,7 +108,6 @@ export async function saveProjectPlantSetting(
   const { error } = await supabase
     .from("project_plants")
     .update({
-      sort_order: payload.sortOrder,
       is_active: payload.isActive,
     })
     .eq("project_id", payload.projectId)

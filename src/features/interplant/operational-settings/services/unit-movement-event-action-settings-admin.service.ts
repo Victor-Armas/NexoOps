@@ -6,7 +6,7 @@ import type {
 } from "../types/unit-movement-event-action-settings-admin.types";
 
 const UNIT_MOVEMENT_EVENT_ACTION_COLUMNS =
-  "id, project_id, event_type, label, sort_order, requires_movement, show_as_action, behavior, icon_key, color_key, is_system, is_active, updated_by, created_at, updated_at";
+  "id, project_id, event_type, label, requires_movement, show_as_action, behavior, icon_key, color_key, is_system, is_active, updated_by, created_at, updated_at";
 
 function mapUnitMovementEventActionSetting(
   row: UnitMovementEventActionSettingRow,
@@ -16,7 +16,6 @@ function mapUnitMovementEventActionSetting(
     projectId: row.project_id,
     eventType: row.event_type,
     label: row.label,
-    sortOrder: row.sort_order,
     requiresMovement: row.requires_movement,
     showAsAction: row.show_as_action,
     behavior: row.behavior,
@@ -37,7 +36,7 @@ export async function getUnitMovementEventActionSettingsByProject(
     .from("unit_movement_event_action_settings")
     .select(UNIT_MOVEMENT_EVENT_ACTION_COLUMNS)
     .eq("project_id", projectId)
-    .order("sort_order", { ascending: true })
+    .order("label", { ascending: true })
     .returns<UnitMovementEventActionSettingRow[]>();
 
   if (error) throw error;
@@ -49,7 +48,6 @@ export async function saveUnitMovementEventActionSetting(
 ): Promise<UnitMovementEventActionSetting> {
   const commonValues = {
     label: payload.label,
-    sort_order: payload.sortOrder,
     show_as_action: payload.showAsAction,
     icon_key: payload.iconKey,
     color_key: payload.colorKey,

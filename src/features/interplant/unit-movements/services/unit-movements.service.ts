@@ -41,7 +41,6 @@ function mapMovementType(row: MovementTypeRow): MovementType {
     code: row.code,
     name: row.name,
     description: row.description,
-    sortOrder: row.sort_order,
   };
 }
 
@@ -173,9 +172,9 @@ export async function cancelUnitMovement(
 export async function getMovementTypes(): Promise<MovementType[]> {
   const { data, error } = await supabase
     .from("movement_types")
-    .select("id, code, name, description, sort_order")
+    .select("id, code, name, description")
     .eq("is_active", true)
-    .order("sort_order", { ascending: true })
+    .order("name", { ascending: true })
     .returns<MovementTypeRow[]>();
 
   if (error) {

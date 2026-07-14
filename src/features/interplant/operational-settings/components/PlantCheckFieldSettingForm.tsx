@@ -34,11 +34,6 @@ function validateFieldSetting(values: PlantCheckFieldSettingFormValues) {
         return false;
     }
 
-    if (!Number.isInteger(values.sortOrder) || values.sortOrder < 0) {
-        toast.error("El orden debe ser un número entero mayor o igual a 0.");
-        return false;
-    }
-
     return true;
 }
 
@@ -51,7 +46,6 @@ export function PlantCheckFieldSettingForm({
 }: PlantCheckFieldSettingFormProps) {
     const [label, setLabel] = useState(fieldSetting.label);
     const [fieldGroup, setFieldGroup] = useState(fieldSetting.fieldGroup);
-    const [sortOrder, setSortOrder] = useState(String(fieldSetting.sortOrder));
     const [isActive, setIsActive] = useState(fieldSetting.isActive);
 
     const handleSave = async () => {
@@ -62,7 +56,6 @@ export function PlantCheckFieldSettingForm({
             fieldKey: fieldSetting.fieldKey,
             label: label.trim(),
             fieldGroup,
-            sortOrder: Number(sortOrder),
             isActive,
             updatedBy: profileId,
         };
@@ -109,42 +102,25 @@ export function PlantCheckFieldSettingForm({
                     />
                 </label>
 
-                <div className="grid grid-cols-2 gap-3">
-                    <label className="block">
-                        <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                            Grupo
-                        </span>
+                <label className="block">
+                    <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
+                        Grupo
+                    </span>
 
-                        <select
-                            value={fieldGroup}
-                            onChange={(event) =>
-                                setFieldGroup(event.target.value as PlantCheckFieldSettingGroup)
-                            }
-                            className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                        >
-                            {Object.entries(FIELD_GROUP_LABELS).map(([value, text]) => (
-                                <option key={value} value={value} className="text-slate-950">
-                                    {text}
-                                </option>
-                            ))}
-                        </select>
-                    </label>
-
-                    <label className="block">
-                        <span className="text-xs font-semibold text-slate-300 light:text-slate-700">
-                            Orden
-                        </span>
-
-                        <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={sortOrder}
-                            onChange={(event) => setSortOrder(event.target.value)}
-                            className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
-                        />
-                    </label>
-                </div>
+                    <select
+                        value={fieldGroup}
+                        onChange={(event) =>
+                            setFieldGroup(event.target.value as PlantCheckFieldSettingGroup)
+                        }
+                        className="mt-2 h-11 w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 text-sm outline-none focus:border-cyan-400 light:border-slate-200 light:bg-white"
+                    >
+                        {Object.entries(FIELD_GROUP_LABELS).map(([value, text]) => (
+                            <option key={value} value={value} className="text-slate-950">
+                                {text}
+                            </option>
+                        ))}
+                    </select>
+                </label>
 
                 <label className="inline-flex items-center gap-2 text-sm text-slate-300 light:text-slate-700">
                     <input

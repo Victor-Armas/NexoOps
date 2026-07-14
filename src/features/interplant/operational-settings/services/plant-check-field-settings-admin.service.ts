@@ -6,7 +6,7 @@ import type {
 } from "../types/plant-check-field-settings-admin.types";
 
 const PLANT_CHECK_FIELD_SETTING_COLUMNS =
-  "id, project_id, plant_id, field_key, label, field_group, sort_order, is_active, updated_by, created_at, updated_at";
+  "id, project_id, plant_id, field_key, label, field_group, is_active, updated_by, created_at, updated_at";
 
 function mapPlantCheckFieldSetting(
   row: PlantCheckFieldSettingRow,
@@ -18,7 +18,6 @@ function mapPlantCheckFieldSetting(
     fieldKey: row.field_key,
     label: row.label,
     fieldGroup: row.field_group,
-    sortOrder: row.sort_order,
     isActive: row.is_active,
     updatedBy: row.updated_by,
     createdAt: row.created_at,
@@ -34,7 +33,8 @@ export async function getPlantCheckFieldSettingsByProject(
     .select(PLANT_CHECK_FIELD_SETTING_COLUMNS)
     .eq("project_id", projectId)
     .order("plant_id", { ascending: true })
-    .order("sort_order", { ascending: true })
+    .order("field_group", { ascending: true })
+    .order("label", { ascending: true })
     .returns<PlantCheckFieldSettingRow[]>();
 
   if (error) {
@@ -53,7 +53,6 @@ export async function savePlantCheckFieldSetting(
     field_key: payload.fieldKey,
     label: payload.label,
     field_group: payload.fieldGroup,
-    sort_order: payload.sortOrder,
     is_active: payload.isActive,
     updated_by: payload.updatedBy,
     updated_at: new Date().toISOString(),

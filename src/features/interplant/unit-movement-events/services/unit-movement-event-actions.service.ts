@@ -8,7 +8,6 @@ import type {
 function createDefaultAction(params: {
   eventType: string;
   label: string;
-  sortOrder: number;
   requiresMovement: boolean;
   showAsAction: boolean;
   behavior?: UnitMovementEventBehavior;
@@ -19,7 +18,6 @@ function createDefaultAction(params: {
     id: `default:${params.eventType}`,
     eventType: params.eventType,
     label: params.label,
-    sortOrder: params.sortOrder,
     requiresMovement: params.requiresMovement,
     showAsAction: params.showAsAction,
     behavior: params.behavior ?? "status",
@@ -34,7 +32,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "departure_requested",
     label: "Salida indicada",
-    sortOrder: 5,
     requiresMovement: true,
     showAsAction: false,
     iconKey: "truck",
@@ -43,7 +40,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "in_transit",
     label: "En camino",
-    sortOrder: 10,
     requiresMovement: true,
     showAsAction: true,
     iconKey: "truck",
@@ -52,7 +48,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "waiting_dock",
     label: "Esperando rampa",
-    sortOrder: 20,
     requiresMovement: true,
     showAsAction: true,
     iconKey: "clock",
@@ -61,7 +56,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "positioned",
     label: "En rampa",
-    sortOrder: 30,
     requiresMovement: true,
     showAsAction: true,
     iconKey: "map_pin",
@@ -70,7 +64,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "loading",
     label: "Cargando",
-    sortOrder: 40,
     requiresMovement: true,
     showAsAction: true,
     iconKey: "forklift",
@@ -79,7 +72,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "unloading",
     label: "Descargando",
-    sortOrder: 50,
     requiresMovement: true,
     showAsAction: true,
     iconKey: "forklift",
@@ -88,7 +80,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "released",
     label: "Saliendo de planta",
-    sortOrder: 60,
     requiresMovement: true,
     showAsAction: true,
     iconKey: "truck",
@@ -97,7 +88,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "driver_change",
     label: "Cambio operador",
-    sortOrder: 70,
     requiresMovement: false,
     showAsAction: true,
     iconKey: "refresh",
@@ -106,7 +96,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "meal",
     label: "Comida",
-    sortOrder: 900,
     requiresMovement: false,
     showAsAction: false,
     behavior: "meal_start",
@@ -116,7 +105,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "meal_finished",
     label: "Comida finalizada",
-    sortOrder: 910,
     requiresMovement: false,
     showAsAction: false,
     behavior: "meal_end",
@@ -126,7 +114,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "completed",
     label: "Completado",
-    sortOrder: 920,
     requiresMovement: true,
     showAsAction: false,
     behavior: "movement_complete",
@@ -136,7 +123,6 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "cancelled",
     label: "Cancelado",
-    sortOrder: 930,
     requiresMovement: true,
     showAsAction: false,
     behavior: "movement_cancel",
@@ -145,6 +131,15 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   }),
 ];
 
+function sortActionsByLabel(actions: UnitMovementEventAction[]) {
+  return [...actions].sort((first, second) =>
+    first.label.localeCompare(second.label, "es-MX", {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
+}
+
 function mapUnitMovementEventAction(
   row: UnitMovementEventActionSettingRow,
 ): UnitMovementEventAction {
@@ -152,7 +147,6 @@ function mapUnitMovementEventAction(
     id: row.id,
     eventType: row.event_type,
     label: row.label,
-    sortOrder: row.sort_order,
     requiresMovement: row.requires_movement,
     showAsAction: row.show_as_action,
     behavior: row.behavior,
@@ -164,7 +158,7 @@ function mapUnitMovementEventAction(
 }
 
 export function getDefaultUnitMovementEventActions() {
-  return DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS;
+  return sortActionsByLabel(DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS);
 }
 
 export async function getUnitMovementEventActionSettings(
@@ -173,11 +167,11 @@ export async function getUnitMovementEventActionSettings(
   const { data, error } = await supabase
     .from("unit_movement_event_action_settings")
     .select(
-      "id, event_type, label, sort_order, requires_movement, show_as_action, behavior, icon_key, color_key, is_system, is_active",
+      "id, event_type, label, requires_movement, show_as_action, behavior, icon_key, color_key, is_system, is_active",
     )
     .eq("project_id", projectId)
     .eq("is_active", true)
-    .order("sort_order", { ascending: true })
+    .order("label", { ascending: true })
     .returns<UnitMovementEventActionSettingRow[]>();
 
   if (error) {
@@ -185,6 +179,6 @@ export async function getUnitMovementEventActionSettings(
   }
 
   return data.length > 0
-    ? data.map(mapUnitMovementEventAction)
-    : DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS;
+    ? sortActionsByLabel(data.map(mapUnitMovementEventAction))
+    : getDefaultUnitMovementEventActions();
 }

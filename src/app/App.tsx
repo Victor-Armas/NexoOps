@@ -48,8 +48,14 @@ export function App() {
               <Route path="closing" element={<ClosingPage />} />
               <Route path="history" element={<ShiftClosingHistoryPage />} />
               <Route path="plants/:plantId" element={<PlantChecksPage />} />
-              <Route path="admin" element={<AdminPage />} />
             </Route>
+          </Route>
+
+          <Route
+            path="/app/projects/:projectId/admin"
+            element={<ProjectShell showBottomNavigation={false} />}
+          >
+            <Route index element={<AdminPage />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/app" replace />} />

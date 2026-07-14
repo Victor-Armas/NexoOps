@@ -42,7 +42,6 @@ export function UnitMovementEventActionSettingForm({
   onSave,
 }: UnitMovementEventActionSettingFormProps) {
   const [label, setLabel] = useState(actionSetting.label);
-  const [sortOrder, setSortOrder] = useState(String(actionSetting.sortOrder));
   const [requiresMovement, setRequiresMovement] = useState(
     actionSetting.requiresMovement,
   );
@@ -54,15 +53,8 @@ export function UnitMovementEventActionSettingForm({
   const [isActive, setIsActive] = useState(actionSetting.isActive);
 
   const handleSave = async () => {
-    const nextSortOrder = Number(sortOrder);
-
     if (label.trim().length === 0) {
       toast.error("El nombre del estatus es requerido.");
-      return;
-    }
-
-    if (!Number.isInteger(nextSortOrder) || nextSortOrder < 0) {
-      toast.error("El orden debe ser un número entero mayor o igual a 0.");
       return;
     }
 
@@ -71,7 +63,6 @@ export function UnitMovementEventActionSettingForm({
       projectId: actionSetting.projectId,
       eventType: actionSetting.eventType,
       label: label.trim(),
-      sortOrder: nextSortOrder,
       requiresMovement,
       showAsAction,
       behavior: actionSetting.behavior,
@@ -138,18 +129,6 @@ export function UnitMovementEventActionSettingForm({
             </select>
           </label>
         </div>
-
-        <label className="block">
-          <span className="text-xs font-semibold text-muted">Orden</span>
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value)}
-            className="mt-2 h-11 w-full rounded-sm border border-line-strong bg-panel px-3 text-base outline-none focus:border-principal"
-          />
-        </label>
 
         <div className="grid gap-2 text-sm text-muted sm:grid-cols-3">
           <label className="inline-flex min-h-10 items-center gap-2">

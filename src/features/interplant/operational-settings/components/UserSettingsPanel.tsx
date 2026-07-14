@@ -1,7 +1,6 @@
 import { UsersRound } from "lucide-react";
 import { toast } from "sonner";
 import { CreateUserForm } from "./CreateUserForm";
-import { RolePermissionsPanel } from "./RolePermissionsPanel";
 import { UserSettingForm } from "./UserSettingForm";
 import { useUserSettingsAdmin } from "../hooks/useUserSettingsAdmin";
 import type {
@@ -11,12 +10,10 @@ import type {
 
 type UserSettingsPanelProps = {
   currentUserId: string;
-  canManagePermissions: boolean;
 };
 
 export function UserSettingsPanel({
   currentUserId,
-  canManagePermissions,
 }: UserSettingsPanelProps) {
   const {
     users,
@@ -51,9 +48,7 @@ export function UserSettingsPanel({
     }
   };
 
-  if (!canManagePermissions) {
-    return null;
-  }
+
 
   return (
     <>
@@ -115,7 +110,6 @@ export function UserSettingsPanel({
         )}
       </section>
 
-      <RolePermissionsPanel />
     </>
   );
 }

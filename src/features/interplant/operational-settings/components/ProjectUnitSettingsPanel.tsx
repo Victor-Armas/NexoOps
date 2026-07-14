@@ -41,8 +41,7 @@ export function ProjectUnitSettingsPanel({
                     <h3 className="text-lg font-bold">Unidades del proyecto</h3>
 
                     <p className="mt-1 text-sm text-slate-400 light:text-slate-500">
-                        Configura qué unidades aparecen en la operación y el orden en que se
-                        muestran.
+                        Configura qué unidades aparecen en la operación.
                     </p>
                 </div>
             </div>
@@ -66,7 +65,7 @@ export function ProjectUnitSettingsPanel({
                 <div className="space-y-3">
                     {unitSettings.map((unitSetting) => (
                         <ProjectUnitSettingForm
-                            key={`${unitSetting.unitId}-${unitSetting.sortOrder}-${unitSetting.isActive}`}
+                            key={`${unitSetting.unitId}-${unitSetting.isActive}`}
                             unitSetting={unitSetting}
                             isSaving={isSaving}
                             onSave={handleSave}

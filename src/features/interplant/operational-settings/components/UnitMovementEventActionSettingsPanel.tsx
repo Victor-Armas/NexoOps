@@ -1,10 +1,10 @@
 import { ListChecks } from "lucide-react";
 import { useMemo } from "react";
 import { toast } from "sonner";
-import { NewUnitMovementEventActionSettingForm } from "./NewUnitMovementEventActionSettingForm";
-import { UnitMovementEventActionSettingForm } from "./UnitMovementEventActionSettingForm";
 import { useUnitMovementEventActionSettingsAdmin } from "../hooks/useUnitMovementEventActionSettingsAdmin";
 import type { SaveUnitMovementEventActionSettingPayload } from "../types/unit-movement-event-action-settings-admin.types";
+import { NewUnitMovementEventActionSettingForm } from "./NewUnitMovementEventActionSettingForm";
+import { UnitMovementEventActionSettingForm } from "./UnitMovementEventActionSettingForm";
 
 type UnitMovementEventActionSettingsPanelProps = {
   projectId: string;
@@ -27,16 +27,13 @@ export function UnitMovementEventActionSettingsPanel({
     () =>
       actionSettings
         .filter((setting) => setting.behavior === "status")
-        .sort((first, second) => first.sortOrder - second.sortOrder),
+        .sort((first, second) =>
+          first.label.localeCompare(second.label, "es-MX", {
+            numeric: true,
+            sensitivity: "base",
+          }),
+        ),
     [actionSettings],
-  );
-
-  const nextSortOrder = useMemo(
-    () =>
-      visibleStatusSettings.length > 0
-        ? Math.max(...visibleStatusSettings.map((item) => item.sortOrder)) + 10
-        : 10,
-    [visibleStatusSettings],
   );
 
   const handleSave = async (
@@ -90,7 +87,6 @@ export function UnitMovementEventActionSettingsPanel({
           <NewUnitMovementEventActionSettingForm
             projectId={projectId}
             profileId={profileId}
-            nextSortOrder={nextSortOrder}
             isSaving={isSaving}
             onSave={handleSave}
           />

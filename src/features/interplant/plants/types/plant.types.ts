@@ -3,7 +3,6 @@ export type Plant = {
   code: string;
   name: string;
   description: string | null;
-  sortOrder: number;
 };
 
 export type PlantRow = {
@@ -11,10 +10,8 @@ export type PlantRow = {
   code: string;
   name: string;
   description: string | null;
-  sort_order: number;
 };
 
 export type ProjectPlantRow = {
   plant_id: string;
-  sort_order: number;
 };

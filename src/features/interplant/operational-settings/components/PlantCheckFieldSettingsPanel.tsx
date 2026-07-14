@@ -15,6 +15,22 @@ type PlantCheckFieldSettingsPanelProps = {
     profileId: string;
 };
 
+function compareFieldSettings(
+    first: PlantCheckFieldSetting,
+    second: PlantCheckFieldSetting,
+) {
+    const groupComparison = first.fieldGroup.localeCompare(second.fieldGroup);
+
+    if (groupComparison !== 0) {
+        return groupComparison;
+    }
+
+    return first.label.localeCompare(second.label, "es-MX", {
+        numeric: true,
+        sensitivity: "base",
+    });
+}
+
 export function PlantCheckFieldSettingsPanel({
     projectId,
     profileId,
@@ -42,7 +58,7 @@ export function PlantCheckFieldSettingsPanel({
                 return {
                     ...groups,
                     [fieldSetting.plantId]: [...currentGroup, fieldSetting].sort(
-                        (first, second) => first.sortOrder - second.sortOrder,
+                        compareFieldSettings,
                     ),
                 };
             },
@@ -102,14 +118,6 @@ export function PlantCheckFieldSettingsPanel({
                 <div className="space-y-5">
                     {plants.map((plant) => {
                         const plantFieldSettings = fieldSettingsByPlantId[plant.id] ?? [];
-                        const nextSortOrder =
-                            plantFieldSettings.length > 0
-                                ? Math.max(
-                                    ...plantFieldSettings.map(
-                                        (fieldSetting) => fieldSetting.sortOrder,
-                                    ),
-                                ) + 10
-                                : 10;
 
                         return (
                             <section
@@ -140,7 +148,6 @@ export function PlantCheckFieldSettingsPanel({
                                         projectId={projectId}
                                         plantId={plant.id}
                                         profileId={profileId}
-                                        nextSortOrder={nextSortOrder}
                                         isSaving={isSaving}
                                         onSave={handleSave}
                                     />

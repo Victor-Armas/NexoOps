@@ -8,6 +8,16 @@ import type {
   UnitMovementEventActionSetting,
 } from "../types/unit-movement-event-action-settings-admin.types";
 
+function compareActionSettings(
+  first: UnitMovementEventActionSetting,
+  second: UnitMovementEventActionSetting,
+) {
+  return first.label.localeCompare(second.label, "es-MX", {
+    numeric: true,
+    sensitivity: "base",
+  });
+}
+
 export function useUnitMovementEventActionSettingsAdmin(
   projectId: string | undefined,
 ) {
@@ -75,7 +85,7 @@ export function useUnitMovementEventActionSettingsAdmin(
 
           if (!exists) {
             return [...currentActionSettings, savedActionSetting].sort(
-              (first, second) => first.sortOrder - second.sortOrder,
+              compareActionSettings,
             );
           }
 
@@ -85,7 +95,7 @@ export function useUnitMovementEventActionSettingsAdmin(
                 ? savedActionSetting
                 : actionSetting,
             )
-            .sort((first, second) => first.sortOrder - second.sortOrder);
+            .sort(compareActionSettings);
         });
 
         return savedActionSetting;
