@@ -49,7 +49,7 @@ export function useIncidentCategories(
   }, [activeOnly, projectId]);
 
   useEffect(() => {
-    void loadCategories();
+    void Promise.resolve().then(loadCategories);
   }, [loadCategories]);
 
   const saveCategory = useCallback(
