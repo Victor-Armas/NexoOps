@@ -7,7 +7,6 @@ import type { SaveUnitMovementEventActionSettingPayload } from "../types/unit-mo
 type NewUnitMovementEventActionSettingFormProps = {
   projectId: string;
   profileId: string;
-  nextSortOrder: number;
   isSaving: boolean;
   onSave: (
     values: SaveUnitMovementEventActionSettingPayload,
@@ -19,20 +18,17 @@ const CODE_PATTERN = /^[a-z][a-z0-9_]{0,49}$/;
 export function NewUnitMovementEventActionSettingForm({
   projectId,
   profileId,
-  nextSortOrder,
   isSaving,
   onSave,
 }: NewUnitMovementEventActionSettingFormProps) {
   const [eventType, setEventType] = useState("");
   const [label, setLabel] = useState("");
-  const [sortOrder, setSortOrder] = useState(String(nextSortOrder));
   const [requiresMovement, setRequiresMovement] = useState(true);
   const [iconKey, setIconKey] = useState("circle");
   const [colorKey, setColorKey] = useState("neutral");
 
   const handleSave = async () => {
     const code = eventType.trim();
-    const parsedSortOrder = Number(sortOrder);
 
     if (!CODE_PATTERN.test(code)) {
       toast.error(
@@ -46,16 +42,10 @@ export function NewUnitMovementEventActionSettingForm({
       return;
     }
 
-    if (!Number.isInteger(parsedSortOrder) || parsedSortOrder < 0) {
-      toast.error("El orden debe ser un entero mayor o igual a 0.");
-      return;
-    }
-
     await onSave({
       projectId,
       eventType: code,
       label: label.trim(),
-      sortOrder: parsedSortOrder,
       requiresMovement,
       showAsAction: true,
       behavior: "status",
@@ -68,7 +58,6 @@ export function NewUnitMovementEventActionSettingForm({
 
     setEventType("");
     setLabel("");
-    setSortOrder(String(parsedSortOrder + 10));
     setRequiresMovement(true);
     setIconKey("circle");
     setColorKey("neutral");
@@ -142,18 +131,6 @@ export function NewUnitMovementEventActionSettingForm({
             </select>
           </label>
         </div>
-
-        <label className="block">
-          <span className="text-xs font-semibold text-muted">Orden</span>
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={sortOrder}
-            onChange={(event) => setSortOrder(event.target.value)}
-            className="mt-2 h-11 w-full rounded-sm border border-line-strong bg-panel px-3 text-base outline-none focus:border-principal"
-          />
-        </label>
 
         <label className="inline-flex min-h-10 items-center gap-2 text-sm text-muted">
           <input
