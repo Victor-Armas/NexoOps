@@ -36,7 +36,7 @@ export function UserProjectSelector({
         const checked = value.includes(project.id);
 
         return (
-          <label
+          <div
             key={project.id}
             className={`flex min-h-12 items-center justify-between gap-3 px-3 py-2 ${
               index > 0 ? "border-t border-line" : ""
@@ -59,7 +59,7 @@ export function UserProjectSelector({
               }
               aria-label={`${checked ? "Quitar" : "Asignar"} ${project.name}`}
             />
-          </label>
+          </div>
         );
       })}
     </div>
