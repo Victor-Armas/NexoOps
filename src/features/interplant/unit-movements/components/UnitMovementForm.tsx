@@ -1,7 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Route } from "lucide-react";
+import { ArrowRight, FileText, Package, Route } from "lucide-react";
 import { useForm, useWatch } from "react-hook-form";
-import { Button } from "../../../../components/ui/Button";
 import type { Plant } from "../../plants/types/plant.types";
 import {
   unitMovementSchema,
@@ -14,8 +13,14 @@ type UnitMovementFormProps = {
   plants: Plant[];
   movementTypes: MovementType[];
   isSubmitting: boolean;
-  onSubmit: (values: UnitMovementFormValues) => Promise<void>;
+  onSubmit: (values: UnitMovementFormValues) => Promise<boolean>;
 };
+
+const fieldClassName =
+  "h-12 w-full min-w-0 rounded-sm border border-line-strong bg-surface-dark px-3 text-sm text-foreground-dark outline-none transition focus:border-principal focus:ring-2 focus:ring-principal/15 light:bg-white light:text-slate-900";
+
+const labelClassName =
+  "font-barlow-condensed text-xs font-semibold uppercase tracking-[0.1em] text-faint";
 
 export function UnitMovementForm({
   plants,
@@ -50,78 +55,54 @@ export function UnitMovementForm({
   );
 
   const handleValidSubmit = async (values: UnitMovementFormValues) => {
-    await onSubmit(values);
+    const wasCreated = await onSubmit(values);
 
-    reset({
-      originPlantId: "",
-      destinationPlantId: "",
-      movementTypeId: "",
-      quantity: 0,
-      notes: "",
-    });
+    if (wasCreated) {
+      reset({
+        originPlantId: "",
+        destinationPlantId: "",
+        movementTypeId: "",
+        quantity: 0,
+        notes: "",
+      });
+    }
   };
 
   return (
-    <section className="rounded-4xl border border-white/10 bg-white/10 p-5 shadow-xl backdrop-blur-xl light:border-slate-200 light:bg-white">
-      <div className="mb-5 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-400/10 text-cyan-300 light:bg-cyan-100 light:text-cyan-700">
-          <Route size={22} />
+    <form onSubmit={handleSubmit(handleValidSubmit)} className="space-y-5">
+      <section className="rounded-sm border border-line bg-panel/60 p-4 light:bg-slate-50">
+        <div className="mb-4 flex items-center gap-2 text-principal">
+          <Route size={17} />
+          <p className="section-label text-principal">Ruta del movimiento</p>
         </div>
 
-        <div>
-          <h2 className="font-bold">Registrar movimiento</h2>
-          <p className="text-sm text-slate-400 light:text-slate-500">
-            Captura origen, destino y cantidad movida.
-          </p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit(handleValidSubmit)} className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-              Origen
-            </span>
-
-            <select
-              className="h-12 w-full rounded-sm bg-white/10 px-4 text-sm text-white outline-none light:border light:border-slate-200 light:bg-white light:text-slate-900"
-              {...register("originPlantId")}
-            >
+        <div className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-end gap-2">
+          <label className="min-w-0 space-y-2">
+            <span className={labelClassName}>Origen</span>
+            <select className={fieldClassName} {...register("originPlantId")}>
               <option value="" className="text-slate-900">
                 Sin origen
               </option>
-
               {plants.map((plant) => (
-                <option
-                  key={plant.id}
-                  value={plant.id}
-                  className="text-slate-900"
-                >
+                <option key={plant.id} value={plant.id} className="text-slate-900">
                   {plant.name}
                 </option>
               ))}
             </select>
           </label>
 
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-              Destino
-            </span>
+          <span className="mb-3 flex h-6 w-6 items-center justify-center text-faint">
+            <ArrowRight size={17} />
+          </span>
 
-            <select
-              className="h-12 w-full rounded-sm bg-white/10 px-4 text-sm text-white outline-none light:border light:border-slate-200 light:bg-white light:text-slate-900"
-              {...register("destinationPlantId")}
-            >
+          <label className="min-w-0 space-y-2">
+            <span className={labelClassName}>Destino</span>
+            <select className={fieldClassName} {...register("destinationPlantId")}>
               <option value="" className="text-slate-900">
                 Sin destino
               </option>
-
               {destinationPlants.map((plant) => (
-                <option
-                  key={plant.id}
-                  value={plant.id}
-                  className="text-slate-900"
-                >
+                <option key={plant.id} value={plant.id} className="text-slate-900">
                   {plant.name}
                 </option>
               ))}
@@ -130,80 +111,76 @@ export function UnitMovementForm({
         </div>
 
         {errors.destinationPlantId && (
-          <p className="text-sm text-red-400 light:text-red-600">
+          <p className="mt-2 text-sm text-danger">
             {errors.destinationPlantId.message}
           </p>
         )}
+      </section>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-              Tipo
-            </span>
-
-            <select
-              className="h-12 w-full rounded-sm bg-white/10 px-4 text-sm text-white outline-none light:border light:border-slate-200 light:bg-white light:text-slate-900"
-              {...register("movementTypeId")}
-            >
-              <option value="" className="text-slate-900">
-                Sin tipo
-              </option>
-
-              {movementTypes.map((movementType) => (
-                <option
-                  key={movementType.id}
-                  value={movementType.id}
-                  className="text-slate-900"
-                >
-                  {movementType.name}
-                </option>
-              ))}
-            </select>
-          </label>
-
-          <label className="block space-y-2">
-            <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-              Cantidad
-            </span>
-
-            <input
-              type="number"
-              min={0}
-              className="h-12 w-full rounded-sm bg-white/10 px-4 text-sm text-white outline-none light:border light:border-slate-200 light:bg-white light:text-slate-900"
-              {...register("quantity")}
-            />
-
-            {errors.quantity && (
-              <p className="text-sm text-red-400 light:text-red-600">
-                {errors.quantity.message}
-              </p>
-            )}
-          </label>
-        </div>
-
-        <label className="block space-y-2">
-          <span className="text-sm font-medium text-slate-300 light:text-slate-700">
-            Notas
+      <div className="grid grid-cols-2 gap-3">
+        <label className="min-w-0 space-y-2">
+          <span className={`${labelClassName} inline-flex items-center gap-1.5`}>
+            <Route size={13} />
+            Tipo
           </span>
-
-          <textarea
-            rows={3}
-            placeholder="Ej. Sin rampa disponible, esperando descarga, prioridad operativa..."
-            className="w-full rounded-sm bg-white/10 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400 light:border light:border-slate-200 light:bg-white light:text-slate-900"
-            {...register("notes")}
-          />
-
-          {errors.notes && (
-            <p className="text-sm text-red-400 light:text-red-600">
-              {errors.notes.message}
-            </p>
-          )}
+          <select className={fieldClassName} {...register("movementTypeId")}>
+            <option value="" className="text-slate-900">
+              Sin tipo
+            </option>
+            {movementTypes.map((movementType) => (
+              <option
+                key={movementType.id}
+                value={movementType.id}
+                className="text-slate-900"
+              >
+                {movementType.name}
+              </option>
+            ))}
+          </select>
         </label>
 
-        <Button type="submit" className="w-full" disabled={isSubmitting}>
-          {isSubmitting ? "Guardando..." : "Guardar movimiento"}
-        </Button>
-      </form>
-    </section>
+        <label className="min-w-0 space-y-2">
+          <span className={`${labelClassName} inline-flex items-center gap-1.5`}>
+            <Package size={13} />
+            Cantidad
+          </span>
+          <input
+            type="number"
+            min={0}
+            inputMode="numeric"
+            className={fieldClassName}
+            {...register("quantity")}
+          />
+          {errors.quantity && (
+            <p className="text-sm text-danger">{errors.quantity.message}</p>
+          )}
+        </label>
+      </div>
+
+      <label className="block space-y-2">
+        <span className={`${labelClassName} inline-flex items-center gap-1.5`}>
+          <FileText size={13} />
+          Notas
+        </span>
+        <textarea
+          rows={3}
+          placeholder="Agrega una observación solo si es necesaria..."
+          className="w-full resize-none rounded-sm border border-line-strong bg-surface-dark px-3 py-3 text-sm text-foreground-dark outline-none transition placeholder:text-faint focus:border-principal focus:ring-2 focus:ring-principal/15 light:bg-white light:text-slate-900"
+          {...register("notes")}
+        />
+        {errors.notes && (
+          <p className="text-sm text-danger">{errors.notes.message}</p>
+        )}
+      </label>
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-sm bg-principal px-5 font-barlow-condensed text-base font-semibold uppercase tracking-[0.08em] text-slate-950 shadow-lg shadow-black/10 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Route size={18} />
+        {isSubmitting ? "Registrando..." : "Registrar movimiento"}
+      </button>
+    </form>
   );
 }
