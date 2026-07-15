@@ -33,10 +33,9 @@ export function useLatestUnitMovementEventsByMovementIds(
   );
 
   const hasMovementIds = movementIdsKey.length > 0;
-
   const [latestByMovementId, setLatestByMovementId] =
     useState<LatestEventsByMovementId>({});
-  const [isLoading, setIsLoading] = useState(hasMovementIds);
+  const [loadedMovementIdsKey, setLoadedMovementIdsKey] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -48,7 +47,6 @@ export function useLatestUnitMovementEventsByMovementIds(
 
     async function loadLatestEvents() {
       try {
-        setIsLoading(true);
         setErrorMessage(null);
 
         const movementIds = movementIdsKey.split(",");
@@ -63,7 +61,7 @@ export function useLatestUnitMovementEventsByMovementIds(
         }
       } finally {
         if (isMounted) {
-          setIsLoading(false);
+          setLoadedMovementIdsKey(movementIdsKey);
         }
       }
     }
@@ -81,7 +79,6 @@ export function useLatestUnitMovementEventsByMovementIds(
     }
 
     try {
-      setIsLoading(true);
       setErrorMessage(null);
 
       const movementIds = movementIdsKey.split(",");
@@ -90,8 +87,6 @@ export function useLatestUnitMovementEventsByMovementIds(
       setLatestByMovementId(mapLatestEventsByMovementId(events));
     } catch {
       setErrorMessage("No se pudo cargar el estado actual de las unidades.");
-    } finally {
-      setIsLoading(false);
     }
   }, [hasMovementIds, movementIdsKey]);
 
@@ -111,7 +106,9 @@ export function useLatestUnitMovementEventsByMovementIds(
 
   return {
     latestByMovementId: hasMovementIds ? latestByMovementId : {},
-    isLoading: hasMovementIds ? isLoading : false,
+    isLoading: Boolean(
+      hasMovementIds && loadedMovementIdsKey !== movementIdsKey,
+    ),
     errorMessage: hasMovementIds ? errorMessage : null,
     refetch,
   };
