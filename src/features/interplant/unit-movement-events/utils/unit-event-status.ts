@@ -5,6 +5,7 @@ import type {
 } from "../types/unit-movement-event-action.types";
 import {
   DIESEL_REFUELING_FINISHED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
   type UnitMovementEvent,
 } from "../types/unit-movement-event.types";
 import { findUnitEventAction } from "./unit-event-actions";
@@ -12,6 +13,7 @@ import { findUnitEventAction } from "./unit-event-actions";
 const INACTIVE_STANDALONE_BEHAVIORS = new Set<UnitMovementEventBehavior>([
   "meal_end",
   "fuel_end",
+  "driver_change_end",
   "movement_complete",
   "movement_cancel",
 ]);
@@ -21,6 +23,7 @@ const INACTIVE_FALLBACK_EVENT_TYPES = new Set([
   "completed",
   "cancelled",
   DIESEL_REFUELING_FINISHED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
 ]);
 
 export function isStandaloneActiveUnitEvent(
