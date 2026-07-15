@@ -1,6 +1,8 @@
 import { supabase } from "../../../../lib/supabase/client";
 import { subscribeToTableChanges } from "../../../../lib/supabase/realtime";
+import type { UnitOperationalPhase } from "../../unit-movement-events/types/unit-movement-event.types";
 import type {
+  ContinueUnitMovementPayload,
   CreateUnitMovementPayload,
   MovementType,
   MovementTypeRow,
@@ -14,6 +16,14 @@ const UNIT_MOVEMENT_COLUMNS =
 type ShiftContextParams = {
   shiftId: string;
   unitIds: string[];
+};
+
+type AdvanceUnitMovementWorkflowPayload = {
+  movementId: string;
+  eventType: string;
+  notes?: string;
+  phase?: UnitOperationalPhase | null;
+  plantId?: string | null;
 };
 
 function mapUnitMovement(row: UnitMovementRow): UnitMovement {
@@ -42,6 +52,16 @@ function mapMovementType(row: MovementTypeRow): MovementType {
     name: row.name,
     description: row.description,
   };
+}
+
+function getRpcMovementRow(data: unknown): UnitMovementRow {
+  const row = Array.isArray(data) ? data[0] : data;
+
+  if (!row || typeof row !== "object") {
+    throw new Error("La operación no devolvió el movimiento actualizado.");
+  }
+
+  return row as UnitMovementRow;
 }
 
 export async function getUnitMovementsByShift(
@@ -125,6 +145,82 @@ export async function createUnitMovement(
   }
 
   return mapUnitMovement(data);
+}
+
+export async function createUnitMovementWorkflow(
+  payload: CreateUnitMovementPayload,
+): Promise<UnitMovement> {
+  if (!payload.originPlantId || !payload.destinationPlantId) {
+    throw new Error("El movimiento requiere una planta de origen y una de destino.");
+  }
+
+  const { data, error } = await supabase.rpc("create_unit_movement_workflow", {
+    target_shift_id: payload.shiftId,
+    target_unit_id: payload.unitId,
+    target_origin_plant_id: payload.originPlantId,
+    target_destination_plant_id: payload.destinationPlantId,
+    target_movement_type_id: payload.movementTypeId,
+    target_quantity: payload.quantity,
+    target_notes: payload.notes?.trim() || null,
+  });
+
+  if (error) throw error;
+  return mapUnitMovement(getRpcMovementRow(data));
+}
+
+export async function advanceUnitMovementWorkflow(
+  payload: AdvanceUnitMovementWorkflowPayload,
+): Promise<void> {
+  const { error } = await supabase.rpc("advance_unit_movement_workflow", {
+    target_movement_id: payload.movementId,
+    target_event_type: payload.eventType,
+    target_notes: payload.notes?.trim() || null,
+    target_phase: payload.phase ?? null,
+    target_plant_id: payload.plantId ?? null,
+  });
+
+  if (error) throw error;
+}
+
+export async function completeUnitMovementWorkflow(
+  movementId: string,
+): Promise<UnitMovement> {
+  const { data, error } = await supabase.rpc("complete_unit_movement_workflow", {
+    target_movement_id: movementId,
+  });
+
+  if (error) throw error;
+  return mapUnitMovement(getRpcMovementRow(data));
+}
+
+export async function completeAndContinueUnitMovement(
+  payload: ContinueUnitMovementPayload,
+): Promise<UnitMovement> {
+  const { data, error } = await supabase.rpc(
+    "complete_and_continue_unit_movement",
+    {
+      target_movement_id: payload.movementId,
+      next_shift_id: payload.shiftId,
+      next_destination_plant_id: payload.destinationPlantId,
+      next_movement_type_id: payload.movementTypeId,
+      next_quantity: payload.quantity,
+      next_notes: payload.notes?.trim() || null,
+    },
+  );
+
+  if (error) throw error;
+  return mapUnitMovement(getRpcMovementRow(data));
+}
+
+export async function cancelUnitMovementWorkflow(
+  movementId: string,
+): Promise<UnitMovement> {
+  const { data, error } = await supabase.rpc("cancel_unit_movement_workflow", {
+    target_movement_id: movementId,
+  });
+
+  if (error) throw error;
+  return mapUnitMovement(getRpcMovementRow(data));
 }
 
 export async function completeUnitMovement(
