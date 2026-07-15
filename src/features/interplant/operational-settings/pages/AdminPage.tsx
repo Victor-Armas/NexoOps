@@ -53,6 +53,11 @@ function OperationalSettingsForm({
   const [mealDelayLimitMinutes, setMealDelayLimitMinutes] = useState(
     String(settings.mealDelayLimitMinutes),
   );
+  const [dockWaitLimitMinutes, setDockWaitLimitMinutes] = useState(
+    String(settings.dockWaitLimitMinutes),
+  );
+  const [documentationWaitLimitMinutes, setDocumentationWaitLimitMinutes] =
+    useState(String(settings.documentationWaitLimitMinutes));
   const [mediumFullCountThreshold, setMediumFullCountThreshold] = useState(
     String(settings.mediumFullCountThreshold),
   );
@@ -65,6 +70,10 @@ function OperationalSettingsForm({
 
     const nextMealTargetMinutes = Number(mealTargetMinutes);
     const nextMealDelayLimitMinutes = Number(mealDelayLimitMinutes);
+    const nextDockWaitLimitMinutes = Number(dockWaitLimitMinutes);
+    const nextDocumentationWaitLimitMinutes = Number(
+      documentationWaitLimitMinutes,
+    );
     const nextMediumFullCountThreshold = Number(mediumFullCountThreshold);
     const nextMediumEmptyCountThreshold = Number(mediumEmptyCountThreshold);
 
@@ -80,6 +89,22 @@ function OperationalSettingsForm({
       toast.error(
         "El límite de alerta debe ser mayor o igual al tiempo objetivo.",
       );
+      return;
+    }
+
+    if (
+      !Number.isInteger(nextDockWaitLimitMinutes) ||
+      nextDockWaitLimitMinutes <= 0
+    ) {
+      toast.error("El límite de espera de rampa debe ser mayor a 0.");
+      return;
+    }
+
+    if (
+      !Number.isInteger(nextDocumentationWaitLimitMinutes) ||
+      nextDocumentationWaitLimitMinutes <= 0
+    ) {
+      toast.error("El límite de espera de documentación debe ser mayor a 0.");
       return;
     }
 
@@ -104,6 +129,8 @@ function OperationalSettingsForm({
         projectId,
         mealTargetMinutes: nextMealTargetMinutes,
         mealDelayLimitMinutes: nextMealDelayLimitMinutes,
+        dockWaitLimitMinutes: nextDockWaitLimitMinutes,
+        documentationWaitLimitMinutes: nextDocumentationWaitLimitMinutes,
         mediumFullCountThreshold: nextMediumFullCountThreshold,
         mediumEmptyCountThreshold: nextMediumEmptyCountThreshold,
         updatedBy: profileId,
@@ -160,6 +187,57 @@ function OperationalSettingsForm({
             </div>
           </label>
         </div>
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center gap-2">
+          <span className="font-ibm-plex-mono text-[10px] uppercase tracking-[0.14em] text-muted">
+            Esperas operativas
+          </span>
+          <div className="h-px flex-1 bg-line" />
+        </div>
+
+        <div className="overflow-hidden rounded-sm border border-line bg-panel">
+          <label className="flex min-h-14 items-center justify-between gap-4 border-b border-line px-4 py-3">
+            <span className="text-sm font-medium">Límite espera de rampa</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={dockWaitLimitMinutes}
+                onChange={(event) => setDockWaitLimitMinutes(event.target.value)}
+                className="w-16 bg-transparent text-right font-ibm-plex-mono text-sm font-semibold outline-none"
+              />
+              <span className="font-ibm-plex-mono text-xs text-muted">min</span>
+            </div>
+          </label>
+
+          <label className="flex min-h-14 items-center justify-between gap-4 px-4 py-3">
+            <span className="text-sm font-medium">
+              Límite espera de documentación
+            </span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min={1}
+                step={1}
+                inputMode="numeric"
+                value={documentationWaitLimitMinutes}
+                onChange={(event) =>
+                  setDocumentationWaitLimitMinutes(event.target.value)
+                }
+                className="w-16 bg-transparent text-right font-ibm-plex-mono text-sm font-semibold outline-none"
+              />
+              <span className="font-ibm-plex-mono text-xs text-muted">min</span>
+            </div>
+          </label>
+        </div>
+
+        <p className="mt-3 text-xs leading-5 text-muted">
+          Las esperas que superen estos límites generan una incidencia automática.
+        </p>
       </section>
 
       <section>
