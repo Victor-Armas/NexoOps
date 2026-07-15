@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, Plus, Route, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { LoadingScreen } from "../../../../components/layout/LoadingScreen";
@@ -25,6 +25,7 @@ export function UnitMovementsPage() {
 
   const { profile, can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isMovementModalOpen, setIsMovementModalOpen] = useState(false);
 
   const {
     shift,
@@ -117,29 +118,56 @@ export function UnitMovementsPage() {
     eventActionsErrorMessage ||
     operationalSettingsErrorMessage;
 
+  useEffect(() => {
+    if (!isMovementModalOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !isSubmitting) {
+        setIsMovementModalOpen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMovementModalOpen, isSubmitting]);
+
   if (isLoading) {
     return <LoadingScreen message="Cargando movimientos..." />;
   }
 
-  const handleSubmit = async (values: UnitMovementFormValues) => {
+  const handleSubmit = async (
+    values: UnitMovementFormValues,
+  ): Promise<boolean> => {
     if (!shift || !unitId) {
       toast.error("No hay turno abierto para registrar movimientos.");
-      return;
+      return false;
     }
 
     if (isStandaloneMealActive) {
       toast.error("Finaliza la comida antes de iniciar un movimiento.");
-      return;
+      return false;
     }
 
     if (isFuelingActive) {
       toast.error("Finaliza la carga de diésel antes de iniciar un movimiento.");
-      return;
+      return false;
     }
 
     if (isDriverChangeActive) {
       toast.error("Finaliza el cambio de operador antes de iniciar un movimiento.");
-      return;
+      return false;
+    }
+
+    if (hasOpenMovement) {
+      toast.error("Completa o cancela el movimiento actual antes de crear otro.");
+      return false;
     }
 
     try {
@@ -155,9 +183,12 @@ export function UnitMovementsPage() {
         notes: values.notes?.trim() || undefined,
       });
 
+      setIsMovementModalOpen(false);
       toast.success("Movimiento registrado correctamente.");
+      return true;
     } catch {
       toast.error("No se pudo registrar el movimiento.");
+      return false;
     } finally {
       setIsSubmitting(false);
     }
@@ -204,7 +235,7 @@ export function UnitMovementsPage() {
 
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="mincard w-fit border-principal text-principal light:text-cyan-700">
+            <div className="mincard w-fit border-principal text-principal">
               U{unit?.code ?? "--"}
             </div>
             <h2 className="mt-4 text-4xl font-bold tittle">
@@ -262,26 +293,64 @@ export function UnitMovementsPage() {
       )}
 
       {shift && canRegisterMovement && canCreateMovementNow && (
-        <div className="mb-5">
-          <UnitMovementForm
-            plants={plants}
-            movementTypes={movementTypes}
-            isSubmitting={isSubmitting}
-            onSubmit={handleSubmit}
-          />
-        </div>
+        <button
+          type="button"
+          aria-label="Registrar nuevo movimiento"
+          onClick={() => setIsMovementModalOpen(true)}
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.75rem)] right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-principal/40 bg-principal text-slate-950 shadow-[0_10px_30px_rgba(0,0,0,0.35)] transition active:scale-90 md:bottom-8 md:right-8"
+        >
+          <Plus size={27} strokeWidth={2.2} />
+        </button>
       )}
 
-      {shift && canRegisterMovement && !canCreateMovementNow && (
-        <section className="mb-5 rounded-sm border border-line bg-panel p-5 text-sm text-muted">
-          {isStandaloneMealActive
-            ? "Finaliza la comida antes de registrar un movimiento nuevo."
-            : isFuelingActive
-              ? "Finaliza la carga de diésel antes de registrar un movimiento nuevo."
-              : isDriverChangeActive
-                ? "Finaliza el cambio de operador antes de registrar un movimiento nuevo."
-                : "Completa o cancela el movimiento abierto antes de registrar uno nuevo."}
-        </section>
+      {isMovementModalOpen && canCreateMovementNow && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center sm:px-5 sm:py-8"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="new-movement-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !isSubmitting) {
+              setIsMovementModalOpen(false);
+            }
+          }}
+        >
+          <section className="max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-sm border border-line-strong bg-surface-dark px-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] pt-5 shadow-2xl sm:rounded-sm sm:p-6 light:bg-white">
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div className="flex min-w-0 items-start gap-3">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-principal/30 bg-principal/10 text-principal">
+                  <Route size={21} />
+                </span>
+                <div className="min-w-0">
+                  <p className="section-label text-principal">Nuevo movimiento</p>
+                  <h3 id="new-movement-title" className="mt-1 text-2xl font-bold tittle">
+                    Registrar movimiento
+                  </h3>
+                  <p className="sub mt-1">
+                    Define la ruta y los datos operativos de U{unit?.code ?? "--"}.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Cerrar"
+                disabled={isSubmitting}
+                onClick={() => setIsMovementModalOpen(false)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line text-muted transition hover:border-principal/50 hover:text-principal disabled:opacity-50"
+              >
+                <X size={19} />
+              </button>
+            </div>
+
+            <UnitMovementForm
+              plants={plants}
+              movementTypes={movementTypes}
+              isSubmitting={isSubmitting}
+              onSubmit={handleSubmit}
+            />
+          </section>
+        </div>
       )}
 
       {shift && !canRegisterMovement && (
