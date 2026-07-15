@@ -122,6 +122,7 @@ revoke all on function public.create_unit_movement_workflow(
   integer,
   text
 ) from public;
+
 grant execute on function public.create_unit_movement_workflow(
   uuid,
   uuid,
@@ -153,11 +154,17 @@ begin
     raise exception 'No tienes permiso para actualizar el estado de la unidad.';
   end if;
 
-  select movement, shift.project_id
-  into target_movement, target_project_id
+  select movement.*
+  into target_movement
   from public.unit_movements movement
-  join public.shifts shift on shift.id = movement.shift_id
   where movement.id = target_movement_id;
+
+  if target_movement.id is not null then
+    select shift.project_id
+    into target_project_id
+    from public.shifts shift
+    where shift.id = target_movement.shift_id;
+  end if;
 
   if target_movement.id is null
      or not public.can_access_project(target_project_id) then
@@ -213,6 +220,7 @@ revoke all on function public.advance_unit_movement_workflow(
   text,
   uuid
 ) from public;
+
 grant execute on function public.advance_unit_movement_workflow(
   uuid,
   text,
@@ -239,12 +247,18 @@ begin
     raise exception 'No tienes permiso para completar movimientos.';
   end if;
 
-  select movement, shift.project_id
-  into target_movement, target_project_id
+  select movement.*
+  into target_movement
   from public.unit_movements movement
-  join public.shifts shift on shift.id = movement.shift_id
   where movement.id = target_movement_id
-  for update of movement;
+  for update;
+
+  if target_movement.id is not null then
+    select shift.project_id
+    into target_project_id
+    from public.shifts shift
+    where shift.id = target_movement.shift_id;
+  end if;
 
   if target_movement.id is null
      or not public.can_access_project(target_project_id) then
@@ -325,6 +339,7 @@ end;
 $$;
 
 revoke all on function public.complete_unit_movement_workflow(uuid) from public;
+
 grant execute on function public.complete_unit_movement_workflow(uuid)
   to authenticated;
 
@@ -355,12 +370,18 @@ begin
     raise exception 'No tienes permiso para finalizar y continuar movimientos.';
   end if;
 
-  select movement, shift.project_id
-  into current_movement, current_project_id
+  select movement.*
+  into current_movement
   from public.unit_movements movement
-  join public.shifts shift on shift.id = movement.shift_id
   where movement.id = target_movement_id
-  for update of movement;
+  for update;
+
+  if current_movement.id is not null then
+    select shift.project_id
+    into current_project_id
+    from public.shifts shift
+    where shift.id = current_movement.shift_id;
+  end if;
 
   if current_movement.id is null
      or current_movement.status <> 'open'
@@ -509,6 +530,7 @@ revoke all on function public.complete_and_continue_unit_movement(
   integer,
   text
 ) from public;
+
 grant execute on function public.complete_and_continue_unit_movement(
   uuid,
   uuid,
@@ -535,12 +557,18 @@ begin
     raise exception 'No tienes permiso para cancelar movimientos.';
   end if;
 
-  select movement, shift.project_id
-  into target_movement, target_project_id
+  select movement.*
+  into target_movement
   from public.unit_movements movement
-  join public.shifts shift on shift.id = movement.shift_id
   where movement.id = target_movement_id
-  for update of movement;
+  for update;
+
+  if target_movement.id is not null then
+    select shift.project_id
+    into target_project_id
+    from public.shifts shift
+    where shift.id = target_movement.shift_id;
+  end if;
 
   if target_movement.id is null
      or target_movement.status <> 'open'
@@ -578,6 +606,7 @@ end;
 $$;
 
 revoke all on function public.cancel_unit_movement_workflow(uuid) from public;
+
 grant execute on function public.cancel_unit_movement_workflow(uuid)
   to authenticated;
 
