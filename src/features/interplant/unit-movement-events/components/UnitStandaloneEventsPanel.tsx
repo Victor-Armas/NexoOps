@@ -12,6 +12,8 @@ import type { UnitMovementEventAction } from "../types/unit-movement-event-actio
 import {
   DIESEL_REFUELING_FINISHED_EVENT,
   DIESEL_REFUELING_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
   type UnitMovementEvent,
   type UnitMovementEventType,
 } from "../types/unit-movement-event.types";
@@ -25,6 +27,7 @@ type UnitStandaloneEventsPanelProps = {
   eventActions: UnitMovementEventAction[];
   isMealActive: boolean;
   isFuelingActive: boolean;
+  isDriverChangeActive: boolean;
   isLoading: boolean;
   errorMessage: string | null;
   onAddEvent: (payload: {
@@ -60,6 +63,7 @@ export function UnitStandaloneEventsPanel({
   eventActions,
   isMealActive,
   isFuelingActive,
+  isDriverChangeActive,
   isLoading,
   errorMessage,
   onAddEvent,
@@ -124,6 +128,36 @@ export function UnitStandaloneEventsPanel({
     }
   };
 
+  const handleDriverChange = async () => {
+    const isFinishing = isDriverChangeActive;
+
+    try {
+      setIsSubmitting(true);
+      await onAddEvent({
+        eventType: isFinishing
+          ? DRIVER_CHANGE_FINISHED_EVENT
+          : DRIVER_CHANGE_STARTED_EVENT,
+        notes: isFinishing
+          ? "Cambio de operador finalizado."
+          : "Inicio de cambio de operador.",
+      });
+      toast.success(
+        isFinishing
+          ? "Cambio de operador finalizado. Unidad disponible."
+          : "Cambio de operador iniciado.",
+      );
+    } catch (error) {
+      toast.error(
+        getActionErrorMessage(
+          error,
+          "No se pudo actualizar el cambio de operador.",
+        ),
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleStandaloneStatus = async (action: UnitMovementEventAction) => {
     try {
       setIsSubmitting(true);
@@ -144,14 +178,17 @@ export function UnitStandaloneEventsPanel({
     }
   };
 
+  const hasBlockingProcess =
+    isMealActive || isFuelingActive || isDriverChangeActive;
+
   return (
     <section className="mb-7 rounded-sm border border-line bg-panel p-4">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="section-label">Eventos de unidad</p>
           <p className="sub mt-2">
-            Comida, carga de diésel y estatus independientes no requieren un
-            movimiento activo.
+            Comida, carga de diésel, cambio de operador y estatus independientes
+            no requieren un movimiento activo.
           </p>
         </div>
         <span className="mincard shrink-0 text-xs">{unitName}</span>
@@ -168,7 +205,7 @@ export function UnitStandaloneEventsPanel({
         <div className="mt-4 grid grid-cols-2 gap-3">
           <button
             type="button"
-            disabled={isSubmitting || isFuelingActive}
+            disabled={isSubmitting || isFuelingActive || isDriverChangeActive}
             onClick={() => void handleMeal()}
             className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
               isMealActive
@@ -182,7 +219,7 @@ export function UnitStandaloneEventsPanel({
 
           <button
             type="button"
-            disabled={isSubmitting || isMealActive}
+            disabled={isSubmitting || isMealActive || isDriverChangeActive}
             onClick={() => void handleFueling()}
             className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
               isFuelingActive
@@ -194,17 +231,32 @@ export function UnitStandaloneEventsPanel({
             {isFuelingActive ? "Finalizar carga" : "Cargar diésel"}
           </button>
 
+          <button
+            type="button"
+            disabled={isSubmitting || isMealActive || isFuelingActive}
+            onClick={() => void handleDriverChange()}
+            className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
+              isDriverChangeActive
+                ? "border-principal bg-principal text-slate-950"
+                : "border-principal/50 text-principal"
+            }`}
+          >
+            <RefreshCw size={18} />
+            {isDriverChangeActive
+              ? "Finalizar cambio"
+              : "Cambio de operador"}
+          </button>
+
           {standaloneActions.map((action) => {
             const isActive =
-              !isMealActive &&
-              !isFuelingActive &&
+              !hasBlockingProcess &&
               latestStandaloneEvent?.eventType === action.eventType;
 
             return (
               <button
                 key={action.id}
                 type="button"
-                disabled={isSubmitting || isMealActive || isFuelingActive}
+                disabled={isSubmitting || hasBlockingProcess}
                 onClick={() => void handleStandaloneStatus(action)}
                 className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-sm border px-3 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.07em] disabled:opacity-50 ${
                   isActive
