@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronLeft, Plus, Route, X } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -303,55 +304,71 @@ export function UnitMovementsPage() {
         </button>
       )}
 
-      {isMovementModalOpen && canCreateMovementNow && (
-        <div
-          className="fixed inset-x-0 top-0 bottom-[calc(env(safe-area-inset-bottom)+4.75rem)] z-50 flex items-center justify-center bg-black/70 px-4 py-4 backdrop-blur-sm md:inset-0 md:px-5 md:py-8"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="new-movement-title"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !isSubmitting) {
-              setIsMovementModalOpen(false);
-            }
-          }}
-        >
-          <section className="max-h-[calc(100dvh-env(safe-area-inset-bottom)-7rem)] w-full max-w-lg overflow-y-auto rounded-sm border border-line-strong bg-surface-dark p-5 shadow-2xl md:max-h-[92dvh] md:p-6 light:bg-white">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="flex min-w-0 items-start gap-3">
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-principal/30 bg-principal/10 text-principal">
-                  <Route size={21} />
-                </span>
-                <div className="min-w-0">
-                  <p className="section-label text-principal">Nuevo movimiento</p>
-                  <h3 id="new-movement-title" className="mt-1 text-2xl font-bold tittle">
-                    Registrar movimiento
-                  </h3>
-                  <p className="sub mt-1">
-                    Define la ruta y los datos operativos de U{unit?.code ?? "--"}.
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                aria-label="Cerrar"
-                disabled={isSubmitting}
-                onClick={() => setIsMovementModalOpen(false)}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line text-muted transition hover:border-principal/50 hover:text-principal disabled:opacity-50"
-              >
-                <X size={19} />
-              </button>
-            </div>
-
-            <UnitMovementForm
-              plants={plants}
-              movementTypes={movementTypes}
-              isSubmitting={isSubmitting}
-              onSubmit={handleSubmit}
+      {isMovementModalOpen &&
+        canCreateMovementNow &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="new-movement-title"
+          >
+            <div
+              className="fixed inset-0 bg-black/55 backdrop-blur-[2px]"
+              aria-hidden="true"
+              onMouseDown={() => {
+                if (!isSubmitting) {
+                  setIsMovementModalOpen(false);
+                }
+              }}
             />
-          </section>
-        </div>
-      )}
+
+            <div className="relative z-10 flex min-h-full items-center justify-center p-4 sm:p-6">
+              <section className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-sm border border-line-strong bg-surface-dark p-5 shadow-2xl sm:max-h-[calc(100dvh-3rem)] md:p-6 light:bg-white">
+                <div className="mb-5 flex items-start justify-between gap-4">
+                  <div className="flex min-w-0 items-start gap-3">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-principal/30 bg-principal/10 text-principal">
+                      <Route size={21} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="section-label text-principal">
+                        Nuevo movimiento
+                      </p>
+                      <h3
+                        id="new-movement-title"
+                        className="mt-1 text-2xl font-bold tittle"
+                      >
+                        Registrar movimiento
+                      </h3>
+                      <p className="sub mt-1">
+                        Define la ruta y los datos operativos de U
+                        {unit?.code ?? "--"}.
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    aria-label="Cerrar"
+                    disabled={isSubmitting}
+                    onClick={() => setIsMovementModalOpen(false)}
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sm border border-line text-muted transition hover:border-principal/50 hover:text-principal disabled:opacity-50"
+                  >
+                    <X size={19} />
+                  </button>
+                </div>
+
+                <UnitMovementForm
+                  plants={plants}
+                  movementTypes={movementTypes}
+                  isSubmitting={isSubmitting}
+                  onSubmit={handleSubmit}
+                />
+              </section>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {shift && !canRegisterMovement && (
         <section className="mb-5 rounded-sm border border-line bg-panel p-5 text-sm text-muted light:border-slate-200 light:bg-white light:text-slate-500">
