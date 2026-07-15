@@ -6,6 +6,8 @@ export type UnitMovementEventBehavior =
   | "meal_end"
   | "fuel_start"
   | "fuel_end"
+  | "driver_change_start"
+  | "driver_change_end"
   | "movement_complete"
   | "movement_cancel";
 
