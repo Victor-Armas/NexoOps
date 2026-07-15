@@ -70,6 +70,24 @@ export async function getUnitEvents(params: {
   return data.map(mapUnitMovementEvent);
 }
 
+export async function getRecentUnitEventsByUnitIds(
+  unitIds: string[],
+  limit = 29,
+): Promise<UnitMovementEvent[]> {
+  if (unitIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from("unit_events")
+    .select(UNIT_EVENT_COLUMNS)
+    .in("unit_id", unitIds)
+    .order("event_at", { ascending: false })
+    .limit(limit)
+    .returns<UnitMovementEventRow[]>();
+
+  if (error) throw error;
+  return data.map(mapUnitMovementEvent);
+}
+
 export async function getStandaloneBlockingEvents(
   unitId: string,
 ): Promise<UnitMovementEvent[]> {
