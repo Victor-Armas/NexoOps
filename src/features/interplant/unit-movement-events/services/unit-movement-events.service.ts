@@ -3,6 +3,8 @@ import { subscribeToTableChanges } from "../../../../lib/supabase/realtime";
 import {
   DIESEL_REFUELING_FINISHED_EVENT,
   DIESEL_REFUELING_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
   type CreateUnitMovementEventPayload,
   type UnitMovementEvent,
   type UnitMovementEventRow,
@@ -16,6 +18,8 @@ const STANDALONE_BLOCKING_EVENT_TYPES = [
   "meal_finished",
   DIESEL_REFUELING_STARTED_EVENT,
   DIESEL_REFUELING_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
 ];
 
 function mapUnitMovementEvent(row: UnitMovementEventRow): UnitMovementEvent {
@@ -74,7 +78,7 @@ export async function getStandaloneBlockingEvents(
     .is("unit_movement_id", null)
     .in("event_type", STANDALONE_BLOCKING_EVENT_TYPES)
     .order("event_at", { ascending: false })
-    .limit(40)
+    .limit(60)
     .returns<UnitMovementEventRow[]>();
 
   if (error) throw error;
