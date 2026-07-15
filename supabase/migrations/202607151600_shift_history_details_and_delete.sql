@@ -116,8 +116,8 @@ begin
     shift.shift_date desc,
     shift.opened_at desc,
     plant.code,
-    check_count desc,
-    full_name;
+    count(*) desc,
+    coalesce(profile.full_name, 'Usuario no disponible');
 end;
 $$;
 
