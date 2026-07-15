@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "../../../../components/ui/Button";
 import { Switch } from "../../../../components/ui/Switch";
 import { cn } from "../../../../lib/utils/cn";
+import { isCoreUnitMovementWorkflowEventType } from "../../unit-movements/utils/unit-movement-workflow";
 import type {
   SaveUnitMovementEventActionSettingPayload,
   UnitMovementEventActionSetting,
@@ -44,17 +45,22 @@ export function UnitMovementEventActionSettingForm({
   isSaving,
   onSave,
 }: UnitMovementEventActionSettingFormProps) {
+  const isCoreWorkflowStep = isCoreUnitMovementWorkflowEventType(
+    actionSetting.eventType,
+  );
   const [isExpanded, setIsExpanded] = useState(false);
   const [label, setLabel] = useState(actionSetting.label);
   const [requiresMovement, setRequiresMovement] = useState(
     actionSetting.requiresMovement,
   );
   const [showAsAction, setShowAsAction] = useState(
-    actionSetting.showAsAction,
+    isCoreWorkflowStep ? false : actionSetting.showAsAction,
   );
   const [iconKey, setIconKey] = useState(actionSetting.iconKey);
   const [colorKey, setColorKey] = useState(actionSetting.colorKey);
-  const [isActive, setIsActive] = useState(actionSetting.isActive);
+  const [isActive, setIsActive] = useState(
+    isCoreWorkflowStep ? true : actionSetting.isActive,
+  );
 
   const saveValues = async (nextIsActive = isActive) => {
     if (!label.trim()) {
@@ -67,18 +73,19 @@ export function UnitMovementEventActionSettingForm({
       projectId: actionSetting.projectId,
       eventType: actionSetting.eventType,
       label: label.trim(),
-      requiresMovement,
-      showAsAction,
+      requiresMovement: isCoreWorkflowStep ? true : requiresMovement,
+      showAsAction: isCoreWorkflowStep ? false : showAsAction,
       behavior: actionSetting.behavior,
       iconKey,
       colorKey,
       isSystem: actionSetting.isSystem,
-      isActive: nextIsActive,
+      isActive: isCoreWorkflowStep ? true : nextIsActive,
       updatedBy: profileId,
     });
   };
 
   const handleActiveChange = (nextIsActive: boolean) => {
+    if (isCoreWorkflowStep) return;
     setIsActive(nextIsActive);
     void saveValues(nextIsActive);
   };
@@ -103,7 +110,11 @@ export function UnitMovementEventActionSettingForm({
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold">{label}</span>
             <span className="block truncate text-xs text-muted">
-              {requiresMovement ? "Requiere movimiento" : "Independiente"}
+              {isCoreWorkflowStep
+                ? "Flujo obligatorio"
+                : requiresMovement
+                  ? "Requiere movimiento"
+                  : "Independiente"}
               {actionSetting.isSystem ? " · Sistema" : " · Personalizado"}
             </span>
           </span>
@@ -119,7 +130,7 @@ export function UnitMovementEventActionSettingForm({
 
         <Switch
           checked={isActive}
-          disabled={isSaving}
+          disabled={isSaving || isCoreWorkflowStep}
           onChange={(event) => handleActiveChange(event.target.checked)}
           aria-label={`${isActive ? "Desactivar" : "Activar"} ${actionSetting.label}`}
         />
@@ -168,10 +179,14 @@ export function UnitMovementEventActionSettingForm({
           </div>
 
           <div className="flex min-h-11 items-center justify-between rounded-sm border border-line bg-panel px-3">
-            <span className="text-sm font-semibold">Mostrar como botón</span>
+            <span className="text-sm font-semibold">
+              {isCoreWorkflowStep
+                ? "Controlado por el flujo guiado"
+                : "Mostrar como botón"}
+            </span>
             <Switch
               checked={showAsAction}
-              disabled={isSaving}
+              disabled={isSaving || isCoreWorkflowStep}
               onChange={(event) => setShowAsAction(event.target.checked)}
               aria-label="Mostrar como botón"
             />
@@ -181,7 +196,7 @@ export function UnitMovementEventActionSettingForm({
             <span className="text-sm font-semibold">Requiere movimiento</span>
             <Switch
               checked={requiresMovement}
-              disabled={isSaving || actionSetting.isSystem}
+              disabled={isSaving || actionSetting.isSystem || isCoreWorkflowStep}
               onChange={(event) => setRequiresMovement(event.target.checked)}
               aria-label="Requiere movimiento"
             />
