@@ -20,6 +20,15 @@ import {
 import { getStandaloneStatusActions } from "../utils/unit-event-actions";
 import { UnitMovementTimeline } from "./UnitMovementTimeline";
 
+const SYSTEM_MANAGED_STANDALONE_EVENTS = new Set([
+  DIESEL_REFUELING_STARTED_EVENT,
+  DIESEL_REFUELING_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
+  "meal",
+  "meal_finished",
+]);
+
 type UnitStandaloneEventsPanelProps = {
   unitName: string;
   hasOpenMovement: boolean;
@@ -71,7 +80,9 @@ export function UnitStandaloneEventsPanel({
   const { can } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const canCreateEvent = can("units.event.create");
-  const standaloneActions = getStandaloneStatusActions(eventActions);
+  const standaloneActions = getStandaloneStatusActions(eventActions).filter(
+    (action) => !SYSTEM_MANAGED_STANDALONE_EVENTS.has(action.eventType),
+  );
   const latestStandaloneEvent = standaloneEvents[0] ?? null;
 
   const handleMeal = async () => {
