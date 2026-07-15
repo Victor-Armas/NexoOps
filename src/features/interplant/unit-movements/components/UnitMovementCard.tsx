@@ -1,12 +1,11 @@
-import { createPortal } from "react-dom";
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   AlertTriangle,
   ArrowRight,
   CircleSlash2,
   Clock3,
   MapPin,
-  Route,
   Utensils,
   X,
 } from "lucide-react";
@@ -22,17 +21,17 @@ import type {
 import { getUnitEventLabel } from "../../unit-movement-events/utils/unit-event-actions";
 import type { Plant } from "../../plants/types/plant.types";
 import type { Unit } from "../../units/types/unit.types";
+import type {
+  ContinueUnitMovementPayload,
+  MovementType,
+  UnitMovement,
+} from "../types/unit-movement.types";
 import {
   getLatestCoreUnitMovementEvent,
   getNextGuidedUnitMovementAction,
   isCoreUnitMovementWorkflowEventType,
 } from "../utils/unit-movement-workflow";
 import { resolveUnitOperationalSnapshot } from "../utils/unit-operational-snapshot";
-import type {
-  ContinueUnitMovementPayload,
-  MovementType,
-  UnitMovement,
-} from "../types/unit-movement.types";
 import { UnitMovementContinuationPanel } from "./UnitMovementContinuationPanel";
 
 type AdvanceMovementPayload = {
@@ -198,10 +197,30 @@ export function UnitMovementCard({
       await refetch();
       setNow(new Date());
       toast.success("Estado actualizado.");
+      return true;
     } catch {
       toast.error("No se pudo actualizar el estado.");
+      return false;
     } finally {
       setIsEventSubmitting(false);
+    }
+  };
+
+  const handleNextStep = async () => {
+    if (!nextAction) return;
+
+    if (nextAction.completesMovement) {
+      if (latestCoreEvent?.eventType === "unloading") {
+        const wasUpdated = await handleAdvance("unloading_finished");
+        if (!wasUpdated) return;
+      }
+
+      setShowContinuation(true);
+      return;
+    }
+
+    if (nextAction.eventType) {
+      await handleAdvance(nextAction.eventType);
     }
   };
 
@@ -248,6 +267,8 @@ export function UnitMovementCard({
       setIsEventSubmitting(true);
       await onComplete(movement.id);
       toast.success("Movimiento completado. La unidad quedó disponible.");
+    } catch {
+      // The page-level handler already reports the operation error.
     } finally {
       setIsEventSubmitting(false);
     }
@@ -267,6 +288,8 @@ export function UnitMovementCard({
         ...values,
       });
       toast.success("Movimiento completado y siguiente carga iniciada.");
+    } catch {
+      // The page-level handler already reports the operation error.
     } finally {
       setIsEventSubmitting(false);
     }
@@ -310,7 +333,11 @@ export function UnitMovementCard({
               {isMealActive ? "Comida" : snapshot.headline}
             </h3>
             <p className="mt-2 inline-flex items-center gap-2 font-ibm-plex-mono text-xs text-muted">
-              {snapshot.currentPlantCode ? <MapPin size={14} /> : <Clock3 size={14} />}
+              {snapshot.currentPlantCode ? (
+                <MapPin size={14} />
+              ) : (
+                <Clock3 size={14} />
+              )}
               {isMealActive && latestMealStart
                 ? `Desde ${formatTime(latestMealStart.eventAt)}`
                 : snapshot.statusStartedAt
@@ -363,7 +390,9 @@ export function UnitMovementCard({
           <div className="flex items-start gap-3">
             <AlertTriangle size={19} className="shrink-0 text-principal" />
             <div>
-              <p className="font-semibold text-principal">Unidad en hora de comida</p>
+              <p className="font-semibold text-principal">
+                Unidad en hora de comida
+              </p>
               <p className="sub mt-1">
                 Inicio {formatTime(latestMealStart.eventAt)} ·{" "}
                 {formatElapsedMinutes(elapsedMealMinutes)}
@@ -385,16 +414,7 @@ export function UnitMovementCard({
           <button
             type="button"
             disabled={isEventSubmitting || isMealActive}
-            onClick={() => {
-              if (nextAction.completesMovement) {
-                setShowContinuation(true);
-                return;
-              }
-
-              if (nextAction.eventType) {
-                void handleAdvance(nextAction.eventType);
-              }
-            }}
+            onClick={() => void handleNextStep()}
             className="mt-3 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-sm bg-principal px-4 font-barlow-condensed text-sm font-semibold uppercase tracking-[0.08em] text-slate-950 transition active:scale-[0.98] disabled:opacity-50"
           >
             {nextAction.label}
@@ -485,6 +505,7 @@ export function UnitMovementCard({
 
       <UnitMovementTimeline
         events={unitMovementEvents}
+        eventActions={eventActions}
         isLoading={isLoadingEvents}
         errorMessage={eventsErrorMessage}
       />
