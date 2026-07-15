@@ -81,7 +81,7 @@ export function UnitMovementForm({
             <span className={labelClassName}>Origen</span>
             <select className={fieldClassName} {...register("originPlantId")}>
               <option value="" className="text-slate-900">
-                Sin origen
+                Seleccionar
               </option>
               {plants.map((plant) => (
                 <option key={plant.id} value={plant.id} className="text-slate-900">
@@ -99,7 +99,7 @@ export function UnitMovementForm({
             <span className={labelClassName}>Destino</span>
             <select className={fieldClassName} {...register("destinationPlantId")}>
               <option value="" className="text-slate-900">
-                Sin destino
+                Seleccionar
               </option>
               {destinationPlants.map((plant) => (
                 <option key={plant.id} value={plant.id} className="text-slate-900">
@@ -110,9 +110,9 @@ export function UnitMovementForm({
           </label>
         </div>
 
-        {errors.destinationPlantId && (
+        {(errors.originPlantId || errors.destinationPlantId) && (
           <p className="mt-2 text-sm text-danger">
-            {errors.destinationPlantId.message}
+            {errors.originPlantId?.message ?? errors.destinationPlantId?.message}
           </p>
         )}
       </section>
@@ -179,7 +179,7 @@ export function UnitMovementForm({
         className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-sm bg-principal px-5 font-barlow-condensed text-base font-semibold uppercase tracking-[0.08em] text-slate-950 shadow-lg shadow-black/10 transition active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Route size={18} />
-        {isSubmitting ? "Registrando..." : "Registrar movimiento"}
+        {isSubmitting ? "Registrando..." : "Iniciar movimiento"}
       </button>
     </form>
   );
