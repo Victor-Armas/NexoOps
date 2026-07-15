@@ -6,6 +6,14 @@ export const DIESEL_REFUELING_EVENT_TYPES = [
   DIESEL_REFUELING_FINISHED_EVENT,
 ] as const;
 
+export const DRIVER_CHANGE_STARTED_EVENT = "driver_change";
+export const DRIVER_CHANGE_FINISHED_EVENT = "driver_change_finished";
+
+export const DRIVER_CHANGE_EVENT_TYPES = [
+  DRIVER_CHANGE_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
+] as const;
+
 export type UnitMovementEventType = string;
 
 export type UnitMovementEvent = {
@@ -55,7 +63,8 @@ const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
   released: "Saliendo de planta",
   meal: "Comida",
   meal_finished: "Comida finalizada",
-  driver_change: "Cambio operador",
+  driver_change: "Cambio de operador",
+  driver_change_finished: "Cambio de operador finalizado",
   diesel_refueling: "Carga de diésel",
   diesel_refueling_finished: "Carga de diésel finalizada",
   completed: "Completado",
