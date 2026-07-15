@@ -480,9 +480,16 @@ export function ControlTowerPage() {
           />
         </section>
 
-        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="min-w-0 space-y-4">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1fr)_360px] xl:items-stretch">
+          <div className="min-w-0 xl:col-start-1 xl:row-start-1">
             <ControlTowerMap plants={plants} snapshots={snapshots} />
+          </div>
+
+          <div className="min-w-0 xl:col-start-2 xl:row-start-1">
+            <ControlTowerActivityChart events={recentEvents} now={now} />
+          </div>
+
+          <div className="min-w-0 xl:col-start-1 xl:row-start-2">
             <ControlTowerUnitGrid
               projectId={projectId ?? ""}
               snapshots={snapshots}
@@ -495,15 +502,14 @@ export function ControlTowerPage() {
             />
           </div>
 
-          <aside className="grid min-w-0 gap-4 md:grid-cols-2 xl:grid-cols-1 xl:self-start">
-            <ControlTowerActivityChart events={recentEvents} now={now} />
+          <div className="min-h-0 min-w-0 xl:col-start-2 xl:row-start-2">
             <ControlTowerEventFeed
               events={recentEvents}
               eventActions={eventActions}
               plants={plants}
               units={units}
             />
-          </aside>
+          </div>
         </div>
 
         <footer className="grid gap-2 rounded-xl border border-line bg-panel/70 px-4 py-3 font-ibm-plex-mono text-[10px] text-muted sm:grid-cols-2 xl:grid-cols-4">
