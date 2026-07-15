@@ -16,19 +16,11 @@ import {
   INCIDENT_SEVERITY_LABELS,
   type IncidentSeverity,
 } from "../../incidents/types/incident.types";
+import { useOperationalSettings } from "../../operational-settings/hooks/useOperationalSettings";
 import { useLatestUnitEventsByUnitIds } from "../../unit-movement-events/hooks/useLatestUnitEventsByUnitIds";
 import { useLatestUnitMovementEventsByMovementIds } from "../../unit-movement-events/hooks/useLatestUnitMovementEventsByMovementIds";
 import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
-import type { UnitMovementEvent } from "../../unit-movement-events/types/unit-movement-event.types";
-import {
-  getUnitEventColorKey,
-  getUnitEventIconKey,
-  getUnitEventLabel,
-} from "../../unit-movement-events/utils/unit-event-actions";
-import {
-  isStandaloneActiveUnitEvent,
-  resolveCurrentUnitEvent,
-} from "../../unit-movement-events/utils/unit-event-status";
+import { resolveCurrentUnitEvent } from "../../unit-movement-events/utils/unit-event-status";
 import { useLatestPlantChecksByShift } from "../../plant-checks/hooks/useLatestPlantChecksByShift";
 import {
   PLANT_RISK_LABELS,
@@ -39,8 +31,10 @@ import { OpenShiftPanel } from "../../shifts/components/OpenShiftPanel";
 import { useShift } from "../../shifts/hooks/useShift";
 import type { OpenShiftFormValues } from "../../shifts/schemas/shift.schemas";
 import { SHIFT_TYPE_LABELS } from "../../shifts/types/shift.types";
+import { useMovementTypes } from "../../unit-movements/hooks/useMovementTypes";
 import { useShiftUnitMovements } from "../../unit-movements/hooks/useShiftUnitMovements";
 import type { UnitMovement } from "../../unit-movements/types/unit-movement.types";
+import { resolveUnitOperationalSnapshot } from "../../unit-movements/utils/unit-operational-snapshot";
 import { useUnits } from "../../units/hooks/useUnits";
 import { AnimatedUnitStatusIcon } from "../components/AnimatedUnitStatusIcon";
 
@@ -71,11 +65,15 @@ function formatShiftElapsed(openedAt: string, now: Date) {
     .join(":");
 }
 
-function formatElapsedLabel(startedAt: string, now: Date) {
-  const elapsedMinutes = Math.max(
+function getElapsedMinutes(startedAt: string, now: Date) {
+  return Math.max(
     0,
     Math.floor((now.getTime() - new Date(startedAt).getTime()) / 60_000),
   );
+}
+
+function formatElapsedLabel(startedAt: string, now: Date) {
+  const elapsedMinutes = getElapsedMinutes(startedAt, now);
 
   if (elapsedMinutes < 60) return `${elapsedMinutes} min`;
 
@@ -136,29 +134,13 @@ function getIncidentClasses(severity: IncidentSeverity) {
   };
 }
 
-function getUnitAccentClass(colorKey: string) {
+function getUnitAccentClass(colorKey: string, isAvailable: boolean) {
+  if (isAvailable) return "text-success";
   if (colorKey === "amber") return "text-principal";
   if (colorKey === "blue") return "text-blue-300 light:text-blue-700";
   if (colorKey === "success") return "text-success";
   if (colorKey === "danger") return "text-danger";
   return "text-foreground-dark light:text-slate-900";
-}
-
-function getUnitStatusLabel(params: {
-  movement: UnitMovement | null;
-  event: UnitMovementEvent | null;
-  standaloneActive: boolean;
-  eventActions: ReturnType<typeof useUnitMovementEventActions>["actions"];
-}) {
-  const { movement, event, standaloneActive, eventActions } = params;
-
-  if (standaloneActive && event) {
-    return getUnitEventLabel(eventActions, event.eventType);
-  }
-
-  if (!movement || movement.status !== "open") return "Disponible";
-  if (!event) return "En movimiento";
-  return getUnitEventLabel(eventActions, event.eventType);
 }
 
 export function InterplantDashboardPage() {
@@ -185,6 +167,18 @@ export function InterplantDashboardPage() {
     isLoading: isLoadingUnits,
     errorMessage: unitsErrorMessage,
   } = useUnits(projectId);
+
+  const {
+    movementTypes,
+    isLoading: isLoadingMovementTypes,
+    errorMessage: movementTypesErrorMessage,
+  } = useMovementTypes();
+
+  const {
+    settings: operationalSettings,
+    isLoading: isLoadingOperationalSettings,
+    errorMessage: operationalSettingsErrorMessage,
+  } = useOperationalSettings(projectId);
 
   const unitIds = useMemo(() => units.map((unit) => unit.id), [units]);
 
@@ -265,19 +259,23 @@ export function InterplantDashboardPage() {
     isLoadingShift ||
     Boolean(
       shift &&
-      (isLoadingPlants ||
-        isLoadingUnits ||
-        isLoadingLatestChecks ||
-        isLoadingUnitMovements ||
-        isLoadingLatestMovementEvents ||
-        isLoadingLatestUnitEvents ||
-        isLoadingIncidents),
+        (isLoadingPlants ||
+          isLoadingUnits ||
+          isLoadingMovementTypes ||
+          isLoadingOperationalSettings ||
+          isLoadingLatestChecks ||
+          isLoadingUnitMovements ||
+          isLoadingLatestMovementEvents ||
+          isLoadingLatestUnitEvents ||
+          isLoadingIncidents),
     );
 
   const errorMessage =
     shiftErrorMessage ||
     plantsErrorMessage ||
     unitsErrorMessage ||
+    movementTypesErrorMessage ||
+    operationalSettingsErrorMessage ||
     latestChecksErrorMessage ||
     unitMovementsErrorMessage ||
     latestMovementEventsErrorMessage ||
@@ -465,17 +463,18 @@ export function InterplantDashboardPage() {
                       <p className="sub mt-1 truncate">
                         {latestCheck
                           ? `Última ${formatTime(latestCheck.checkedAt)} · riesgo ${PLANT_RISK_LABELS[
-                            latestCheck.riskLevel
-                          ].toLowerCase()}`
+                              latestCheck.riskLevel
+                            ].toLowerCase()}`
                           : "Sin revisar este turno"}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">
                       <p
-                        className={`font-ibm-plex-mono text-2xl font-semibold ${reviewCount === 0
+                        className={`font-ibm-plex-mono text-2xl font-semibold ${
+                          reviewCount === 0
                             ? "text-faint"
                             : "text-foreground-dark light:text-slate-900"
-                          }`}
+                        }`}
                       >
                         {reviewCount}
                       </p>
@@ -509,78 +508,89 @@ export function InterplantDashboardPage() {
                   latestUnitEvent,
                   eventActions,
                 });
-                const standaloneActive = isStandaloneActiveUnitEvent(
-                  event,
-                  eventActions,
-                );
-                const isAvailable =
-                  !standaloneActive && (!movement || movement.status !== "open");
-                const statusLabel = getUnitStatusLabel({
+                const snapshot = resolveUnitOperationalSnapshot({
+                  unit,
                   movement,
                   event,
-                  standaloneActive,
                   eventActions,
+                  plants,
+                  movementTypes,
                 });
-                const colorKey = getUnitEventColorKey(
-                  eventActions,
-                  event?.eventType,
-                );
-                const iconKey = getUnitEventIconKey(
-                  eventActions,
-                  event?.eventType,
-                );
-                const statusStartedAt =
-                  event?.eventAt ?? movement?.startedAt ?? null;
-                const locationPlantId =
-                  movement?.destinationPlantId ?? movement?.originPlantId ?? null;
-                const location = plants.find(
-                  (plant) => plant.id === locationPlantId,
-                );
+                const elapsedMinutes = snapshot.statusStartedAt
+                  ? getElapsedMinutes(snapshot.statusStartedAt, now)
+                  : 0;
+                const waitLimitMinutes =
+                  snapshot.waitKind === "dock"
+                    ? operationalSettings?.dockWaitLimitMinutes ?? 15
+                    : snapshot.waitKind === "documentation"
+                      ? operationalSettings?.documentationWaitLimitMinutes ?? 15
+                      : null;
+                const isWaitDelayed =
+                  waitLimitMinutes !== null && elapsedMinutes > waitLimitMinutes;
+                const details = [
+                  snapshot.routeLabel,
+                  snapshot.movementTypeLabel,
+                  snapshot.quantity !== null
+                    ? `${snapshot.quantity} unidades`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(" · ");
 
                 return (
                   <Link
                     key={unit.id}
                     to={`/app/projects/${projectId}/units/${unit.id}`}
-                    className={`flex items-center gap-4 rounded-sm border border-line bg-panel p-4 transition active:scale-[0.99] ${standaloneActive || colorKey === "amber" || colorKey === "danger"
-                        ? "border-l-4 border-l-principal"
-                        : ""
-                      }`}
+                    className={`flex items-start gap-4 rounded-sm border bg-panel p-4 transition active:scale-[0.99] ${
+                      isWaitDelayed || snapshot.isWaiting || snapshot.colorKey === "danger"
+                        ? "border-principal/60 border-l-4 border-l-principal"
+                        : "border-line"
+                    }`}
                   >
                     <AnimatedUnitStatusIcon
-                      eventType={event?.eventType ?? null}
-                      iconKey={
-                        movement?.status === "open" && !event
-                          ? "truck"
-                          : iconKey
-                      }
-                      colorKey={colorKey}
-                      isAvailable={isAvailable}
+                      eventType={snapshot.eventType}
+                      iconKey={snapshot.iconKey}
+                      colorKey={snapshot.colorKey}
+                      isAvailable={snapshot.isAvailable}
                     />
+
                     <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="font-ibm-plex-mono text-xs font-semibold text-foreground-dark light:text-slate-900">
+                          {snapshot.unitLabel}
+                        </p>
+                        <span className="font-ibm-plex-mono text-[9px] uppercase tracking-[0.1em] text-faint">
+                          {snapshot.phaseLabel}
+                        </span>
+                      </div>
+
                       <p
-                        className={`font-medium ${isAvailable
-                            ? "text-success"
-                            : getUnitAccentClass(colorKey)
-                          }`}
+                        className={`mt-2 text-base font-semibold ${getUnitAccentClass(
+                          snapshot.colorKey,
+                          snapshot.isAvailable,
+                        )}`}
                       >
-                        {statusLabel}
+                        {snapshot.headline}
                       </p>
+
                       <p className="sub mt-1 truncate">
-                        {isAvailable
-                          ? "Unidad libre para movimiento"
-                          : `U${unit.code}${statusStartedAt
-                            ? ` · ${formatElapsedLabel(statusStartedAt, now)}`
-                            : ""
-                          }`}
+                        {snapshot.isAvailable ? "Sin movimiento activo" : details}
                       </p>
+
+                      {!snapshot.isAvailable && snapshot.statusStartedAt && (
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 font-ibm-plex-mono text-[10px] text-faint">
+                          <span>
+                            Estado actual ·{" "}
+                            {formatElapsedLabel(snapshot.statusStartedAt, now)}
+                          </span>
+                          {isWaitDelayed && waitLimitMinutes !== null && (
+                            <span className="font-semibold text-principal">
+                              +{elapsedMinutes - waitLimitMinutes} min sobre límite
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
-                    <span className="mincard min-h-10 shrink-0 light:text-slate-900">
-                      {isAvailable
-                        ? `U${unit.code}`
-                        : standaloneActive
-                          ? "—"
-                          : location?.code ?? "—"}
-                    </span>
                   </Link>
                 );
               })}
