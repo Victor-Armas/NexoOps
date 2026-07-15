@@ -47,7 +47,7 @@ export function ControlTowerActivityChart({
   }, [events, now]);
 
   return (
-    <section className="rounded-xl border border-line bg-panel/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.16)]">
+    <section className="flex h-full min-h-[280px] flex-col rounded-xl border border-line bg-panel/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.16)] xl:min-h-0">
       <div className="flex items-center justify-between gap-4">
         <div>
           <p className="font-barlow-condensed text-sm font-bold uppercase tracking-[0.08em]">
@@ -62,7 +62,7 @@ export function ControlTowerActivityChart({
         </span>
       </div>
 
-      <div className="mt-4 h-36 w-full">
+      <div className="mt-4 min-h-36 flex-1 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 4, bottom: 0, left: 4 }}>
             <defs>
