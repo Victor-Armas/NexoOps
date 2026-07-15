@@ -15,6 +15,11 @@ export const DRIVER_CHANGE_EVENT_TYPES = [
 ] as const;
 
 export type UnitMovementEventType = string;
+export type UnitOperationalPhase =
+  | "origin"
+  | "transit"
+  | "destination"
+  | "standalone";
 
 export type UnitMovementEvent = {
   id: string;
@@ -23,6 +28,8 @@ export type UnitMovementEvent = {
   unitMovementId: string | null;
   eventTypeId: string;
   eventType: UnitMovementEventType;
+  phase: UnitOperationalPhase | null;
+  plantId: string | null;
   notes: string | null;
   eventAt: string;
   createdBy: string;
@@ -37,6 +44,8 @@ export type UnitMovementEventRow = {
   unit_movement_id: string | null;
   event_type_id: string;
   event_type: UnitMovementEventType;
+  phase: UnitOperationalPhase | null;
+  plant_id: string | null;
   notes: string | null;
   event_at: string;
   created_by: string;
@@ -50,6 +59,8 @@ export type CreateUnitMovementEventPayload = {
   shiftId?: string;
   eventTypeId?: string;
   eventType: UnitMovementEventType;
+  phase?: UnitOperationalPhase | null;
+  plantId?: string | null;
   notes?: string;
 };
 
@@ -57,9 +68,12 @@ const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
   departure_requested: "Salida indicada",
   in_transit: "En camino",
   waiting_dock: "Esperando rampa",
+  waiting_documents: "Esperando documentación",
   positioned: "En rampa",
   loading: "Cargando",
+  loading_finished: "Carga finalizada",
   unloading: "Descargando",
+  unloading_finished: "Descarga finalizada",
   released: "Saliendo de planta",
   meal: "Comida",
   meal_finished: "Comida finalizada",
