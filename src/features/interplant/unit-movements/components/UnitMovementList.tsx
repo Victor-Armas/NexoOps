@@ -1,7 +1,9 @@
 import type { UnitMovementEventAction } from "../../unit-movement-events/types/unit-movement-event-action.types";
+import type { UnitOperationalPhase } from "../../unit-movement-events/types/unit-movement-event.types";
 import type { Plant } from "../../plants/types/plant.types";
 import type { Unit } from "../../units/types/unit.types";
 import type {
+  ContinueUnitMovementPayload,
   MovementType,
   UnitMovement,
 } from "../types/unit-movement.types";
@@ -10,25 +12,43 @@ import { UnitMovementCard } from "./UnitMovementCard";
 
 type UnitMovementListProps = {
   unitMovements: UnitMovement[];
+  currentShiftId: string;
   units: Unit[];
   plants: Plant[];
   movementTypes: MovementType[];
   mealTargetMinutes: number;
   mealDelayLimitMinutes: number;
+  dockWaitLimitMinutes: number;
+  documentationWaitLimitMinutes: number;
   eventActions: UnitMovementEventAction[];
+  onAdvance: (payload: {
+    movementId: string;
+    eventType: string;
+    notes?: string;
+    phase?: UnitOperationalPhase | null;
+    plantId?: string | null;
+  }) => Promise<void>;
   onComplete: (movementId: string) => Promise<void>;
+  onCompleteAndContinue: (
+    payload: ContinueUnitMovementPayload,
+  ) => Promise<void>;
   onCancel: (movementId: string) => Promise<void>;
 };
 
 export function UnitMovementList({
   unitMovements,
+  currentShiftId,
   units,
   plants,
   movementTypes,
   mealTargetMinutes,
   mealDelayLimitMinutes,
+  dockWaitLimitMinutes,
+  documentationWaitLimitMinutes,
   eventActions,
+  onAdvance,
   onComplete,
+  onCompleteAndContinue,
   onCancel,
 }: UnitMovementListProps) {
   const activeMovements = unitMovements.filter(
@@ -72,13 +92,18 @@ export function UnitMovementList({
               <UnitMovementCard
                 key={movement.id}
                 movement={movement}
+                currentShiftId={currentShiftId}
                 units={units}
                 plants={plants}
                 movementTypes={movementTypes}
                 mealTargetMinutes={mealTargetMinutes}
                 mealDelayLimitMinutes={mealDelayLimitMinutes}
+                dockWaitLimitMinutes={dockWaitLimitMinutes}
+                documentationWaitLimitMinutes={documentationWaitLimitMinutes}
                 eventActions={eventActions}
+                onAdvance={onAdvance}
                 onComplete={onComplete}
+                onCompleteAndContinue={onCompleteAndContinue}
                 onCancel={onCancel}
               />
             ))}
