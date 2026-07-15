@@ -74,6 +74,7 @@ export function UnitMovementsPage() {
     standaloneEvents,
     isMealActive: isStandaloneMealActive,
     isFuelingActive,
+    isDriverChangeActive,
     isLoading: isLoadingUnitEvents,
     errorMessage: unitEventsErrorMessage,
     addEvent: addStandaloneEvent,
@@ -93,7 +94,10 @@ export function UnitMovementsPage() {
   const canCompleteMovement = can("units.movement.complete");
   const canCancelMovement = can("units.movement.cancel");
   const canCreateMovementNow =
-    !hasOpenMovement && !isStandaloneMealActive && !isFuelingActive;
+    !hasOpenMovement &&
+    !isStandaloneMealActive &&
+    !isFuelingActive &&
+    !isDriverChangeActive;
 
   const isLoading =
     isLoadingShift ||
@@ -130,6 +134,11 @@ export function UnitMovementsPage() {
 
     if (isFuelingActive) {
       toast.error("Finaliza la carga de diésel antes de iniciar un movimiento.");
+      return;
+    }
+
+    if (isDriverChangeActive) {
+      toast.error("Finaliza el cambio de operador antes de iniciar un movimiento.");
       return;
     }
 
@@ -227,6 +236,7 @@ export function UnitMovementsPage() {
           eventActions={eventActions}
           isMealActive={isStandaloneMealActive}
           isFuelingActive={isFuelingActive}
+          isDriverChangeActive={isDriverChangeActive}
           isLoading={isLoadingUnitEvents}
           errorMessage={unitEventsErrorMessage}
           onAddEvent={addStandaloneEvent}
@@ -268,7 +278,9 @@ export function UnitMovementsPage() {
             ? "Finaliza la comida antes de registrar un movimiento nuevo."
             : isFuelingActive
               ? "Finaliza la carga de diésel antes de registrar un movimiento nuevo."
-              : "Completa o cancela el movimiento abierto antes de registrar uno nuevo."}
+              : isDriverChangeActive
+                ? "Finaliza el cambio de operador antes de registrar un movimiento nuevo."
+                : "Completa o cancela el movimiento abierto antes de registrar uno nuevo."}
         </section>
       )}
 
