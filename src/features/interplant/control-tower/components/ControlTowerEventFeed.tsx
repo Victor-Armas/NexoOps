@@ -35,8 +35,8 @@ export function ControlTowerEventFeed({
   units,
 }: ControlTowerEventFeedProps) {
   return (
-    <section className="flex min-h-0 flex-col rounded-xl border border-line bg-panel/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.16)]">
-      <div className="flex items-center justify-between gap-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-xl border border-line bg-panel/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.16)]">
+      <div className="flex shrink-0 items-center justify-between gap-4">
         <div className="flex items-center gap-2">
           <Radio size={17} className="text-principal" />
           <h2 className="font-barlow-condensed text-sm font-bold uppercase tracking-[0.08em]">
@@ -49,7 +49,7 @@ export function ControlTowerEventFeed({
         </span>
       </div>
 
-      <div className="mt-4 max-h-[520px] min-h-0 space-y-0 overflow-y-auto pr-1 xl:max-h-[calc(100vh-30rem)] xl:min-h-72">
+      <div className="mt-4 min-h-0 flex-1 space-y-0 overflow-y-auto pr-1">
         {events.map((event, index) => {
           const unit = units.find((item) => item.id === event.unitId);
           const plant = plants.find((item) => item.id === event.plantId);
