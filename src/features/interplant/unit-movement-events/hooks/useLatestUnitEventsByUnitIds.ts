@@ -22,27 +22,21 @@ export function useLatestUnitEventsByUnitIds(
   shiftId: string | undefined,
 ) {
   const unitIdsKey = useMemo(() => unitIds.join(","), [unitIds]);
-  const hasContext = Boolean(shiftId && unitIdsKey);
+  const contextKey = shiftId && unitIdsKey ? `${shiftId}:${unitIdsKey}` : "";
+  const hasContext = contextKey.length > 0;
   const [latestByUnitId, setLatestByUnitId] =
     useState<LatestEventsByUnitId>({});
-  const [isLoading, setIsLoading] = useState(hasContext);
+  const [loadedContextKey, setLoadedContextKey] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const refetch = useCallback(async () => {
+  const loadEvents = useCallback(async () => {
     if (!shiftId || !unitIdsKey) {
       return;
     }
 
-    try {
-      setIsLoading(true);
-      setErrorMessage(null);
-      const events = await getUnitEventsByUnitIds(unitIdsKey.split(","));
-      setLatestByUnitId(mapLatestEventsByUnitId(events));
-    } catch {
-      setErrorMessage("No se pudo cargar el estado actual de las unidades.");
-    } finally {
-      setIsLoading(false);
-    }
+    setErrorMessage(null);
+    const events = await getUnitEventsByUnitIds(unitIdsKey.split(","));
+    setLatestByUnitId(mapLatestEventsByUnitId(events));
   }, [shiftId, unitIdsKey]);
 
   useEffect(() => {
@@ -50,7 +44,41 @@ export function useLatestUnitEventsByUnitIds(
       return;
     }
 
-    void Promise.resolve().then(refetch);
+    let isMounted = true;
+
+    void loadEvents()
+      .catch(() => {
+        if (isMounted) {
+          setErrorMessage("No se pudo cargar el estado actual de las unidades.");
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setLoadedContextKey(contextKey);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [contextKey, hasContext, loadEvents]);
+
+  const refetch = useCallback(async () => {
+    if (!hasContext) {
+      return;
+    }
+
+    try {
+      await loadEvents();
+    } catch {
+      setErrorMessage("No se pudo cargar el estado actual de las unidades.");
+    }
+  }, [hasContext, loadEvents]);
+
+  useEffect(() => {
+    if (!hasContext) {
+      return;
+    }
 
     const channel = subscribeToUnitMovementEventsTableChanges(() => {
       void refetch();
@@ -63,7 +91,7 @@ export function useLatestUnitEventsByUnitIds(
 
   return {
     latestByUnitId: hasContext ? latestByUnitId : {},
-    isLoading: hasContext ? isLoading : false,
+    isLoading: Boolean(hasContext && loadedContextKey !== contextKey),
     errorMessage: hasContext ? errorMessage : null,
     refetch,
   };
