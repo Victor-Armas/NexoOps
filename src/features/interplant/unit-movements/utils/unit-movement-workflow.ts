@@ -82,14 +82,13 @@ export function getNextGuidedUnitMovementAction(
         description: "Comienza la descarga en la planta destino.",
       };
     case "unloading":
+    case "unloading_finished":
       return {
         eventType: null,
         label: "Finalizar descarga",
         description: "Termina el movimiento o continúa con la siguiente carga.",
         completesMovement: true,
       };
-    case "unloading_finished":
-      return null;
     default:
       return {
         eventType: "loading",
