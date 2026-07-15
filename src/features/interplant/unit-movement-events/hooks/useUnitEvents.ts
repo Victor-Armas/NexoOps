@@ -9,6 +9,8 @@ import {
 import {
   DIESEL_REFUELING_FINISHED_EVENT,
   DIESEL_REFUELING_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
   type CreateUnitMovementEventPayload,
   type UnitMovementEvent,
 } from "../types/unit-movement-event.types";
@@ -18,6 +20,8 @@ const BLOCKING_EVENT_TYPES = new Set([
   "meal_finished",
   DIESEL_REFUELING_STARTED_EVENT,
   DIESEL_REFUELING_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
 ]);
 
 function isStandaloneProcessActive(
@@ -103,6 +107,11 @@ export function useUnitEvents(
     DIESEL_REFUELING_STARTED_EVENT,
     DIESEL_REFUELING_FINISHED_EVENT,
   );
+  const isDriverChangeActive = isStandaloneProcessActive(
+    blockingEvents,
+    DRIVER_CHANGE_STARTED_EVENT,
+    DRIVER_CHANGE_FINISHED_EVENT,
+  );
 
   const addEvent = useCallback(
     async (
@@ -147,6 +156,7 @@ export function useUnitEvents(
     latestMealStart: latestMealStart ?? null,
     isMealActive,
     isFuelingActive,
+    isDriverChangeActive,
     isLoading,
     errorMessage,
     addEvent,
