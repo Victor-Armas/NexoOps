@@ -11,12 +11,14 @@ import { useShift } from "../../shifts/hooks/useShift";
 import { UnitStandaloneEventsPanel } from "../../unit-movement-events/components/UnitStandaloneEventsPanel";
 import { useUnitEvents } from "../../unit-movement-events/hooks/useUnitEvents";
 import { useUnitMovementEventActions } from "../../unit-movement-events/hooks/useUnitMovementEventActions";
+import type { UnitOperationalPhase } from "../../unit-movement-events/types/unit-movement-event.types";
 import { useUnits } from "../../units/hooks/useUnits";
 import { UnitMovementForm } from "../components/UnitMovementForm";
 import { UnitMovementList } from "../components/UnitMovementList";
 import { useMovementTypes } from "../hooks/useMovementTypes";
 import { useUnitMovements } from "../hooks/useUnitMovements";
 import type { UnitMovementFormValues } from "../schemas/unit-movement.schemas";
+import type { ContinueUnitMovementPayload } from "../types/unit-movement.types";
 
 export function UnitMovementsPage() {
   const { projectId, unitId } = useParams<{
@@ -68,7 +70,9 @@ export function UnitMovementsPage() {
     isLoading: isLoadingUnitMovements,
     errorMessage: unitMovementsErrorMessage,
     addUnitMovement,
+    advanceMovement,
     markAsCompleted,
+    completeAndContinue,
     markAsCancelled,
   } = useUnitMovements(shift?.id, unitId);
 
@@ -185,27 +189,53 @@ export function UnitMovementsPage() {
       });
 
       setIsMovementModalOpen(false);
-      toast.success("Movimiento registrado correctamente.");
+      toast.success("Movimiento iniciado. La unidad quedó en etapa de carga.");
       return true;
     } catch {
-      toast.error("No se pudo registrar el movimiento.");
+      toast.error("No se pudo iniciar el movimiento.");
       return false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleAdvance = async (payload: {
+    movementId: string;
+    eventType: string;
+    notes?: string;
+    phase?: UnitOperationalPhase | null;
+    plantId?: string | null;
+  }) => {
+    await advanceMovement(payload);
+  };
+
   const handleComplete = async (movementId: string) => {
     if (!canCompleteMovement) {
       toast.error("No tienes permiso para completar movimientos.");
-      return;
+      throw new Error("Sin permiso para completar movimientos.");
     }
 
     try {
       await markAsCompleted(movementId);
-      toast.success("Movimiento completado.");
     } catch {
       toast.error("No se pudo completar el movimiento.");
+      throw new Error("No se pudo completar el movimiento.");
+    }
+  };
+
+  const handleCompleteAndContinue = async (
+    payload: ContinueUnitMovementPayload,
+  ) => {
+    if (!canCompleteMovement || !canRegisterMovement) {
+      toast.error("No tienes permiso para finalizar y continuar movimientos.");
+      throw new Error("Sin permiso para finalizar y continuar.");
+    }
+
+    try {
+      await completeAndContinue(payload);
+    } catch {
+      toast.error("No se pudo completar y continuar el movimiento.");
+      throw new Error("No se pudo completar y continuar el movimiento.");
     }
   };
 
@@ -279,15 +309,24 @@ export function UnitMovementsPage() {
         <div className="mb-7">
           <UnitMovementList
             unitMovements={unitMovements}
+            currentShiftId={shift.id}
             units={units}
             plants={plants}
             movementTypes={movementTypes}
             mealTargetMinutes={operationalSettings?.mealTargetMinutes ?? 60}
-            eventActions={eventActions}
             mealDelayLimitMinutes={
               operationalSettings?.mealDelayLimitMinutes ?? 75
             }
+            dockWaitLimitMinutes={
+              operationalSettings?.dockWaitLimitMinutes ?? 15
+            }
+            documentationWaitLimitMinutes={
+              operationalSettings?.documentationWaitLimitMinutes ?? 15
+            }
+            eventActions={eventActions}
+            onAdvance={handleAdvance}
             onComplete={handleComplete}
+            onCompleteAndContinue={handleCompleteAndContinue}
             onCancel={handleCancel}
           />
         </div>
