@@ -1,4 +1,5 @@
 import type { ShiftType } from "../../shifts/types/shift.types";
+import type { PlantCheckActivityReportRow } from "./plant-check-activity.types";
 
 export type ShiftClosingHistoryFilters = {
   startDate: string;
@@ -30,6 +31,11 @@ export type ShiftClosingHistoryItem = {
   incidentResolvedCount: number;
   incidentHighSeverityCount: number;
   notes: string | null;
+};
+
+export type ShiftClosingHistoryData = {
+  items: ShiftClosingHistoryItem[];
+  plantCheckActivity: PlantCheckActivityReportRow[];
 };
 
 export type ShiftClosingHistoryShiftRow = {
