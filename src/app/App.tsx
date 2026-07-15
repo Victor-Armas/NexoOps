@@ -19,6 +19,7 @@ import { PlantChecksPage } from "../features/interplant/plant-checks/pages/Plant
 import { UnitMovementsPage } from "../features/interplant/unit-movements/pages/UnitMovementsPage";
 import { ShiftClosingHistoryPage } from "../features/interplant/history/pages/ShiftClosingHistoryPage";
 import { AdminPage } from "../features/interplant/operational-settings/pages/AdminPage";
+import { ControlTowerPage } from "../features/interplant/control-tower/pages/ControlTowerPage";
 
 export function App() {
   return (
@@ -38,6 +39,11 @@ export function App() {
             <Route path="/app" element={<AppShell />}>
               <Route index element={<ProjectMenuPage />} />
             </Route>
+
+            <Route
+              path="/app/projects/:projectId/control-tower"
+              element={<ControlTowerPage />}
+            />
 
             <Route path="/app/projects/:projectId" element={<ProjectShell />}>
               <Route index element={<InterplantDashboardPage />} />
