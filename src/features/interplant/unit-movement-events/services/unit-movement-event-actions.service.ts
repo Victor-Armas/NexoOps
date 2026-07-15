@@ -7,6 +7,8 @@ import type {
 import {
   DIESEL_REFUELING_FINISHED_EVENT,
   DIESEL_REFUELING_STARTED_EVENT,
+  DRIVER_CHANGE_FINISHED_EVENT,
+  DRIVER_CHANGE_STARTED_EVENT,
 } from "../types/unit-movement-event.types";
 
 function createDefaultAction(params: {
@@ -90,12 +92,22 @@ const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
     colorKey: "blue",
   }),
   createDefaultAction({
-    eventType: "driver_change",
-    label: "Cambio operador",
+    eventType: DRIVER_CHANGE_STARTED_EVENT,
+    label: "Cambio de operador",
     requiresMovement: false,
-    showAsAction: true,
+    showAsAction: false,
+    behavior: "driver_change_start",
     iconKey: "refresh",
     colorKey: "amber",
+  }),
+  createDefaultAction({
+    eventType: DRIVER_CHANGE_FINISHED_EVENT,
+    label: "Cambio de operador finalizado",
+    requiresMovement: false,
+    showAsAction: false,
+    behavior: "driver_change_end",
+    iconKey: "refresh",
+    colorKey: "success",
   }),
   createDefaultAction({
     eventType: DIESEL_REFUELING_STARTED_EVENT,
