@@ -1,4 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
+import {
+  addDaysToInputDate,
+  getMonterreyInputDate,
+  getMonterreyUtcDateRange,
+} from "../../../../lib/date-time/monterrey-time";
 import { getOperationalHistoryData } from "../services/operational-history.service";
 import type {
   OperationalHistoryData,
@@ -11,31 +16,15 @@ const EMPTY_DATA: OperationalHistoryData = {
   statusDurations: [],
   incidents: [],
   incidentDaily: [],
+  plantChecks: [],
 };
 
-function toInputDate(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
 export function getDefaultOperationalHistoryFilters(): OperationalHistoryFilters {
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - 6);
+  const endDate = getMonterreyInputDate();
 
   return {
-    startDate: toInputDate(startDate),
-    endDate: toInputDate(endDate),
-  };
-}
-
-function getRange(filters: OperationalHistoryFilters) {
-  const rangeStart = new Date(`${filters.startDate}T00:00:00`);
-  const rangeEnd = new Date(`${filters.endDate}T00:00:00`);
-  rangeEnd.setDate(rangeEnd.getDate() + 1);
-
-  return {
-    rangeStart: rangeStart.toISOString(),
-    rangeEnd: rangeEnd.toISOString(),
+    startDate: addDaysToInputDate(endDate, -6),
+    endDate,
   };
 }
 
@@ -59,7 +48,10 @@ export function useOperationalHistory(projectId: string | undefined) {
       setIsLoading(true);
       setErrorMessage(null);
 
-      const range = getRange(filters);
+      const range = getMonterreyUtcDateRange(
+        filters.startDate,
+        filters.endDate,
+      );
       const nextData = await getOperationalHistoryData({
         projectId,
         ...range,
