@@ -17,6 +17,13 @@ type ClosingOpenMovementsListProps = {
   latestByMovementId: Record<string, UnitMovementEvent>;
 };
 
+function getPhaseLabel(event?: UnitMovementEvent) {
+  if (event?.phase === "origin") return "Origen";
+  if (event?.phase === "transit") return "Traslado";
+  if (event?.phase === "destination") return "Destino";
+  return "En proceso";
+}
+
 export function ClosingOpenMovementsList({
   openMovements,
   units,
@@ -38,7 +45,7 @@ export function ClosingOpenMovementsList({
             Movimientos abiertos
           </p>
           <p className="mt-1 text-xs leading-5 text-muted">
-            No bloquean el cierre y quedarán disponibles para continuar en el siguiente turno.
+            No bloquean el cierre y conservarán su etapa para continuar en el siguiente turno.
           </p>
         </div>
       </div>
@@ -62,6 +69,17 @@ export function ClosingOpenMovementsList({
             latestEvent,
             openFallbackLabel: "Movimiento abierto",
           });
+          const currentPlant = latestEvent?.plantId
+            ? plants.find((plant) => plant.id === latestEvent.plantId)
+            : latestEvent?.phase === "origin"
+              ? plants.find((plant) => plant.id === movement.originPlantId)
+              : latestEvent?.phase === "destination"
+                ? plants.find((plant) => plant.id === movement.destinationPlantId)
+                : null;
+          const operationalStatus = currentPlant
+            ? `${statusLabel} en ${currentPlant.code}`
+            : statusLabel;
+          const statusStartedAt = latestEvent?.eventAt ?? movement.startedAt;
 
           return (
             <article
@@ -70,19 +88,24 @@ export function ClosingOpenMovementsList({
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-semibold">{unitLabel}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold">{unitLabel}</p>
+                    <span className="font-ibm-plex-mono text-[9px] uppercase tracking-[0.08em] text-faint">
+                      {getPhaseLabel(latestEvent)}
+                    </span>
+                  </div>
                   <p className="mt-1 truncate text-xs text-muted">
                     {originName} → {destinationName}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-sm border border-principal/40 px-2 py-1 font-ibm-plex-mono text-[9px] uppercase text-principal">
-                  {statusLabel}
+                <span className="shrink-0 rounded-sm border border-principal/40 px-2 py-1 text-right font-ibm-plex-mono text-[9px] uppercase text-principal">
+                  {operationalStatus}
                 </span>
               </div>
 
               <p className="mt-3 inline-flex items-center gap-1.5 font-ibm-plex-mono text-[9px] uppercase tracking-[0.08em] text-muted">
                 <Clock3 size={13} />
-                Activo {formatElapsedTime(movement.startedAt)}
+                Estado actual {formatElapsedTime(statusStartedAt)}
               </p>
             </article>
           );
