@@ -11,7 +11,7 @@ import {
 } from "../types/unit-movement-event.types";
 
 const UNIT_EVENT_COLUMNS =
-  "id, unit_id, shift_id, unit_movement_id, event_type_id, event_type, notes, event_at, created_by, created_at, updated_at";
+  "id, unit_id, shift_id, unit_movement_id, event_type_id, event_type, phase, plant_id, notes, event_at, created_by, created_at, updated_at";
 
 const STANDALONE_BLOCKING_EVENT_TYPES = [
   "meal",
@@ -30,6 +30,8 @@ function mapUnitMovementEvent(row: UnitMovementEventRow): UnitMovementEvent {
     unitMovementId: row.unit_movement_id,
     eventTypeId: row.event_type_id,
     eventType: row.event_type,
+    phase: row.phase,
+    plantId: row.plant_id,
     notes: row.notes,
     eventAt: row.event_at,
     createdBy: row.created_by,
@@ -138,6 +140,8 @@ export async function createUnitMovementEvent(
       unit_movement_id: payload.unitMovementId ?? null,
       event_type_id: payload.eventTypeId ?? undefined,
       event_type: payload.eventType,
+      phase: payload.phase ?? undefined,
+      plant_id: payload.plantId ?? undefined,
       notes: payload.notes?.trim() || null,
     })
     .select(UNIT_EVENT_COLUMNS)
