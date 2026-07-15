@@ -1,5 +1,10 @@
+import {
+  getMonterreyUtcDateRange,
+} from "../../../../lib/date-time/monterrey-time";
 import { supabase } from "../../../../lib/supabase/client";
+import { getPlantCheckActivityReport } from "./plant-check-activity.service";
 import type {
+  ShiftClosingHistoryData,
   ShiftClosingHistoryFilters,
   ShiftClosingHistoryItem,
   ShiftClosingHistoryRow,
@@ -34,14 +39,6 @@ const SHIFT_CLOSING_HISTORY_COLUMNS = `
   )
 `;
 
-function getDayStart(date: string) {
-  return `${date}T00:00:00.000Z`;
-}
-
-function getDayEnd(date: string) {
-  return `${date}T23:59:59.999Z`;
-}
-
 function mapShiftClosingHistoryItem(
   row: ShiftClosingHistoryRow,
 ): ShiftClosingHistoryItem {
@@ -75,13 +72,18 @@ function mapShiftClosingHistoryItem(
 export async function getShiftClosingHistory(params: {
   projectId: string;
   filters: ShiftClosingHistoryFilters;
-}): Promise<ShiftClosingHistoryItem[]> {
+}): Promise<ShiftClosingHistoryData> {
+  const { rangeStart, rangeEnd } = getMonterreyUtcDateRange(
+    params.filters.startDate,
+    params.filters.endDate,
+  );
+
   let query = supabase
     .from("shift_closings")
     .select(SHIFT_CLOSING_HISTORY_COLUMNS)
     .eq("shifts.project_id", params.projectId)
-    .gte("closed_at", getDayStart(params.filters.startDate))
-    .lte("closed_at", getDayEnd(params.filters.endDate))
+    .gte("closed_at", rangeStart)
+    .lt("closed_at", rangeEnd)
     .order("closed_at", { ascending: false })
     .limit(100);
 
@@ -95,5 +97,27 @@ export async function getShiftClosingHistory(params: {
     throw error;
   }
 
-  return data.map(mapShiftClosingHistoryItem);
+  const items = data.map(mapShiftClosingHistoryItem);
+  const plantCheckActivity =
+    items.length === 0
+      ? []
+      : await getPlantCheckActivityReport({
+          projectId: params.projectId,
+          shiftIds: items.map((item) => item.shiftId),
+        });
+
+  return {
+    items,
+    plantCheckActivity,
+  };
+}
+
+export async function deleteShiftPermanently(shiftId: string) {
+  const { error } = await supabase.rpc("delete_shift_permanently", {
+    target_shift_id: shiftId,
+  });
+
+  if (error) {
+    throw error;
+  }
 }
