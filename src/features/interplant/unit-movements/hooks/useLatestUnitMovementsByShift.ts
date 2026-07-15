@@ -39,10 +39,11 @@ export function useLatestUnitMovementsByShift(
   );
 
   const hasContextUnits = normalizedUnitIds.length > 0;
+  const contextKey = shiftId ? `${shiftId}:${unitIdsKey}` : "";
 
   const [latestByUnitId, setLatestByUnitId] =
     useState<LatestUnitMovementsByUnitId>({});
-  const [isLoading, setIsLoading] = useState(Boolean(shiftId));
+  const [loadedContextKey, setLoadedContextKey] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const loadUnitMovements = useCallback(async () => {
@@ -61,6 +62,10 @@ export function useLatestUnitMovementsByShift(
   }, [shiftId, hasContextUnits, normalizedUnitIds]);
 
   useEffect(() => {
+    if (!contextKey) {
+      return;
+    }
+
     let isMounted = true;
 
     void loadUnitMovements()
@@ -81,18 +86,21 @@ export function useLatestUnitMovementsByShift(
       })
       .finally(() => {
         if (isMounted) {
-          setIsLoading(false);
+          setLoadedContextKey(contextKey);
         }
       });
 
     return () => {
       isMounted = false;
     };
-  }, [loadUnitMovements]);
+  }, [contextKey, loadUnitMovements]);
 
   const refetch = useCallback(async () => {
+    if (!contextKey) {
+      return;
+    }
+
     try {
-      setIsLoading(true);
       setErrorMessage(null);
 
       const data = await loadUnitMovements();
@@ -100,10 +108,8 @@ export function useLatestUnitMovementsByShift(
       setLatestByUnitId(mapLatestMovementsByUnitId(data));
     } catch {
       setErrorMessage("No se pudo cargar el estado de las unidades.");
-    } finally {
-      setIsLoading(false);
     }
-  }, [loadUnitMovements]);
+  }, [contextKey, loadUnitMovements]);
 
   useEffect(() => {
     if (!shiftId) {
@@ -125,7 +131,7 @@ export function useLatestUnitMovementsByShift(
 
   return {
     latestByUnitId,
-    isLoading,
+    isLoading: Boolean(contextKey && loadedContextKey !== contextKey),
     errorMessage,
     refetch,
   };
