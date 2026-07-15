@@ -1,4 +1,5 @@
 import { supabase } from "../../../../lib/supabase/client";
+import { getPlantCheckActivityReport } from "./plant-check-activity.service";
 import type {
   IncidentActivityReportRow,
   IncidentDailyReportRow,
@@ -19,39 +20,50 @@ export async function getOperationalHistoryData({
   rangeStart,
   rangeEnd,
 }: OperationalHistoryRequest): Promise<OperationalHistoryData> {
-  const [usersResult, unitsResult, durationsResult, incidentsResult, dailyResult] =
-    await Promise.all([
-      supabase.rpc("get_user_activity_report", {
-        target_project_id: projectId,
-        range_start: rangeStart,
-        range_end: rangeEnd,
-        target_user_id: null,
-      }),
-      supabase.rpc("get_unit_activity_report", {
-        target_project_id: projectId,
-        range_start: rangeStart,
-        range_end: rangeEnd,
-        target_unit_id: null,
-      }),
-      supabase.rpc("get_unit_status_duration_report", {
-        target_project_id: projectId,
-        range_start: rangeStart,
-        range_end: rangeEnd,
-        target_unit_id: null,
-      }),
-      supabase.rpc("get_incident_activity_report", {
-        target_project_id: projectId,
-        range_start: rangeStart,
-        range_end: rangeEnd,
-        target_scope: null,
-        target_category_id: null,
-      }),
-      supabase.rpc("get_incident_daily_report", {
-        target_project_id: projectId,
-        range_start: rangeStart,
-        range_end: rangeEnd,
-      }),
-    ]);
+  const [
+    usersResult,
+    unitsResult,
+    durationsResult,
+    incidentsResult,
+    dailyResult,
+    plantChecks,
+  ] = await Promise.all([
+    supabase.rpc("get_user_activity_report", {
+      target_project_id: projectId,
+      range_start: rangeStart,
+      range_end: rangeEnd,
+      target_user_id: null,
+    }),
+    supabase.rpc("get_unit_activity_report", {
+      target_project_id: projectId,
+      range_start: rangeStart,
+      range_end: rangeEnd,
+      target_unit_id: null,
+    }),
+    supabase.rpc("get_unit_status_duration_report", {
+      target_project_id: projectId,
+      range_start: rangeStart,
+      range_end: rangeEnd,
+      target_unit_id: null,
+    }),
+    supabase.rpc("get_incident_activity_report", {
+      target_project_id: projectId,
+      range_start: rangeStart,
+      range_end: rangeEnd,
+      target_scope: null,
+      target_category_id: null,
+    }),
+    supabase.rpc("get_incident_daily_report", {
+      target_project_id: projectId,
+      range_start: rangeStart,
+      range_end: rangeEnd,
+    }),
+    getPlantCheckActivityReport({
+      projectId,
+      rangeStart,
+      rangeEnd,
+    }),
+  ]);
 
   const firstError =
     usersResult.error ||
@@ -70,5 +82,6 @@ export async function getOperationalHistoryData({
     statusDurations: (durationsResult.data ?? []) as UnitStatusDurationReportRow[],
     incidents: (incidentsResult.data ?? []) as IncidentActivityReportRow[],
     incidentDaily: (dailyResult.data ?? []) as IncidentDailyReportRow[],
+    plantChecks,
   };
 }
