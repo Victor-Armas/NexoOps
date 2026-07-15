@@ -13,9 +13,13 @@ type PositionedSnapshot = {
   stackIndex: number;
 };
 
+const TRACK_EDGE_PADDING = 7;
+
 function getStationPosition(index: number, count: number) {
   if (count <= 1) return 50;
-  return (index / (count - 1)) * 100;
+
+  const availableWidth = 100 - TRACK_EDGE_PADDING * 2;
+  return TRACK_EDGE_PADDING + (index / (count - 1)) * availableWidth;
 }
 
 function getSnapshotPosition(
@@ -97,10 +101,9 @@ export function ControlTowerMap({ plants, snapshots }: ControlTowerMapProps) {
     [],
   );
   const unlocatedCount = snapshots.length - positionedSnapshots.length;
-  const trackMinWidth = Math.max(760, plants.length * 210);
 
   return (
-    <section className="rounded-xl border border-line bg-panel/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)] backdrop-blur md:p-5">
+    <section className="h-full rounded-xl border border-line bg-panel/90 p-4 shadow-[0_18px_60px_rgba(0,0,0,0.18)] backdrop-blur md:p-5">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
@@ -135,12 +138,15 @@ export function ControlTowerMap({ plants, snapshots }: ControlTowerMapProps) {
           No hay plantas activas asignadas al proyecto.
         </div>
       ) : (
-        <div className="mt-5 overflow-x-auto pb-2">
-          <div
-            className="relative h-[300px]"
-            style={{ minWidth: `${trackMinWidth}px` }}
-          >
-            <div className="absolute left-[4%] right-[4%] top-[172px] h-[3px] overflow-hidden rounded-full bg-line-strong">
+        <div className="mt-5 w-full overflow-hidden pb-2">
+          <div className="relative h-[300px] w-full min-w-0">
+            <div
+              className="absolute top-[172px] h-[3px] overflow-hidden rounded-full bg-line-strong"
+              style={{
+                left: `${TRACK_EDGE_PADDING}%`,
+                right: `${TRACK_EDGE_PADDING}%`,
+              }}
+            >
               <div className="h-full w-full animate-pulse bg-gradient-to-r from-transparent via-principal/45 to-transparent" />
             </div>
 
@@ -156,16 +162,16 @@ export function ControlTowerMap({ plants, snapshots }: ControlTowerMapProps) {
                   className="absolute top-[142px] -translate-x-1/2 text-center"
                   style={{ left: `${position}%` }}
                 >
-                  <div className="relative mx-auto flex h-16 w-20 items-center justify-center rounded-xl border-2 border-line-strong bg-surface-dark shadow-lg">
-                    <Factory size={16} className="absolute left-2 top-2 text-faint" />
-                    <span className="font-barlow-condensed text-xl font-bold">
+                  <div className="relative mx-auto flex h-14 w-16 items-center justify-center rounded-xl border-2 border-line-strong bg-surface-dark shadow-lg md:h-16 md:w-20">
+                    <Factory size={15} className="absolute left-2 top-2 text-faint" />
+                    <span className="font-barlow-condensed text-lg font-bold md:text-xl">
                       {plant.code}
                     </span>
                     <span className="absolute -bottom-2 -right-2 flex h-6 min-w-6 items-center justify-center rounded-full border border-line-strong bg-panel px-1.5 font-ibm-plex-mono text-[9px] text-muted">
                       {unitsAtPlant}
                     </span>
                   </div>
-                  <p className="mt-3 max-w-28 truncate font-barlow-condensed text-[10px] font-semibold uppercase tracking-[0.08em] text-faint">
+                  <p className="mt-3 max-w-20 truncate font-barlow-condensed text-[9px] font-semibold uppercase tracking-[0.06em] text-faint md:max-w-28 md:text-[10px] md:tracking-[0.08em]">
                     {plant.name}
                   </p>
                 </div>
@@ -182,11 +188,11 @@ export function ControlTowerMap({ plants, snapshots }: ControlTowerMapProps) {
                   style={{ left: `${position}%`, top: `${top}px` }}
                 >
                   <div
-                    className={`group flex min-w-24 items-center gap-2 rounded-lg border px-3 py-2 shadow-lg transition-transform duration-300 hover:-translate-y-1 ${getUnitBadgeClass(
+                    className={`group flex min-w-20 items-center gap-2 rounded-lg border px-2.5 py-2 shadow-lg transition-transform duration-300 hover:-translate-y-1 md:min-w-24 md:px-3 ${getUnitBadgeClass(
                       snapshot,
                     )}`}
                   >
-                    <span className="font-ibm-plex-mono text-xs font-bold">
+                    <span className="font-ibm-plex-mono text-[10px] font-bold md:text-xs">
                       {snapshot.unitLabel}
                     </span>
                     {snapshot.phase === "transit" && (
