@@ -1,3 +1,5 @@
+import type { PlantCheckActivityReportRow } from "./plant-check-activity.types";
+
 export type OperationalHistoryView =
   | "personal"
   | "unidades"
@@ -75,4 +77,5 @@ export type OperationalHistoryData = {
   statusDurations: UnitStatusDurationReportRow[];
   incidents: IncidentActivityReportRow[];
   incidentDaily: IncidentDailyReportRow[];
+  plantChecks: PlantCheckActivityReportRow[];
 };
