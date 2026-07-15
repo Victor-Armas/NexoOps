@@ -2,6 +2,8 @@ export type OperationalSettings = {
   projectId: string;
   mealTargetMinutes: number;
   mealDelayLimitMinutes: number;
+  dockWaitLimitMinutes: number;
+  documentationWaitLimitMinutes: number;
   mediumFullCountThreshold: number;
   mediumEmptyCountThreshold: number;
   updatedBy: string | null;
@@ -13,6 +15,8 @@ export type OperationalSettingsRow = {
   project_id: string;
   meal_target_minutes: number;
   meal_delay_limit_minutes: number;
+  dock_wait_limit_minutes: number;
+  documentation_wait_limit_minutes: number;
   medium_full_count_threshold: number;
   medium_empty_count_threshold: number;
   updated_by: string | null;
@@ -24,6 +28,8 @@ export type SaveOperationalSettingsPayload = {
   projectId: string;
   mealTargetMinutes: number;
   mealDelayLimitMinutes: number;
+  dockWaitLimitMinutes: number;
+  documentationWaitLimitMinutes: number;
   mediumFullCountThreshold: number;
   mediumEmptyCountThreshold: number;
   updatedBy: string;
