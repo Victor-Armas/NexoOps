@@ -44,6 +44,15 @@ export type CreateUnitMovementPayload = {
   notes?: string;
 };
 
+export type ContinueUnitMovementPayload = {
+  movementId: string;
+  shiftId: string;
+  destinationPlantId: string;
+  movementTypeId: string | null;
+  quantity: number;
+  notes?: string;
+};
+
 export type MovementType = {
   id: string;
   code: string;
