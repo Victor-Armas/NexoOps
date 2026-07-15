@@ -40,10 +40,16 @@ export function isProtectedUnitEvent(
   actions: UnitMovementEventAction[],
   eventType: string,
 ) {
-  const behavior = findUnitEventAction(actions, eventType)?.behavior;
+  const action = findUnitEventAction(actions, eventType);
   return (
-    behavior === "movement_complete" ||
-    behavior === "movement_cancel" ||
+    action?.behavior === "movement_complete" ||
+    action?.behavior === "movement_cancel" ||
+    Boolean(
+      action?.isSystem &&
+        action.requiresMovement &&
+        action.behavior === "status" &&
+        !action.showAsAction,
+    ) ||
     eventType === "completed" ||
     eventType === "cancelled"
   );
