@@ -5,6 +5,7 @@ import type {
   MovementType,
   UnitMovement,
 } from "../types/unit-movement.types";
+import { CompletedUnitMovementCard } from "./CompletedUnitMovementCard";
 import { UnitMovementCard } from "./UnitMovementCard";
 
 type UnitMovementListProps = {
@@ -30,30 +31,80 @@ export function UnitMovementList({
   onComplete,
   onCancel,
 }: UnitMovementListProps) {
+  const activeMovements = unitMovements.filter(
+    (movement) => movement.status === "open",
+  );
+  const previousMovements = unitMovements.filter(
+    (movement) => movement.status !== "open",
+  );
+
+  if (unitMovements.length === 0) {
+    return (
+      <section>
+        <div className="flex items-center gap-3">
+          <span className="section-label shrink-0">Movimientos</span>
+          <span className="h-px flex-1 bg-line" />
+        </div>
+
+        <div className="mt-4 rounded-sm border border-dashed border-line-strong bg-panel/50 px-5 py-7 text-center light:bg-white">
+          <p className="font-medium text-muted">Sin movimientos en este turno</p>
+          <p className="sub mt-1">
+            Usa el botón + para registrar el primer movimiento de la unidad.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section className="space-y-4">
-      <p className="section-label before:h-px before:flex-1 before:bg-line">
-        Movimientos del turno
-      </p>
+    <section className="space-y-6">
+      {activeMovements.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="section-label shrink-0 text-principal">
+              Movimiento actual
+            </span>
+            <span className="h-px flex-1 bg-principal/30" />
+          </div>
 
-      {unitMovements.map((movement) => (
-        <UnitMovementCard
-          key={movement.id}
-          movement={movement}
-          units={units}
-          plants={plants}
-          movementTypes={movementTypes}
-          mealTargetMinutes={mealTargetMinutes}
-          mealDelayLimitMinutes={mealDelayLimitMinutes}
-          eventActions={eventActions}
-          onComplete={onComplete}
-          onCancel={onCancel}
-        />
-      ))}
+          <div className="mt-4 space-y-4">
+            {activeMovements.map((movement) => (
+              <UnitMovementCard
+                key={movement.id}
+                movement={movement}
+                units={units}
+                plants={plants}
+                movementTypes={movementTypes}
+                mealTargetMinutes={mealTargetMinutes}
+                mealDelayLimitMinutes={mealDelayLimitMinutes}
+                eventActions={eventActions}
+                onComplete={onComplete}
+                onCancel={onCancel}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
-      {unitMovements.length === 0 && (
-        <div className="rounded-sm border border-line bg-panel p-5 text-sm text-muted light:border-slate-200 light:bg-white light:text-slate-500">
-          Aún no hay movimientos registrados en este turno.
+      {previousMovements.length > 0 && (
+        <div>
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-line" />
+            <span className="section-label shrink-0">Movimientos anteriores</span>
+            <span className="h-px flex-1 bg-line" />
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {previousMovements.map((movement) => (
+              <CompletedUnitMovementCard
+                key={movement.id}
+                movement={movement}
+                units={units}
+                plants={plants}
+                movementTypes={movementTypes}
+              />
+            ))}
+          </div>
         </div>
       )}
     </section>
