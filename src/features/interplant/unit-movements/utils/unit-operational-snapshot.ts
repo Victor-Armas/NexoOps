@@ -1,5 +1,6 @@
 import type { UnitMovementEventAction } from "../../unit-movement-events/types/unit-movement-event-action.types";
 import type { UnitMovementEvent } from "../../unit-movement-events/types/unit-movement-event.types";
+import type { UnitOperationalPhase } from "../../unit-movement-events/types/unit-movement-event.types";
 import {
   getUnitEventColorKey,
   getUnitEventIconKey,
@@ -12,7 +13,6 @@ import type {
   MovementType,
   UnitMovement,
 } from "../types/unit-movement.types";
-import type { UnitOperationalPhase } from "../../unit-movement-events/types/unit-movement-event.types";
 
 export type UnitOperationalSnapshot = {
   unitId: string;
@@ -87,13 +87,10 @@ function resolveCurrentPlantId(
   phase: UnitOperationalPhase | null,
 ) {
   if (event?.plantId) return event.plantId;
-  if (!movement) return null;
+  if (!movement || movement.status !== "open") return null;
 
   if (phase === "origin") return movement.originPlantId;
   if (phase === "destination") return movement.destinationPlantId;
-  if (movement.status !== "open") {
-    return movement.destinationPlantId ?? movement.originPlantId;
-  }
 
   return null;
 }
@@ -122,13 +119,11 @@ function getHeadline(params: {
   } = params;
   const location = currentPlantCode ? ` en ${currentPlantCode}` : "";
 
-  if (isAvailable) {
-    return currentPlantCode ? `Disponible en ${currentPlantCode}` : "Disponible";
-  }
+  if (isAvailable) return "Disponible";
 
   switch (eventType) {
     case "departure_requested":
-      return `Salida indicada${location}`;
+      return `En movimiento${location}`;
     case "loading":
       return `Cargando${location}`;
     case "loading_finished":
@@ -160,21 +155,25 @@ export function resolveUnitOperationalSnapshot({
   plants,
   movementTypes = [],
 }: ResolveUnitOperationalSnapshotParams): UnitOperationalSnapshot {
+  const activeMovement = movement?.status === "open" ? movement : null;
   const standaloneActive = isStandaloneActiveUnitEvent(event, eventActions);
-  const isAvailable =
-    !standaloneActive && (!movement || movement.status !== "open");
-  const phase = resolvePhase(movement, event, standaloneActive);
-  const currentPlantId = resolveCurrentPlantId(movement, event, phase);
+  const isAvailable = !standaloneActive && !activeMovement;
+  const phase = isAvailable
+    ? null
+    : resolvePhase(activeMovement, event, standaloneActive);
+  const currentPlantId = isAvailable
+    ? null
+    : resolveCurrentPlantId(activeMovement, event, phase);
   const currentPlant = findPlant(plants, currentPlantId);
-  const originPlant = findPlant(plants, movement?.originPlantId ?? null);
+  const originPlant = findPlant(plants, activeMovement?.originPlantId ?? null);
   const destinationPlant = findPlant(
     plants,
-    movement?.destinationPlantId ?? null,
+    activeMovement?.destinationPlantId ?? null,
   );
   const movementType = movementTypes.find(
-    (type) => type.id === movement?.movementTypeId,
+    (type) => type.id === activeMovement?.movementTypeId,
   );
-  const eventType = event?.eventType ?? null;
+  const eventType = isAvailable ? null : event?.eventType ?? null;
   const statusLabel = isAvailable
     ? "Disponible"
     : event
@@ -190,7 +189,7 @@ export function resolveUnitOperationalSnapshot({
   return {
     unitId: unit.id,
     unitLabel: `U${unit.code}`,
-    movementId: movement?.id ?? null,
+    movementId: activeMovement?.id ?? null,
     isAvailable,
     isStandalone: standaloneActive,
     phase,
@@ -198,14 +197,14 @@ export function resolveUnitOperationalSnapshot({
     currentPlantId,
     currentPlantCode: currentPlant?.code ?? null,
     currentPlantName: currentPlant?.name ?? null,
-    originPlantId: movement?.originPlantId ?? null,
-    destinationPlantId: movement?.destinationPlantId ?? null,
+    originPlantId: activeMovement?.originPlantId ?? null,
+    destinationPlantId: activeMovement?.destinationPlantId ?? null,
     routeLabel:
-      movement && (originPlant || destinationPlant)
+      activeMovement && (originPlant || destinationPlant)
         ? `${originPlant?.code ?? "—"} → ${destinationPlant?.code ?? "—"}`
         : "Sin movimiento activo",
     movementTypeLabel: movementType?.name ?? null,
-    quantity: movement?.quantity ?? null,
+    quantity: activeMovement?.quantity ?? null,
     eventType,
     statusLabel,
     headline: getHeadline({
@@ -215,7 +214,9 @@ export function resolveUnitOperationalSnapshot({
       currentPlantCode: currentPlant?.code ?? null,
       destinationCode: destinationPlant?.code ?? null,
     }),
-    statusStartedAt: event?.eventAt ?? movement?.startedAt ?? null,
+    statusStartedAt: isAvailable
+      ? null
+      : event?.eventAt ?? activeMovement?.startedAt ?? null,
     iconKey,
     colorKey,
     isWaiting:
