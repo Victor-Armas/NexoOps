@@ -181,6 +181,9 @@ export function UnitMovementCard({
     waitLimitMinutes !== null && statusElapsedMinutes > waitLimitMinutes;
   const shouldShowContinuation =
     showContinuation || latestCoreEvent?.eventType === "unloading_finished";
+  const canGoDirectlyToDock =
+    latestCoreEvent?.eventType === "departure_requested" ||
+    latestCoreEvent?.eventType === "in_transit";
 
   const handleAdvance = async (
     eventType: string,
@@ -287,7 +290,7 @@ export function UnitMovementCard({
         shiftId: currentShiftId,
         ...values,
       });
-      toast.success("Movimiento completado y siguiente carga iniciada.");
+      toast.success("Movimiento completado y siguiente movimiento iniciado.");
     } catch {
       // The page-level handler already reports the operation error.
     } finally {
@@ -421,7 +424,7 @@ export function UnitMovementCard({
             <ArrowRight size={17} />
           </button>
 
-          {latestCoreEvent?.eventType === "in_transit" && (
+          {canGoDirectlyToDock && (
             <button
               type="button"
               disabled={isEventSubmitting || isMealActive}
