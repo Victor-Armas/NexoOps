@@ -65,7 +65,7 @@ export type CreateUnitMovementEventPayload = {
 };
 
 const BUILT_IN_UNIT_MOVEMENT_EVENT_LABELS: Record<string, string> = {
-  departure_requested: "Salida indicada",
+  departure_requested: "En movimiento",
   in_transit: "En camino",
   waiting_dock: "Esperando rampa",
   waiting_documents: "Esperando documentación",
