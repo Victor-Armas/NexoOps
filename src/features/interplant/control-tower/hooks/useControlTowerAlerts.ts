@@ -1,10 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
 import type { UnitOperationalSnapshot } from "../../unit-movements/utils/unit-operational-snapshot";
 
 const SOUND_STORAGE_KEY = "nexoops:control-tower:sound";
-const NOTIFICATION_DURATION_MS = 9_000;
-const MAX_VISIBLE_NOTIFICATIONS = 3;
+const NOTIFICATION_DURATION_MS = 4_500;
 
 export type ControlTowerNotificationTone =
   | "info"
@@ -98,7 +96,7 @@ export function useControlTowerAlerts(
   );
   const hasHydratedRef = useRef(false);
   const scopeKeyRef = useRef(scopeKey);
-  const notificationTimersRef = useRef<Map<string, number>>(new Map());
+  const notificationTimerRef = useRef<number | null>(null);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -130,15 +128,15 @@ export function useControlTowerAlerts(
         const gain = context.createGain();
         gain.gain.setValueAtTime(0.0001, now);
         gain.gain.exponentialRampToValueAtTime(
-          tone === "danger" ? 0.22 : 0.16,
+          tone === "danger" ? 0.18 : 0.12,
           now + 0.02,
         );
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.42);
         gain.connect(context.destination);
 
         const frequencies =
           tone === "danger"
-            ? [420, 340, 420]
+            ? [420, 340]
             : tone === "warning"
               ? [540, 720]
               : tone === "success"
@@ -147,12 +145,12 @@ export function useControlTowerAlerts(
 
         frequencies.forEach((frequency, index) => {
           const oscillator = context.createOscillator();
-          const startAt = now + index * 0.16;
+          const startAt = now + index * 0.14;
           oscillator.type = tone === "danger" ? "triangle" : "sine";
           oscillator.frequency.setValueAtTime(frequency, startAt);
           oscillator.connect(gain);
           oscillator.start(startAt);
-          oscillator.stop(startAt + 0.15);
+          oscillator.stop(startAt + 0.12);
         });
       } catch {
         // Browsers can block audio until the first user gesture.
@@ -161,35 +159,39 @@ export function useControlTowerAlerts(
     [getAudioContext, soundEnabled],
   );
 
-  const dismissNotification = useCallback((notificationId: string) => {
-    setNotifications((current) =>
-      current.filter((notification) => notification.id !== notificationId),
-    );
-
-    const timeoutId = notificationTimersRef.current.get(notificationId);
-    if (timeoutId !== undefined) {
-      window.clearTimeout(timeoutId);
-      notificationTimersRef.current.delete(notificationId);
+  const clearNotificationTimer = useCallback(() => {
+    if (notificationTimerRef.current !== null) {
+      window.clearTimeout(notificationTimerRef.current);
+      notificationTimerRef.current = null;
     }
   }, []);
 
-  const clearNotifications = useCallback(() => {
-    notificationTimersRef.current.forEach((timeoutId) => {
-      window.clearTimeout(timeoutId);
-    });
-    notificationTimersRef.current.clear();
-    setNotifications([]);
-  }, []);
-
-  const scheduleNotificationDismiss = useCallback(
+  const dismissNotification = useCallback(
     (notificationId: string) => {
-      const timeoutId = window.setTimeout(() => {
-        dismissNotification(notificationId);
-      }, NOTIFICATION_DURATION_MS);
-
-      notificationTimersRef.current.set(notificationId, timeoutId);
+      setNotifications((current) =>
+        current.filter((notification) => notification.id !== notificationId),
+      );
+      clearNotificationTimer();
     },
-    [dismissNotification],
+    [clearNotificationTimer],
+  );
+
+  const clearNotifications = useCallback(() => {
+    clearNotificationTimer();
+    setNotifications([]);
+  }, [clearNotificationTimer]);
+
+  const showNotification = useCallback(
+    (notification: ControlTowerNotification) => {
+      clearNotificationTimer();
+      setNotifications([notification]);
+
+      notificationTimerRef.current = window.setTimeout(() => {
+        setNotifications([]);
+        notificationTimerRef.current = null;
+      }, NOTIFICATION_DURATION_MS);
+    },
+    [clearNotificationTimer],
   );
 
   useEffect(() => {
@@ -254,62 +256,23 @@ export function useControlTowerAlerts(
         createNotification(snapshot, previousSnapshot),
     );
 
-    setNotifications((current) => [
-      ...nextNotifications,
-      ...current,
-    ].slice(0, MAX_VISIBLE_NOTIFICATIONS));
+    const highestPriorityNotification = [...nextNotifications].sort(
+      (first, second) =>
+        getTonePriority(second.tone) - getTonePriority(first.tone),
+    )[0];
 
-    nextNotifications.forEach((notification) => {
-      scheduleNotificationDismiss(notification.id);
+    if (!highestPriorityNotification) return;
 
-      const descriptionParts = [
-        `${notification.previousTitle} → ${notification.title}`,
-        notification.routeLabel !== "Sin movimiento activo"
-          ? notification.routeLabel
-          : null,
-        notification.movementTypeLabel,
-        notification.quantity !== null
-          ? `${notification.quantity} unidades`
-          : null,
-      ].filter(Boolean);
-
-      const toastOptions = {
-        description: descriptionParts.join(" · "),
-        duration: 6_500,
-      };
-
-      if (notification.tone === "success") {
-        toast.success(`${notification.unitLabel} · ${notification.title}`, toastOptions);
-      } else if (notification.tone === "danger") {
-        toast.error(`${notification.unitLabel} · ${notification.title}`, toastOptions);
-      } else {
-        toast(`${notification.unitLabel} · ${notification.title}`, toastOptions);
-      }
-    });
-
-    const highestPriorityTone = nextNotifications
-      .map((notification) => notification.tone)
-      .sort((first, second) => getTonePriority(second) - getTonePriority(first))[0];
-
-    if (highestPriorityTone) {
-      void playStatusTone(highestPriorityTone);
-    }
-  }, [
-    enabled,
-    playStatusTone,
-    scheduleNotificationDismiss,
-    snapshots,
-  ]);
+    showNotification(highestPriorityNotification);
+    void playStatusTone(highestPriorityNotification.tone);
+  }, [enabled, playStatusTone, showNotification, snapshots]);
 
   useEffect(
     () => () => {
-      notificationTimersRef.current.forEach((timeoutId) => {
-        window.clearTimeout(timeoutId);
-      });
-      notificationTimersRef.current.clear();
+      clearNotificationTimer();
       void audioContextRef.current?.close();
     },
-    [],
+    [clearNotificationTimer],
   );
 
   const toggleSound = useCallback(() => {
