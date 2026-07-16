@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   ArrowLeft,
-  BellRing,
   Clock3,
   Expand,
   Minimize2,
@@ -28,6 +27,7 @@ import { resolveUnitOperationalSnapshot } from "../../unit-movements/utils/unit-
 import { useUnits } from "../../units/hooks/useUnits";
 import { ControlTowerActivityChart } from "../components/ControlTowerActivityChart";
 import { ControlTowerEventFeed } from "../components/ControlTowerEventFeed";
+import { ControlTowerLiveNotifications } from "../components/ControlTowerLiveNotifications";
 import { ControlTowerMap } from "../components/ControlTowerMap";
 import { ControlTowerUnitGrid } from "../components/ControlTowerUnitGrid";
 import { useControlTowerAlerts } from "../hooks/useControlTowerAlerts";
@@ -90,7 +90,9 @@ function SummaryCard({
       <p className="font-barlow-condensed text-[10px] font-semibold uppercase tracking-[0.1em] text-faint">
         {label}
       </p>
-      <p className={`mt-1 font-ibm-plex-mono text-2xl font-semibold ${valueClass}`}>
+      <p
+        className={`mt-1 font-ibm-plex-mono text-2xl font-semibold ${valueClass}`}
+      >
         {value}
       </p>
     </article>
@@ -101,7 +103,9 @@ export function ControlTowerPage() {
   const { projectId } = useParams<{ projectId: string }>();
   const { profile, can } = useAuth();
   const [now, setNow] = useState(() => new Date());
-  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const [isFullscreen, setIsFullscreen] = useState(
+    Boolean(document.fullscreenElement),
+  );
 
   const canViewControlTower = can("control_tower.view");
 
@@ -202,8 +206,27 @@ export function ControlTowerPage() {
     ],
   );
 
-  const { soundEnabled, toggleSound, unlockSound } =
-    useControlTowerAlerts(snapshots);
+  const isSnapshotMonitoringReady =
+    !isLoadingShift &&
+    !isLoadingPlants &&
+    !isLoadingUnits &&
+    !isLoadingMovementTypes &&
+    !isLoadingEventActions &&
+    (!shift ||
+      (!isLoadingMovements &&
+        !isLoadingMovementEvents &&
+        !isLoadingUnitEvents));
+
+  const {
+    soundEnabled,
+    notifications,
+    dismissNotification,
+    toggleSound,
+    unlockSound,
+  } = useControlTowerAlerts(snapshots, {
+    enabled: isSnapshotMonitoringReady,
+    scopeKey: shift?.id ?? "no-open-shift",
+  });
 
   useEffect(() => {
     const intervalId = window.setInterval(() => setNow(new Date()), 1_000);
@@ -237,7 +260,9 @@ export function ControlTowerPage() {
     const meals = snapshots.filter(
       (snapshot) => snapshot.eventType === "meal",
     ).length;
-    const available = snapshots.filter((snapshot) => snapshot.isAvailable).length;
+    const available = snapshots.filter(
+      (snapshot) => snapshot.isAvailable,
+    ).length;
 
     return {
       active,
@@ -264,9 +289,7 @@ export function ControlTowerPage() {
       ) {
         alerts.push({
           id: `${snapshot.unitId}:meal`,
-          text: `${snapshot.unitLabel} excede el tiempo de comida: ${elapsedMinutes} min (límite ${
-            settings?.mealDelayLimitMinutes ?? 75
-          } min)`,
+          text: `${snapshot.unitLabel} excede el tiempo de comida: ${elapsedMinutes} min`,
           severity: "danger",
         });
       }
@@ -281,7 +304,7 @@ export function ControlTowerPage() {
       if (waitLimit !== null && elapsedMinutes > waitLimit) {
         alerts.push({
           id: `${snapshot.unitId}:${snapshot.waitKind}`,
-          text: `${snapshot.unitLabel} lleva ${elapsedMinutes} min en ${snapshot.statusLabel.toLowerCase()} (límite ${waitLimit} min)`,
+          text: `${snapshot.unitLabel} supera el límite de ${snapshot.statusLabel.toLowerCase()}`,
           severity: "warning",
         });
       }
@@ -300,7 +323,6 @@ export function ControlTowerPage() {
     return alerts;
   }, [now, openIncidents, settings, snapshots]);
 
-  const firstAlert = operationalAlerts[0] ?? null;
   const errorMessage =
     shiftErrorMessage ||
     plantsErrorMessage ||
@@ -407,14 +429,23 @@ export function ControlTowerPage() {
               type="button"
               onClick={() => void handleFullscreen()}
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-line-strong text-muted transition hover:border-principal/50 hover:text-principal"
-              aria-label={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
-              title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
+              aria-label={
+                isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
+              }
+              title={
+                isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"
+              }
             >
               {isFullscreen ? <Minimize2 size={18} /> : <Expand size={18} />}
             </button>
           </div>
         </div>
       </header>
+
+      <ControlTowerLiveNotifications
+        notifications={notifications}
+        onDismiss={dismissNotification}
+      />
 
       <main className="mx-auto max-w-[1800px] space-y-4 px-4 py-4 md:px-6 md:py-6 xl:px-8">
         {errorMessage && (
@@ -427,36 +458,17 @@ export function ControlTowerPage() {
           <section className="flex items-center gap-3 rounded-xl border border-principal/40 bg-principal/10 px-4 py-4 text-principal">
             <Clock3 size={20} />
             <p className="text-sm font-semibold">
-              No hay un turno abierto. La torre seguirá mostrando la actividad reciente, pero no habrá operación activa del turno.
+              No hay un turno abierto. La torre seguirá mostrando la actividad
+              reciente, pero no habrá operación activa del turno.
             </p>
-          </section>
-        )}
-
-        {firstAlert && (
-          <section
-            className={`flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg ${
-              firstAlert.severity === "danger"
-                ? "border-danger/50 bg-danger/10 text-red-200"
-                : "border-principal/50 bg-principal/10 text-principal"
-            }`}
-          >
-            <BellRing
-              size={19}
-              className="shrink-0 motion-safe:animate-pulse"
-            />
-            <p className="min-w-0 flex-1 text-sm font-semibold">
-              {firstAlert.text}
-            </p>
-            {operationalAlerts.length > 1 && (
-              <span className="shrink-0 rounded-full border border-current/30 px-2 py-1 font-ibm-plex-mono text-[9px]">
-                +{operationalAlerts.length - 1}
-              </span>
-            )}
           </section>
         )}
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
-          <SummaryCard label="Activas" value={`${summary.active}/${snapshots.length}`} />
+          <SummaryCard
+            label="Activas"
+            value={`${summary.active}/${snapshots.length}`}
+          />
           <SummaryCard label="En tránsito" value={summary.transit} />
           <SummaryCard
             label="Esp. rampa"
@@ -515,15 +527,18 @@ export function ControlTowerPage() {
         <footer className="grid gap-2 rounded-xl border border-line bg-panel/70 px-4 py-3 font-ibm-plex-mono text-[10px] text-muted sm:grid-cols-2 xl:grid-cols-4">
           <span className="inline-flex items-center gap-2">
             <Truck size={13} className="text-principal" />
-            Unidades activas: <strong className="text-white">{snapshots.length}</strong>
+            Unidades activas:{" "}
+            <strong className="text-white">{snapshots.length}</strong>
           </span>
           <span className="inline-flex items-center gap-2">
             <Radio size={13} className="text-success" />
-            Eventos visibles: <strong className="text-white">{recentEvents.length}</strong>
+            Eventos visibles:{" "}
+            <strong className="text-white">{recentEvents.length}</strong>
           </span>
           <span className="inline-flex items-center gap-2">
             <ShieldAlert size={13} className="text-danger" />
-            Alertas operativas: <strong className="text-white">{operationalAlerts.length}</strong>
+            Alertas operativas:{" "}
+            <strong className="text-white">{operationalAlerts.length}</strong>
           </span>
           <span className="inline-flex items-center gap-2 xl:justify-end">
             <AlertTriangle size={13} className="text-principal" />
