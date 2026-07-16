@@ -37,11 +37,11 @@ function createDefaultAction(params: {
 const DEFAULT_UNIT_MOVEMENT_EVENT_ACTIONS: UnitMovementEventAction[] = [
   createDefaultAction({
     eventType: "departure_requested",
-    label: "Salida indicada",
+    label: "En movimiento",
     requiresMovement: true,
     showAsAction: false,
     iconKey: "truck",
-    colorKey: "neutral",
+    colorKey: "blue",
   }),
   createDefaultAction({
     eventType: "loading",
