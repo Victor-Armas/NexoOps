@@ -3,6 +3,34 @@ import { toast } from "sonner";
 import type { UnitOperationalSnapshot } from "../../unit-movements/utils/unit-operational-snapshot";
 
 const SOUND_STORAGE_KEY = "nexoops:control-tower:sound";
+const NOTIFICATION_DURATION_MS = 9_000;
+const MAX_VISIBLE_NOTIFICATIONS = 3;
+
+export type ControlTowerNotificationTone =
+  | "info"
+  | "warning"
+  | "danger"
+  | "success";
+
+export type ControlTowerNotification = {
+  id: string;
+  unitId: string;
+  unitLabel: string;
+  title: string;
+  previousTitle: string;
+  phaseLabel: string;
+  currentPlantCode: string | null;
+  routeLabel: string;
+  movementTypeLabel: string | null;
+  quantity: number | null;
+  tone: ControlTowerNotificationTone;
+  createdAt: string;
+};
+
+type UseControlTowerAlertsOptions = {
+  enabled?: boolean;
+  scopeKey?: string | null;
+};
 
 function getInitialSoundPreference() {
   if (typeof window === "undefined") return true;
@@ -15,14 +43,62 @@ function getStatusSignature(snapshot: UnitOperationalSnapshot) {
     snapshot.eventType ?? "available",
     snapshot.phase ?? "none",
     snapshot.currentPlantId ?? "none",
+    snapshot.headline,
   ].join(":");
 }
 
-export function useControlTowerAlerts(snapshots: UnitOperationalSnapshot[]) {
+function getNotificationTone(
+  snapshot: UnitOperationalSnapshot,
+): ControlTowerNotificationTone {
+  if (snapshot.isAvailable) return "success";
+  if (snapshot.colorKey === "danger") return "danger";
+  if (snapshot.isWaiting || snapshot.colorKey === "amber") return "warning";
+  return "info";
+}
+
+function getTonePriority(tone: ControlTowerNotificationTone) {
+  if (tone === "danger") return 4;
+  if (tone === "warning") return 3;
+  if (tone === "success") return 2;
+  return 1;
+}
+
+function createNotification(
+  snapshot: UnitOperationalSnapshot,
+  previousSnapshot: UnitOperationalSnapshot,
+): ControlTowerNotification {
+  return {
+    id: `${snapshot.unitId}:${Date.now()}:${snapshot.eventType ?? "available"}`,
+    unitId: snapshot.unitId,
+    unitLabel: snapshot.unitLabel,
+    title: snapshot.headline,
+    previousTitle: previousSnapshot.headline,
+    phaseLabel: snapshot.phaseLabel,
+    currentPlantCode: snapshot.currentPlantCode,
+    routeLabel: snapshot.routeLabel,
+    movementTypeLabel: snapshot.movementTypeLabel,
+    quantity: snapshot.quantity,
+    tone: getNotificationTone(snapshot),
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export function useControlTowerAlerts(
+  snapshots: UnitOperationalSnapshot[],
+  options: UseControlTowerAlertsOptions = {},
+) {
+  const { enabled = true, scopeKey = "default" } = options;
   const [soundEnabled, setSoundEnabled] = useState(getInitialSoundPreference);
+  const [notifications, setNotifications] = useState<ControlTowerNotification[]>(
+    [],
+  );
   const audioContextRef = useRef<AudioContext | null>(null);
-  const previousStatusesRef = useRef<Map<string, string>>(new Map());
+  const previousSnapshotsRef = useRef<Map<string, UnitOperationalSnapshot>>(
+    new Map(),
+  );
   const hasHydratedRef = useRef(false);
+  const scopeKeyRef = useRef(scopeKey);
+  const notificationTimersRef = useRef<Map<string, number>>(new Map());
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -40,39 +116,81 @@ export function useControlTowerAlerts(snapshots: UnitOperationalSnapshot[]) {
     }
   }, [getAudioContext, soundEnabled]);
 
-  const playStatusTone = useCallback(async () => {
-    if (!soundEnabled) return;
+  const playStatusTone = useCallback(
+    async (tone: ControlTowerNotificationTone) => {
+      if (!soundEnabled) return;
 
-    try {
-      const context = getAudioContext();
-      if (context.state === "suspended") {
-        await context.resume();
+      try {
+        const context = getAudioContext();
+        if (context.state === "suspended") {
+          await context.resume();
+        }
+
+        const now = context.currentTime;
+        const gain = context.createGain();
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(
+          tone === "danger" ? 0.22 : 0.16,
+          now + 0.02,
+        );
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.58);
+        gain.connect(context.destination);
+
+        const frequencies =
+          tone === "danger"
+            ? [420, 340, 420]
+            : tone === "warning"
+              ? [540, 720]
+              : tone === "success"
+                ? [640, 880]
+                : [720, 940];
+
+        frequencies.forEach((frequency, index) => {
+          const oscillator = context.createOscillator();
+          const startAt = now + index * 0.16;
+          oscillator.type = tone === "danger" ? "triangle" : "sine";
+          oscillator.frequency.setValueAtTime(frequency, startAt);
+          oscillator.connect(gain);
+          oscillator.start(startAt);
+          oscillator.stop(startAt + 0.15);
+        });
+      } catch {
+        // Browsers can block audio until the first user gesture.
       }
+    },
+    [getAudioContext, soundEnabled],
+  );
 
-      const now = context.currentTime;
-      const gain = context.createGain();
-      gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.exponentialRampToValueAtTime(0.16, now + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.34);
-      gain.connect(context.destination);
+  const dismissNotification = useCallback((notificationId: string) => {
+    setNotifications((current) =>
+      current.filter((notification) => notification.id !== notificationId),
+    );
 
-      const firstTone = context.createOscillator();
-      firstTone.type = "sine";
-      firstTone.frequency.setValueAtTime(720, now);
-      firstTone.connect(gain);
-      firstTone.start(now);
-      firstTone.stop(now + 0.16);
-
-      const secondTone = context.createOscillator();
-      secondTone.type = "sine";
-      secondTone.frequency.setValueAtTime(940, now + 0.15);
-      secondTone.connect(gain);
-      secondTone.start(now + 0.15);
-      secondTone.stop(now + 0.34);
-    } catch {
-      // Browsers can block audio until the first user gesture. The visual alert remains active.
+    const timeoutId = notificationTimersRef.current.get(notificationId);
+    if (timeoutId !== undefined) {
+      window.clearTimeout(timeoutId);
+      notificationTimersRef.current.delete(notificationId);
     }
-  }, [getAudioContext, soundEnabled]);
+  }, []);
+
+  const clearNotifications = useCallback(() => {
+    notificationTimersRef.current.forEach((timeoutId) => {
+      window.clearTimeout(timeoutId);
+    });
+    notificationTimersRef.current.clear();
+    setNotifications([]);
+  }, []);
+
+  const scheduleNotificationDismiss = useCallback(
+    (notificationId: string) => {
+      const timeoutId = window.setTimeout(() => {
+        dismissNotification(notificationId);
+      }, NOTIFICATION_DURATION_MS);
+
+      notificationTimersRef.current.set(notificationId, timeoutId);
+    },
+    [dismissNotification],
+  );
 
   useEffect(() => {
     if (!soundEnabled) return;
@@ -93,46 +211,106 @@ export function useControlTowerAlerts(snapshots: UnitOperationalSnapshot[]) {
   }, [soundEnabled, unlockSound]);
 
   useEffect(() => {
-    const nextStatuses = new Map(
-      snapshots.map((snapshot) => [
-        snapshot.unitId,
-        getStatusSignature(snapshot),
-      ]),
+    if (scopeKeyRef.current === scopeKey) return;
+
+    scopeKeyRef.current = scopeKey;
+    hasHydratedRef.current = false;
+    previousSnapshotsRef.current = new Map();
+    clearNotifications();
+  }, [clearNotifications, scopeKey]);
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const nextSnapshots = new Map(
+      snapshots.map((snapshot) => [snapshot.unitId, snapshot]),
     );
 
     if (!hasHydratedRef.current) {
-      previousStatusesRef.current = nextStatuses;
+      previousSnapshotsRef.current = nextSnapshots;
       hasHydratedRef.current = true;
       return;
     }
 
-    const changedSnapshots = snapshots.filter((snapshot) => {
-      const previousSignature = previousStatusesRef.current.get(snapshot.unitId);
-      return (
-        previousSignature !== undefined &&
-        previousSignature !== getStatusSignature(snapshot)
-      );
+    const changedSnapshots = snapshots.flatMap((snapshot) => {
+      const previousSnapshot = previousSnapshotsRef.current.get(snapshot.unitId);
+      if (!previousSnapshot) return [];
+
+      if (
+        getStatusSignature(previousSnapshot) === getStatusSignature(snapshot)
+      ) {
+        return [];
+      }
+
+      return [{ snapshot, previousSnapshot }];
     });
 
-    previousStatusesRef.current = nextStatuses;
+    previousSnapshotsRef.current = nextSnapshots;
 
     if (changedSnapshots.length === 0) return;
 
-    changedSnapshots.forEach((snapshot) => {
-      toast(`${snapshot.unitLabel} · ${snapshot.headline}`, {
-        description: snapshot.isAvailable
-          ? "La unidad quedó disponible."
-          : `${snapshot.routeLabel}${
-              snapshot.movementTypeLabel
-                ? ` · ${snapshot.movementTypeLabel}`
-                : ""
-            }`,
-        duration: 7000,
-      });
+    const nextNotifications = changedSnapshots.map(
+      ({ snapshot, previousSnapshot }) =>
+        createNotification(snapshot, previousSnapshot),
+    );
+
+    setNotifications((current) => [
+      ...nextNotifications,
+      ...current,
+    ].slice(0, MAX_VISIBLE_NOTIFICATIONS));
+
+    nextNotifications.forEach((notification) => {
+      scheduleNotificationDismiss(notification.id);
+
+      const descriptionParts = [
+        `${notification.previousTitle} → ${notification.title}`,
+        notification.routeLabel !== "Sin movimiento activo"
+          ? notification.routeLabel
+          : null,
+        notification.movementTypeLabel,
+        notification.quantity !== null
+          ? `${notification.quantity} unidades`
+          : null,
+      ].filter(Boolean);
+
+      const toastOptions = {
+        description: descriptionParts.join(" · "),
+        duration: 6_500,
+      };
+
+      if (notification.tone === "success") {
+        toast.success(`${notification.unitLabel} · ${notification.title}`, toastOptions);
+      } else if (notification.tone === "danger") {
+        toast.error(`${notification.unitLabel} · ${notification.title}`, toastOptions);
+      } else {
+        toast(`${notification.unitLabel} · ${notification.title}`, toastOptions);
+      }
     });
 
-    void playStatusTone();
-  }, [playStatusTone, snapshots]);
+    const highestPriorityTone = nextNotifications
+      .map((notification) => notification.tone)
+      .sort((first, second) => getTonePriority(second) - getTonePriority(first))[0];
+
+    if (highestPriorityTone) {
+      void playStatusTone(highestPriorityTone);
+    }
+  }, [
+    enabled,
+    playStatusTone,
+    scheduleNotificationDismiss,
+    snapshots,
+  ]);
+
+  useEffect(
+    () => () => {
+      notificationTimersRef.current.forEach((timeoutId) => {
+        window.clearTimeout(timeoutId);
+      });
+      notificationTimersRef.current.clear();
+      void audioContextRef.current?.close();
+    },
+    [],
+  );
 
   const toggleSound = useCallback(() => {
     setSoundEnabled((current) => {
@@ -144,6 +322,8 @@ export function useControlTowerAlerts(snapshots: UnitOperationalSnapshot[]) {
 
   return {
     soundEnabled,
+    notifications,
+    dismissNotification,
     toggleSound,
     unlockSound,
   };
