@@ -47,9 +47,33 @@ export function getNextGuidedUnitMovementAction(
   switch (latestCoreEvent?.eventType) {
     case "departure_requested":
       return {
-        eventType: "loading",
-        label: "Iniciar carga",
-        description: "La unidad comienza la carga en la planta de origen.",
+        eventType: "waiting_dock",
+        label: "Esperando rampa",
+        description:
+          "Registra la espera para entrar a la rampa en la planta de origen.",
+      };
+    case "waiting_dock":
+      return {
+        eventType: "positioned",
+        label: "Entrar a rampa",
+        description:
+          latestCoreEvent.phase === "origin"
+            ? "La unidad queda posicionada en la rampa de la planta de origen."
+            : "La unidad queda posicionada en la rampa de la planta destino.",
+      };
+    case "positioned":
+      if (latestCoreEvent.phase === "origin") {
+        return {
+          eventType: "loading",
+          label: "Iniciar carga",
+          description: "Comienza la carga en la planta de origen.",
+        };
+      }
+
+      return {
+        eventType: "unloading",
+        label: "Iniciar descarga",
+        description: "Comienza la descarga en la planta destino.",
       };
     case "loading":
       return {
@@ -69,18 +93,6 @@ export function getNextGuidedUnitMovementAction(
         label: "Esperando rampa",
         description: "Registra la espera al llegar a la planta destino.",
       };
-    case "waiting_dock":
-      return {
-        eventType: "positioned",
-        label: "Entrar a rampa",
-        description: "La unidad ya quedó posicionada en la rampa destino.",
-      };
-    case "positioned":
-      return {
-        eventType: "unloading",
-        label: "Iniciar descarga",
-        description: "Comienza la descarga en la planta destino.",
-      };
     case "unloading":
     case "unloading_finished":
       return {
@@ -91,9 +103,10 @@ export function getNextGuidedUnitMovementAction(
       };
     default:
       return {
-        eventType: "loading",
-        label: "Iniciar carga",
-        description: "Comienza el flujo operativo desde la planta de origen.",
+        eventType: "departure_requested",
+        label: "Iniciar movimiento",
+        description:
+          "La unidad comienza el movimiento hacia la rampa de la planta de origen.",
       };
   }
 }
